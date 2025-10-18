@@ -13,16 +13,25 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        
+        $this->command->info("Создание ролей");
+        $this->command->info("____________");
         $roles = [
             ["UniqName"=> "Admin","Name"=> "Администратор","Description"=> "Администрирует"],
             ["UniqName"=> "RentDealer","Name"=> "Арендодатель","Description"=> "Сдает дома"],
             ["UniqName"=> "User","Name"=> "Пользователь","Description"=> "Пользуется"],
             ["UniqName"=> "Guest","Name"=> "Гость","Description"=> "Гостит"],
         ];
-        foreach ($roles as $role) {
-            Role::create($role);
+        If(Role::count()==4){
+            $this->command->info("Роли уже созданы");
         }
-        $this->command->info("Создано брат");
+        else{
+            foreach ($roles as $role) {
+            $role1 = Role::firstOrCreate($role);
+            $this->command->info("RolesCreated: {$role1->UniqName} , {$role1->IdRole}");
+            }
+            $this->command->info("Дальнейшее создание ролей заблокировано!");
+        }
+        
+        
     }
 }
