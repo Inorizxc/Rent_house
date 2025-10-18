@@ -1,12 +1,39 @@
 <?php
 
+
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 
-Route::get('/', function () {
-    return view('welcome');
+
+Route::get('/tables', function () {
+    return view('welcom');
 })->name('home');
+
+Route::get('/', function () {
+    // Получаем список таблиц
+    $tables = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name;");
+    $tableNames = collect($tables)->pluck('name');
+
+    // Проверяем, выбрал ли пользователь таблицу
+    $selectedTable = request('table');
+    $rows = [];
+
+    if ($selectedTable) {
+        try {
+            $rows = DB::table($selectedTable)->limit(10)->get(); // первые 10 строк
+        } catch (\Throwable $e) {
+            $rows = collect();
+        }
+    }
+
+    return view('test', [
+        'tables' => $tableNames,
+        'selectedTable' => $selectedTable,
+        'rows' => $rows,
+    ]);
+});
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
