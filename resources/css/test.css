@@ -1,0 +1,180 @@
+/* Контейнер */
+.bg-white {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+/* Заголовок блока */
+h2 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+/* Обёртка таблицы */
+.overflow-x-auto {
+  overflow-x: auto;
+}
+
+/* Таблица */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  color: #333;
+  background-color: #fff;
+}
+
+/* Заголовки */
+thead tr {
+  background-color: #f3f4f6;
+}
+th {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 2px solid #d1d5db;
+  font-weight: 600;
+  color: #111827;
+  position: sticky;
+  top: 0;
+  background-color: #f3f4f6;
+}
+
+/* Ячейки */
+td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 14px;
+  vertical-align: middle;
+}
+
+/* Чётные/нечётные строки */
+tr:nth-child(even) {
+  background-color: #fafafa;
+}
+tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+/* Эффект наведения */
+tbody tr:hover {
+  background-color: #e0f2fe;
+  transition: background-color 0.2s ease;
+}
+
+/* Пустое значение */
+td:empty::after {
+  content: "—";
+  color: #9ca3af;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+  th, td {
+    font-size: 0.85rem;
+    padding: 8px 10px;
+  }
+}
+
+/* Сообщение "Нет данных" */
+.text-gray-500 {
+  color: #6b7280;
+  font-style: italic;
+}
+
+
+
+
+
+
+
+/* ======== ПАГИНАЦИЯ ======== */
+
+/* Контейнер, чтобы центрировать */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+/* Сам блок (фон пилюли) */
+.pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(180deg, #ffffff, #fafafa);
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  padding: 8px 20px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Кнопки и числа */
+.pag-btn,
+.pag-num,
+.pag-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  font-size: 14px;
+  line-height: 1;
+  border: none;
+  background: transparent;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+/* Стрелки */
+.pag-btn {
+  font-weight: 600;
+  color: #6b7280;
+}
+.pag-btn:hover:not(.pag-disabled) {
+  background: #f3f4f6;
+}
+.pag-btn.pag-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* Числа */
+.pag-num:hover {
+  background: #f3f4f6;
+}
+
+/* Активная страница */
+.pag-active {
+  background: #e5e7eb;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Многоточие */
+.pag-ellipsis {
+  font-weight: 700;
+  color: #6b7280;
+  border: 1px dashed #d1d5db;
+  padding: 0 10px;
+}
+.pag-ellipsis:hover {
+  background: #f9fafb;
+}
+
+/* Hover эффект */
+.pag-num:not(.pag-active):hover,
+.pag-btn:not(.pag-disabled):hover,
+.pag-ellipsis:hover {
+  transform: translateY(-1px);
+}

@@ -18,9 +18,17 @@ Route::match(['GET','POST'], '/', function (Request $request) {
     $tableNames = collect($tables)->pluck('name');
 
     $selectedTable = $request->get('table');
+    $limit = 1;
 
     $columns = collect();
     if ($selectedTable) {
+        $columns = collect(DB::select("PRAGMA table_info('$selectedTable')"));
+    }
+
+    $page = max((int)$request->get('page', 1), 1);
+
+    $columns = collect();
+    if ($selectedTable){
         $columns = collect(DB::select("PRAGMA table_info('$selectedTable')"));
     }
 
@@ -46,16 +54,30 @@ Route::match(['GET','POST'], '/', function (Request $request) {
         }
     }
 
-    $rows = collect();
+    $rows   = collect();
+    $total  = 0;
+    $pages  = 1;
     if ($selectedTable) {
-        $rows = DB::table($selectedTable)->limit(10)->get();
+        $total = DB::table($selectedTable)->count();
+        $pages = max((int)ceil($total / $limit), 1);
+        // держим page в границах [1..pages]
+        $page  = min($page, $pages);
+        $rows  = DB::table($selectedTable)
+            ->offset(($page-1)*$limit)
+            ->limit($limit)
+            ->get();
     }
+
 
     return view('test', [
         'tables'        => $tableNames,
         'selectedTable' => $selectedTable,
         'columns'       => $columns,
         'rows'          => $rows,
+        'page'          => $page,
+        'pages'         => $pages,
+        'total'         => $total,
+        'limit'         => $limit,
     ]);
 });
 
