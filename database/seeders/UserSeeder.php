@@ -15,9 +15,7 @@ class UserSeeder extends Seeder
     {
         
         $users = [
-            ["Name"=> "Артем","Email"=> "Temich@mail;.com","password"=> "1description"],
-            ["Name"=> "Кирилл","Email"=> "Korotkiy@mail;.com","password"=> "2description"],
-            ["Name"=> "Кирилл","Email"=> "Dlinniy@mail;.com","password"=> "3description"],
+            ["UserId"=>"1","IdRole"=>"1","Name"=>"Артем","Sename"=>"Казаков","Patronimic"=>"Максимович","BirthDate"=>"22/06/2004","Email"=>"temich@mail.ru","Password (cerified)"=>"password","Phone"=>"89776435855","Card"=>"1111 2222 3333"],
         ];
         foreach ($users as $user) {
             User::create($user);
