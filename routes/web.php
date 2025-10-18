@@ -3,6 +3,7 @@
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 
@@ -11,27 +12,50 @@ Route::get('/tables', function () {
     return view('welcom');
 })->name('home');
 
-Route::get('/', function () {
-    // Получаем список таблиц
+Route::match(['GET','POST'], '/', function (Request $request) {
+
     $tables = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name;");
     $tableNames = collect($tables)->pluck('name');
 
-    // Проверяем, выбрал ли пользователь таблицу
-    $selectedTable = request('table');
-    $rows = [];
+    $selectedTable = $request->get('table');
 
+    $columns = collect();
     if ($selectedTable) {
-        try {
-            $rows = DB::table($selectedTable)->limit(10)->get(); // первые 10 строк
-        } catch (\Throwable $e) {
-            $rows = collect();
+        $columns = collect(DB::select("PRAGMA table_info('$selectedTable')"));
+    }
+
+    if ($request->isMethod('post') && $selectedTable) {
+        $blocked = ['id','created_at','updated_at','deleted_at'];
+        $fillable = $columns
+            ->pluck('name')
+            ->reject(fn($c) => in_array($c, $blocked, true))
+            ->values()
+            ->all();
+
+        $payload = $request->only($fillable);
+
+        foreach ($payload as $k => $v) {
+            if ($v === '') $payload[$k] = null;
+        }
+
+        if (!empty($payload)) {
+            DB::table($selectedTable)->insert($payload);
+            return redirect('/')
+                ->withInput(['table' => $selectedTable])
+                ->with('status', "Запись добавлена в «{$selectedTable}»");
         }
     }
 
+    $rows = collect();
+    if ($selectedTable) {
+        $rows = DB::table($selectedTable)->limit(10)->get();
+    }
+
     return view('test', [
-        'tables' => $tableNames,
+        'tables'        => $tableNames,
         'selectedTable' => $selectedTable,
-        'rows' => $rows,
+        'columns'       => $columns,
+        'rows'          => $rows,
     ]);
 });
 
