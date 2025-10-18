@@ -9,23 +9,15 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
-class User extends Authenticatable
+class OrderStatus extends Authenticatable
 {
-    protected $table = "users";
-    protected $primaryKey = "UserId";
+    protected $table = "orderStatuses";
+    protected $primaryKey = "IdOrderStatus";
     public $incrementing = true;
     
     protected $fillable = [
-        'UserId',
-        'IdRole',
-        'Name',
-        'Sename',   
-        'Patronymic',
-        'BirthDate',
-        'Email',
-        'Password (cerified)',
-        'Phone',
-        'Card',
+        'IdOrderStatus',
+        'Type'
     ];
 
 }

@@ -1,0 +1,25 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\OrderCalendar;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class OrderCalendarSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        
+        $orders = [
+            ["IdOrderCalendar"=>"1","IdHouse"=>"1","OrderDate"=>"01.01.2000"],
+        ];
+        foreach ($orders as $order) {
+            OrderCalendar::create($order);
+        }
+        $this->command->info("Создано Ордер");
+    }
+}

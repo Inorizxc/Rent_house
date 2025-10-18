@@ -21,6 +21,6 @@ class OrderStatusSeeder extends Seeder
         foreach ($orderStatuses as $orderStatus) {
             OrderStatus::create($orderStatus);
         }
-        $this->command->info("Создано заказчик");
+        $this->command->info("Создано Ордер Статус");
     }
 }
