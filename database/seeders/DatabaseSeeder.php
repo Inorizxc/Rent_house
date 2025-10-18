@@ -21,6 +21,13 @@ class DatabaseSeeder extends Seeder
             OrderSeeder::class,
             OrderCalendarSeeder::class,
             PriceListSeeder::class,
+            RentTypeSeeder::class,
+            HouseTypeSeeder::class,
+            TagSeeder::class,
+            HouseTagSeeder::class,
+            ServiceSeeder::class,
+            HouseServiceSeeder::class,
+            HouseSeeder::class,
         ]);
     }
 }
