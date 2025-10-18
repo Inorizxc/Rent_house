@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>SQLite Viewer</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.4/dist/tailwind.min.css" rel="stylesheet">
+    @vite(['resources/css/test.css'])
 </head>
 <body class="bg-gray-100 p-8">
 <div class="max-w-6xl mx-auto space-y-6">
@@ -104,11 +104,78 @@
                         </tbody>
                     </table>
                 </div>
-            @endif
-        </div>
-    @endif
+            {{-- Пагинация --}}
+@php
+    $p = $page;   // текущая страница
+    $N = $pages;  // всего страниц
+
+    // Формируем ровно те элементы, что нужно вывести (без дублей)
+    // Модели:
+    //  - число (int)
+    //  - 'dots' — одно многоточие (слева или справа)
+    $items = [];
+
+    if ($N <= 7) {
+        // мало страниц — показываем все
+        $items = range(1, $N);
+    } elseif ($p <= 4) {
+        // начало: 1 2 3 4 5 … N
+        $items = [1, 2, 3, 4, 5, 'dots', $N];
+    } elseif ($p >= $N - 3) {
+        // конец: 1 … N-4 N-3 N-2 N-1 N
+        $items = [1, 'dots', $N-4, $N-3, $N-2, $N-1, $N];
+    } else {
+        // середина: 1 … p-1 p p+1 … N
+        $items = [1, 'dots', $p-1, $p, $p+1, 'dots', $N];
+    }
+@endphp
+
+<div class="pagination-container">
+  <div class="pagination">
+    {{-- Назад --}}
+    <a href="?table={{ urlencode($selectedTable) }}&page={{ max(1, $p-1) }}"
+       class="pag-btn {{ $p==1 ? 'pag-disabled' : '' }}"
+       aria-label="Назад">&lsaquo;</a>
+
+    @foreach ($items as $it)
+        @if ($it === 'dots')
+            <button type="button" class="pag-ellipsis" data-total="{{ $N }}">…</button>
+        @else
+            <a href="?table={{ urlencode($selectedTable) }}&page={{ $it }}"
+               class="pag-num {{ $it==$p ? 'pag-active' : '' }}">{{ $it }}</a>
+        @endif
+    @endforeach
+
+    {{-- Вперёд --}}
+    <a href="?table={{ urlencode($selectedTable) }}&page={{ min($N, $p+1) }}"
+       class="pag-btn {{ $p==$N ? 'pag-disabled' : '' }}"
+       aria-label="Следующая страница">&rsaquo;</a>
+  </div>
+</div>
+@endif
+    </div>
+ @endif
 
 </div>
-</body>
 
+{{-- JS для клика по «…» --}}
+<script>
+document.addEventListener('click', function(e) {
+    if (e.target && e.target.classList.contains('pag-ellipsis')) {
+        const total = parseInt(e.target.getAttribute('data-total') || '1', 10);
+        const input = prompt(`Введите номер страницы (1–${total})`);
+        if (!input) return;
+        let p = parseInt(input, 10);
+        if (isNaN(p)) { alert('Введите число.'); return; }
+        if (p < 1) p = 1;
+        if (p > total) p = total;
+
+        const params = new URLSearchParams(window.location.search);
+        params.set('table', @json($selectedTable));
+        params.set('page', String(p));
+        window.location.search = params.toString();
+    }
+});
+</script>
+</body>
 </html>
