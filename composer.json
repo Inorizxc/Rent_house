@@ -3,6 +3,7 @@
     "name": "laravel/livewire-starter-kit",
     "type": "project",
     "description": "The official Laravel starter kit goida Livewire.",
+    "description": "The official Zlovito2.0 starter kit for Livewire.",
     "keywords": [
         "laravel",
         "framework"
