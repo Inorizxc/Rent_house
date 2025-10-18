@@ -1,25 +1,23 @@
-# Laravel / PHP
-/vendor/
-/bootstrap/cache/
-/storage/*.key
-/storage/framework/*
-/storage/logs
+/.phpunit.cache
+/node_modules
 /public/build
-
-# Node / Vite
-/node_modules/
 /public/hot
-npm-debug.log*
-yarn-error.log*
-pnpm-lock.yaml
-
-# Env / секреты
+/public/storage
+/storage/*.key
+/storage/pail
+/vendor
 .env
-.env.*
+.env.backup
+.env.production
+.phpactor.json
 .phpunit.result.cache
-
-# IDE / ОС
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/auth.json
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
