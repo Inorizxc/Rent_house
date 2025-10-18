@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string("IdRole");
             $table->text("Name");
             $table->text("Sename");
-            $table->text("Patronimic");
+            $table->text("Patronymic");
             $table->text("BirthDate");
             $table->text("Email");
             $table->text("Password (cerified)");
