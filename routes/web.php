@@ -18,7 +18,8 @@ Route::match(['GET','POST'], '/', function (Request $request) {
     $tableNames = collect($tables)->pluck('name');
 
     $selectedTable = $request->get('table');
-    $limit = 1;
+    
+    $limit = min(max((int)$request->get('per', 10), 1), 100);
 
     $columns = collect();
     if ($selectedTable) {
