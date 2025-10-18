@@ -1,0 +1,25 @@
+# Laravel / PHP
+/vendor/
+/bootstrap/cache/
+/storage/*.key
+/storage/framework/*
+/storage/logs
+/public/build
+
+# Node / Vite
+/node_modules/
+/public/hot
+npm-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+
+# Env / секреты
+.env
+.env.*
+.phpunit.result.cache
+
+# IDE / ОС
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
