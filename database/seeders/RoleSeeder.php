@@ -3,8 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Role;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
 
 class RoleSeeder extends Seeder
 {
@@ -21,17 +22,26 @@ class RoleSeeder extends Seeder
             ["UniqName"=> "User","Name"=> "Пользователь","Description"=> "Пользуется"],
             ["UniqName"=> "Guest","Name"=> "Гость","Description"=> "Гостит"],
         ];
-        If(Role::count()==4){
-            $this->command->info("Роли уже созданы");
+        foreach ($roles as $role) {
+        $role1 = Role::firstOrCreate($role);
+        $this->command->info("RolesCreated: {$role1->UniqName} , {$role1->IdRole}");
         }
-        else{
-            foreach ($roles as $role) {
-            $role1 = Role::firstOrCreate($role);
-            $this->command->info("RolesCreated: {$role1->UniqName} , {$role1->IdRole}");
-            }
-            $this->command->info("Дальнейшее создание ролей заблокировано!");
-        }
-        
+        DB::statement("DROP TRIGGER IF EXISTS block_roles_insert");
+        DB::statement("
+            CREATE TRIGGER block_roles_insert
+            BEFORE INSERT ON roles
+            BEGIN
+                SELECT RAISE(ABORT, 'Пососи кирюха со своим созданием');
+            END;
+        ");
+        DB::statement("DROP TRIGGER IF EXISTS block_roles_update");
+        DB::statement("
+            CREATE TRIGGER block_roles_update
+            BEFORE INSERT ON roles
+            BEGIN
+                SELECT RAISE(ABORT, 'Пососи кирюха со своим созданием');
+            END;
+        ");
         
     }
 }
