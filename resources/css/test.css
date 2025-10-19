@@ -178,3 +178,136 @@ td:empty::after {
 .pag-ellipsis:hover {
   transform: translateY(-1px);
 }
+
+
+/* Отступ сверху для таблицы */
+.table-card {
+  margin-top: 1.5rem;        /* отступ сверху */
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;       /* скруглённые углы */
+  overflow: hidden;          /* чтобы скругление было видно */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  background: #fff;
+}
+
+/* Сама таблица */
+.table-card table {
+  width: 100%;
+  border-collapse: separate; /* не склеивать границы */
+  border-spacing: 0;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+/* Заголовок таблицы */
+.table-card thead tr {
+  background-color: #f3f4f6;
+}
+.table-card th {
+  padding: 10px 14px;
+  font-weight: 600;
+  color: #111827;
+  border-bottom: 2px solid #d1d5db;
+  text-align: left;
+  background: #f3f4f6;
+}
+
+/* Ячейки */
+.table-card td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Зебра */
+.table-card tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+/* Hover эффект */
+.table-card tbody tr:hover {
+  background-color: #e0f2fe;
+  transition: background-color 0.2s ease;
+}
+
+/* Небольшой отступ снизу перед пагинацией */
+.pagination-container {
+  margin-top: 1rem;
+}
+
+
+/* ====== Блок "Строк на странице" ====== */
+.rows-per-page {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f9fafb;
+  padding: 8px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+  width: fit-content;
+  transition: all 0.2s ease;
+}
+
+.rows-per-page:hover {
+  background: #f3f4f6;
+}
+
+/* Текстовая подпись */
+.rows-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+  user-select: none;
+}
+
+/* Поле ввода числа */
+.rows-input {
+  width: 70px;
+  padding: 6px 8px;
+  font-size: 0.9rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #111827;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.rows-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+/* Убираем стрелочки (в Chrome и др.) */
+.rows-input::-webkit-outer-spin-button,
+.rows-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.rows-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Мобильные устройства */
+@media (max-width: 640px) {
+  .rows-per-page {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .rows-input {
+    flex-shrink: 0;
+  }
+}
+
+.rows-label{
+    font-weight: 700;
+}
+
+
+
+
+
+
+
+

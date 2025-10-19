@@ -77,12 +77,34 @@
 
         {{-- ПРОСМОТР ДАННЫХ --}}
         <div class="bg-white shadow rounded p-6">
-            <h2 class="text-xl font-semibold mb-3">Первые 10 строк из «{{ $selectedTable }}»</h2>
+            <h2 class="text-xl font-semibold">Таблица «{{ $selectedTable }}»</h2>
+
+            <form method="GET" action="/" class="flex items-center gap-2">
+                <input type="hidden" name="table" value="{{ $selectedTable }}">
+                <input type="hidden" name="page" value="1">
+
+                <div class="rows-per-page">
+                <label for="per" class="rows-label">Строк на странице:</label>
+                <input
+                    id="per"
+                    name="per"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value="{{ $limit }}"
+                    class="rows-input"
+                    onchange="this.form.submit()"
+                >
+                </div>
+            </form>
+        
+        
 
             @if ($rows->isEmpty())
                 <p class="text-gray-500">Нет данных для отображения.</p>
             @else
                 <div class="overflow-x-auto">
+                    <div class="table-card">
                     <table class="min-w-full border border-gray-300 rounded">
                         <thead>
                             <tr class="bg-gray-200">
@@ -103,53 +125,44 @@
                             @endforeach
                         </tbody>
                     </table>
+                    </div>
+
                 </div>
             {{-- Пагинация --}}
 @php
     $p = $page;   // текущая страница
     $N = $pages;  // всего страниц
-
-    // Формируем ровно те элементы, что нужно вывести (без дублей)
-    // Модели:
-    //  - число (int)
-    //  - 'dots' — одно многоточие (слева или справа)
     $items = [];
 
     if ($N <= 7) {
-        // мало страниц — показываем все
         $items = range(1, $N);
     } elseif ($p <= 4) {
-        // начало: 1 2 3 4 5 … N
         $items = [1, 2, 3, 4, 5, 'dots', $N];
     } elseif ($p >= $N - 3) {
-        // конец: 1 … N-4 N-3 N-2 N-1 N
         $items = [1, 'dots', $N-4, $N-3, $N-2, $N-1, $N];
     } else {
-        // середина: 1 … p-1 p p+1 … N
         $items = [1, 'dots', $p-1, $p, $p+1, 'dots', $N];
     }
 @endphp
 
 <div class="pagination-container">
   <div class="pagination">
-    {{-- Назад --}}
-    <a href="?table={{ urlencode($selectedTable) }}&page={{ max(1, $p-1) }}"
-       class="pag-btn {{ $p==1 ? 'pag-disabled' : '' }}"
-       aria-label="Назад">&lsaquo;</a>
+    <a href="?table={{ urlencode($selectedTable) }}&page={{ max(1, $p-1) }}&per={{ $limit }}"
+        class="pag-btn {{ $p==1 ? 'pag-disabled' : '' }}"
+        aria-label="Назад">&lsaquo;</a>
 
-    @foreach ($items as $it)
-        @if ($it === 'dots')
-            <button type="button" class="pag-ellipsis" data-total="{{ $N }}">…</button>
-        @else
-            <a href="?table={{ urlencode($selectedTable) }}&page={{ $it }}"
-               class="pag-num {{ $it==$p ? 'pag-active' : '' }}">{{ $it }}</a>
-        @endif
-    @endforeach
+        @foreach ($items as $it)
+            @if ($it === 'dots')
+                <button type="button" class="pag-ellipsis" data-total="{{ $N }}">…</button>
+            @else
+                <a href="?table={{ urlencode($selectedTable) }}&page={{ $it }}&per={{ $limit }}"
+                class="pag-num {{ $it==$p ? 'pag-active' : '' }}">{{ $it }}</a>
+            @endif
+        @endforeach
 
-    {{-- Вперёд --}}
-    <a href="?table={{ urlencode($selectedTable) }}&page={{ min($N, $p+1) }}"
-       class="pag-btn {{ $p==$N ? 'pag-disabled' : '' }}"
-       aria-label="Следующая страница">&rsaquo;</a>
+        <a href="?table={{ urlencode($selectedTable) }}&page={{ min($N, $p+1) }}&per={{ $limit }}"
+        class="pag-btn {{ $p==$N ? 'pag-disabled' : '' }}"
+        aria-label="Следующая страница">&rsaquo;</a>
   </div>
 </div>
 @endif
@@ -172,6 +185,7 @@ document.addEventListener('click', function(e) {
 
         const params = new URLSearchParams(window.location.search);
         params.set('table', @json($selectedTable));
+        params.set('per', String(@json($limit))); // <-- сохраняем лимит
         params.set('page', String(p));
         window.location.search = params.toString();
     }
