@@ -29,4 +29,15 @@ class House extends Authenticatable
         'Lat',
     ];
 
+    public function user(){
+        return $this->belongsTo(User::class,"RentDealerId","UserId");
+    }
+    
+    public function order(){
+        return $this->hasMany(Order::class,"HouseId","IdHouse");
+    }
+
+    public function tags(){
+        return $this->belongsToMany(Tag::class,"HouseId","HouseId");
+    }
 }

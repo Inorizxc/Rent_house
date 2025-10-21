@@ -18,4 +18,8 @@ class Role extends Model
     protected static function boot(){
         parent::boot();
     }
+
+    public function user(){
+        return $this->hasMany(User::class,"IdRole","IdRole");
+    }
 }

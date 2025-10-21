@@ -28,4 +28,12 @@ class User extends Authenticatable
         'Card',
     ];
 
+    public function roles(){
+        return $this->belongsTo(Role::class,"IdRole","IdRole");
+    }
+
+    public function house(){
+        return $this->hasMany(House::class,"UserId","RentDealerId");
+    }
+
 }

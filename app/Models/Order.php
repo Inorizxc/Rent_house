@@ -19,4 +19,8 @@ class Order extends Model
         "CustomerId",
         "OrderStatus",
         ];
+    
+    public function house(){
+        return $this->belongsTo(House::class,"IdHouse","HouseId");
+    }
 }

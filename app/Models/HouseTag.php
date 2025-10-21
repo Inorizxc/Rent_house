@@ -21,4 +21,8 @@ class HouseTag extends Authenticatable
         'TagId',
     ];
 
+    public function house(){
+        return $this->belongsToMany(House::class,"HouseId","HouseId");
+    }
+
 }
