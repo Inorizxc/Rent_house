@@ -28,6 +28,9 @@ class User extends Authenticatable
         'card',
     ];
 
+    protected $hidden = ['password', 'remember_token'];
+    protected $casts  = ['birth_date' => 'date'];
+
 
     public function roles(){
         return $this->belongsTo(Role::class,"role_id","role_id");
