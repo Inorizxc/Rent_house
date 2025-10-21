@@ -29,11 +29,11 @@ class House extends Authenticatable
         'lat',
     ];
 
-    protected function boot(){
+    protected static function boot(){
 
         parent::boot();
         static::deleting(function ($house){
-            $this->info ("Нахуй с пляжа");
+            info ("Нахуй с пляжа");
 
         });
     }

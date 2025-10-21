@@ -37,7 +37,7 @@ class User extends Authenticatable
         parent::boot();
 
         static::deleting(function ($user){
-            $user->houses()->delete();
+            $user->house()->delete();
         });
     }
 
