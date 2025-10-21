@@ -15,7 +15,9 @@ class OrderCalendarSeeder extends Seeder
     {
         
         $orders = [
-            ["IdOrderCalendar"=>"1","IdHouse"=>"1","OrderDate"=>"01.01.2000"],
+            ["order_calendar_id"=>"1",
+            "house_id"=>"1",
+            "order_date"=>"01.01.2000"],
         ];
         foreach ($orders as $order) {
             OrderCalendar::create($order);

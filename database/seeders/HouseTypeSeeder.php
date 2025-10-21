@@ -14,7 +14,9 @@ class HouseTypeSeeder extends Seeder
     public function run(): void
     {
         $houseTypes = [
-            ["HouseTypeId"=>"1","Name"=>"Коттедж","Description"=>"Ну коттедж че"],
+            ["house_type_id"=>"1",
+            "name"=>"Коттедж",
+            "description"=>"Ну коттедж че"],
         ];
         foreach ($houseTypes as $houseType) {
             HouseType::create($houseType);

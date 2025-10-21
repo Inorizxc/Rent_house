@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('rentTypes', function (Blueprint $table) {
-            $table->string("RentTypeId") ->unique();
-            $table->string("Name");
-            $table->string("Description");
+        Schema::create('rent_types', function (Blueprint $table) {
+            $table->string("rent_type_id") ->unique();
+            $table->string("name");
+            $table->string("description");
             $table->timestamps();
         });
     }

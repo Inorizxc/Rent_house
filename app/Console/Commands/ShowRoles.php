@@ -28,7 +28,7 @@ class ShowRoles extends Command
         $count = Role::count();
         $roles = Role::all();
         foreach ($roles as $role) {
-            $this->info("{$role->UniqName} + {$role->IdRole}+ {$count}");
+            $this->info("{$role->uniq_name} + {$role->role_id}+ {$count}");
         }
 
     }

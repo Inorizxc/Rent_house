@@ -12,21 +12,21 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 class House extends Authenticatable
 {
     protected $table = "houses";
-    protected $primaryKey = "HouseId";
+    protected $primaryKey = "house_id";
     public $incrementing = true;
     
     protected $fillable = [
-        'HouseId',
-        'RentDealerId',
-        'PriceId',   
-        'RentTypeId',
-        'HouseTypeId',
-        'CalendarId',
-        'Adress',
-        'Area',
-        'Deleted',
-        'Ing',
-        'Lat',
+        'house_id',
+        'user_id',
+        'price_id',   
+        'rent_type_id',
+        'house_type_id',
+        'calendar_id',
+        'adress',
+        'area',
+        'is_deleted',
+        'lnd',
+        'lat',
     ];
 
     public function user(){

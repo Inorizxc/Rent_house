@@ -15,7 +15,7 @@ class PriceListSeeder extends Seeder
     {
         
         $priceLists = [
-            ["PriceListId"=>"1","Price"=>"15000"],
+            ["price_list_id"=>"1","price"=>"15000"],
         ];
         foreach ($priceLists as $priceList) {
             PriceList::create($priceList);

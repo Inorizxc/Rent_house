@@ -12,20 +12,20 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 class User extends Authenticatable
 {
     protected $table = "users";
-    protected $primaryKey = "UserId";
+    protected $primaryKey = "user_id";
     public $incrementing = true;
     
     protected $fillable = [
-        'UserId',
-        'IdRole',
-        'Name',
-        'Sename',   
-        'Patronymic',
-        'BirthDate',
-        'Email',
-        'Password (cerified)',
-        'Phone',
-        'Card',
+        'user_id',
+        'role_id',
+        'name',
+        'sename',   
+        'patronymic',
+        'birth_date',
+        'email',
+        'password',
+        'phone',
+        'card',
     ];
 
     public function roles(){

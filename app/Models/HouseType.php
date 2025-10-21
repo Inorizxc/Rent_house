@@ -11,14 +11,14 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class HouseType extends Authenticatable
 {
-    protected $table = "houseTypes";
-    protected $primaryKey = "houseTypeId";
+    protected $table = "house_types";
+    protected $primaryKey = "house_Type_id";
     public $incrementing = true;
     
     protected $fillable = [
-        'houseTypeId',
-        'Name',
-        'Description',
+        'house_type_id',
+        'name',
+        'description',
     ];
 
 }

@@ -32,11 +32,11 @@ class showUserWithRole extends Command
         //$table = DB::table("SELECT u.name as name, u.sename r.name from users as u
         //right join on roles as r
         //where $id = r.IdRole and r.IdRole = u.IdRole");
-        $table1 = Role::with('user')->where("IdRole",$id)->get();
-        $user= User::with("roles")->where("IdRole",$id)->get();
+        $table1 = Role::with('user')->where("role_id",$id)->get();
+        $user= User::with("roles")->where("role_id",$id)->get();
         foreach ($table1 as $role) {
             foreach($user as $user1){
-                $this->info("{$user1->Name}: {$role->Name}");
+                $this->info("{$user1->name}: {$role->name}");
             }
             
         }

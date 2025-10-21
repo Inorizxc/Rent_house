@@ -11,13 +11,13 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class OrderStatus extends Authenticatable
 {
-    protected $table = "orderStatuses";
-    protected $primaryKey = "IdOrderStatus";
+    protected $table = "order_statuses";
+    protected $primaryKey = "order_status_id";
     public $incrementing = true;
     
     protected $fillable = [
-        'IdOrderStatus',
-        'Type'
+        'order_status_id',
+        'type'
     ];
 
 }

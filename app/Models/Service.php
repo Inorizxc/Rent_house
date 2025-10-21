@@ -12,13 +12,13 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 class Service extends Authenticatable
 {
     protected $table = "services";
-    protected $primaryKey = "ServiceId";
+    protected $primaryKey = "service_id";
     public $incrementing = true;
     
     protected $fillable = [
-        'ServiceId',
-        'Name',
-        'Description',
+        'service_id',
+        'name',
+        'description',
     ];
 
 }

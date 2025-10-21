@@ -21,14 +21,14 @@ class RoleSeeder extends Seeder
             $this->command->info("Создание ролей");
         $this->command->info("____________");
             $roles = [
-                ["UniqName"=> "Admin","Name"=> "Администратор","Description"=> "Администрирует"],
-                ["UniqName"=> "RentDealer","Name"=> "Арендодатель","Description"=> "Сдает дома"],
-                ["UniqName"=> "User","Name"=> "Пользователь","Description"=> "Пользуется"],
-                ["UniqName"=> "Guest","Name"=> "Гость","Description"=> "Гостит"],
+                ["uniq_name"=> "Admin","name"=> "Администратор","description"=> "Администрирует"],
+                ["uniq_name"=> "RentDealer","name"=> "Арендодатель","description"=> "Сдает дома"],
+                ["uniq_name"=> "User","name"=> "Пользователь","description"=> "Пользуется"],
+                ["uniq_name"=> "Guest","name"=> "Гость","description"=> "Гостит"],
             ];
             foreach ($roles as $role) {
                 $role1 = Role::firstOrCreate($role);
-                $this->command->info("RolesCreated: {$role1->UniqName} , {$role1->IdRole}");
+                $this->command->info("RolesCreated: {$role1->uniq_name} , {$role1->role_id}");
             }
             $count = Role::count();
             $this->command->info("{$count}");

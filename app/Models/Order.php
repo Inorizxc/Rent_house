@@ -7,17 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 class Order extends Model
 {
     protected $table = "orders";
-    protected $primaryKey = "IdOrder";
+    protected $primaryKey = "order_id";
     public $incrementing = true;
     
     protected $fillable =
     [
-        "IdOrder",
-        "IdHouse",
-        "DateOfOrder",
-        "DayCount",
-        "CustomerId",
-        "OrderStatus",
+        "order_id",
+        "house_id",
+        "date_of_order",
+        "day_count",
+        "customer_id",
+        "order_status",
         ];
     
     public function house(){

@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('priceLists', function (Blueprint $table) {
-            $table->string("PriceListId") ->unique();
-            $table->string("Price");
+        Schema::create('price_lists', function (Blueprint $table) {
+            $table->string("price_list_id") ->unique();
+            $table->string("price");
             $table->timestamps();
         });
     }
     public function down(): void
     {
-        Schema::dropIfExists('priceLists');
+        Schema::dropIfExists('price_lists');
     }
 };

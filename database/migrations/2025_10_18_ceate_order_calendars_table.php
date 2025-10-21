@@ -11,15 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ordercalendars', function (Blueprint $table) {
-            $table->string("IdOrderCalendar") ->unique();
-            $table->string("IdHouse");
-            $table->text("OrderDate");
+        Schema::create('order_calendars', function (Blueprint $table) {
+            $table->string("order_calendar_id") ->unique();
+            $table->string("house_id");
+            $table->text("order_date");
             $table->timestamps();
         });
     }
     public function down(): void
     {
-        Schema::dropIfExists('ordercalendars');
+        Schema::dropIfExists('order_calendars');
     }
 };

@@ -11,13 +11,13 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class PriceList extends Authenticatable
 {
-    protected $table = "priceLists";
-    protected $primaryKey = "PriceListId";
+    protected $table = "price_lists";
+    protected $primaryKey = "priceList_id";
     public $incrementing = true;
     
     protected $fillable = [
-        'PriceList',
-        'Price',
+        'price_list_id',
+        'price',
     ];
 
 }

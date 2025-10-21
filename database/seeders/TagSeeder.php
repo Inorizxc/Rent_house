@@ -14,7 +14,7 @@ class TagSeeder extends Seeder
     public function run(): void
     {
         $tags = [
-            ["TagId"=>"1","Name"=>"У метро","Description"=>"Ну у метро и че"],
+            ["tag_id"=>"1","name"=>"У метро","description"=>"Ну у метро и че"],
         ];
         foreach ($tags as $tag) {
             Tag::create($tag);

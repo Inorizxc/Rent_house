@@ -14,7 +14,9 @@ class RentTypeSeeder extends Seeder
     public function run(): void
     {
         $rentTypes = [
-            ["RentTypeId"=>"1","Name"=>"Аренда","Description"=>"Ну аренда че"],
+            ["rent_type_id"=>"1",
+            "name"=>"Аренда",
+            "description"=>"Ну аренда че"],
         ];
         foreach ($rentTypes as $rentType) {
             RentType::create($rentType);

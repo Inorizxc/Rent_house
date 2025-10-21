@@ -15,7 +15,17 @@ class HouseSeeder extends Seeder
     {
         
         $houses = [
-            ["HouseId"=>"1","RentDealerId"=>"1","PriceId"=>"1","RentTypeId"=>"1","HouseTypeId"=>"1","CalendarId"=>"1","Adress"=>"Ул. Пушикна, дом Колотушкина","Area"=>"150 квадратов","Deleted"=>"None","Ing"=>"Че то","lat"=>"Че то"],
+            ["house_id"=>"1",
+            "user_id"=>"1",
+            "price_id"=>"1",
+            "rent_type_id"=>"1",
+            "house_type_id"=>"1",
+            "calendar_id"=>"1",
+            "adress"=>"Ул. Пушикна, дом Колотушкина",
+            "area"=>"150 квадратов",
+            "is_deleted"=>"None",
+            "lng"=>"Че то",
+            "lat"=>"Че то"],
         ];
         foreach ($houses as $house) {
             House::create($house);

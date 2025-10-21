@@ -15,7 +15,12 @@ class OrderSeeder extends Seeder
     {
         
         $orders = [
-            ["IdOrder"=>"1","IdHouse"=>"1","DateOfOrder"=>"01.01.2000","DayCount"=>"2","CustomerId"=>"1","OrderStatus"=>"Ожидается"],
+            ["order_id"=>"1",
+            "house_id"=>"1",
+            "date_of_order"=>"01.01.2000",
+            "day_count"=>"2",
+            "customer_id"=>"1",
+            "order_status"=>"Ожидается"],
         ];
         foreach ($orders as $order) {
             Order::create($order);

@@ -12,12 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('orders', function (Blueprint $table) {
-            $table->string("IdOrder") ->unique();
-            $table->string("IdHouse");
-            $table->text("DateOfOrder");
-            $table->text("DayCount");
-            $table->text("CustomerId");
-            $table->text("OrderStatus");
+            $table->string("order_id") ->unique();
+            $table->string("house_id");
+            $table->text("date_of_order");
+            $table->text("day_count");
+            $table->text("customer_id");
+            $table->text("order_status");
             $table->timestamps();
         });
     }

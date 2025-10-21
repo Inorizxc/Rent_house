@@ -14,7 +14,9 @@ class HouseTagSeeder extends Seeder
     public function run(): void
     {
         $houseTags = [
-            ["HouseTagId"=>"1","HouseId"=>"1","TagId"=>"1"],
+            ["house_tag_id"=>"1",
+            "house_id"=>"1",
+            "tag_id"=>"1"],
         ];
         foreach ($houseTags as $houseTag) {
             HouseTag::create($houseTag);

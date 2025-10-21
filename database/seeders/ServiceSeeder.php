@@ -14,7 +14,7 @@ class ServiceSeeder extends Seeder
     public function run(): void
     {
         $services = [
-            ["ServiceId"=>"1","Name"=>"Двухэтажный","Description"=>"Ну двухэтажный и че"],
+            ["service_id"=>"1","name"=>"Двухэтажный","description"=>"Ну двухэтажный и че"],
         ];
         foreach ($services as $service) {
             Service::create($service);

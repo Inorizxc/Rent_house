@@ -15,8 +15,8 @@ class OrderStatusSeeder extends Seeder
     {
         
         $orderStatuses = [
-            ["IdOrderStatus"=>"1","Type"=>"Ожидается"],
-            ["IdOrderStatus"=>"2","Type"=>"Услуга оказана"],
+            ["order_status_id"=>"1","type"=>"Ожидается"],
+            ["order_status_id"=>"2","type"=>"Услуга оказана"],
         ];
         foreach ($orderStatuses as $orderStatus) {
             OrderStatus::create($orderStatus);

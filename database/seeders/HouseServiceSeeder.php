@@ -14,7 +14,9 @@ class HouseServiceSeeder extends Seeder
     public function run(): void
     {
         $houseServices = [
-            ["HouseServiceId"=>"1","HouseId"=>"1","ServiceId"=>"1"],
+            ["house_service_id"=>"1",
+            "house_id"=>"1",
+            "service_id"=>"1"],
         ];
         foreach ($houseServices as $houseService) {
             HouseService::create($houseService);
