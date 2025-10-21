@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -36,6 +37,27 @@ return new class extends Migration
             select RAISE(ABORT,'Только арендодатели могут создавать дома');
             END;
         ");
+        DB::statement("CREATE TRIGGER block_house_update_from_role
+            BEFORE UPDATE ON houses
+            when (select role_id from users
+                where users.user_id = new.user_id)>=2
+
+            BEGIN
+            select RAISE(ABORT,'Только арендодатели могут изменять дома');
+            END;
+        ");
+        /*
+        DB::statement("CREATE TRIGGER block_house_update_from_other_user
+            BEFORE UPDATE ON houses
+            when (select user_id from users
+                where users.user_id = new.user_id)<>(select user_id from houses where houses.house_id=new.house_id)
+
+            BEGIN
+            select RAISE(ABORT,'Только владельцы могут изменять дома');
+            END;
+        ");
+        */
+
 
     }
 
@@ -47,5 +69,6 @@ return new class extends Migration
         DB::statement("DROP TRIGGER IF EXISTS block_order_update");
         DB::statement("DROP TRIGGER IF EXISTS block_order_delete");
         DB::statement("DROP TRIGGER IF EXISTS block_house_creation_from_role");
+        DB::statement("DROP TRIGGER IF EXISTS block_house_update_from_role");
     }
 };
