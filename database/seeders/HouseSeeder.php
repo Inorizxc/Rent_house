@@ -26,8 +26,11 @@ class HouseSeeder extends Seeder
             "is_deleted"=>"None",
             "lng"=>"Че то",
             "lat"=>"Че то"],
+
         ];
+
         foreach ($houses as $house) {
+
             House::create($house);
         }
         $this->command->info("Создано Пользователи");
