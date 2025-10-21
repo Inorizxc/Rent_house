@@ -20,9 +20,14 @@ class OrderSeeder extends Seeder
             "date_of_order"=>"01.01.2000",
             "day_count"=>"2",
             "customer_id"=>"1",
-            "order_status"=>"Ожидается"],
+            "order_status"=>"Ожидается",
+            "original_data"=>""],
         ];
         foreach ($orders as $order) {
+            $order_without_original=array_slice($order,1,-2);
+            $json_string=json_encode($order_without_original);
+            $order["original_data"]=$json_string;
+
             Order::create($order);
         }
         $this->command->info("Создано Ордер");

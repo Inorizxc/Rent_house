@@ -26,7 +26,7 @@ class House extends Authenticatable
         'area',
         'is_deleted',
         'lnd',
-        'lat',
+        'lat'
     ];
 
     public function user(){
