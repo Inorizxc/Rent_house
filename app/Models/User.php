@@ -33,6 +33,13 @@ class User extends Authenticatable
     protected $casts  = ['birth_date' => 'date',
                         "need_verification"=> 'boolean'];
 
+    public static function boot(){
+        parent::boot();
+
+        static::deleting(function ($user){
+            $user->houses()->delete();
+        });
+    }
 
     public function roles(){
         return $this->belongsTo(Role::class,"role_id","role_id");

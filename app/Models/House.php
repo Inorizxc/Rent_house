@@ -29,6 +29,15 @@ class House extends Authenticatable
         'lat',
     ];
 
+    protected function boot(){
+
+        parent::boot();
+        static::deleting(function ($house){
+            $this->info ("Нахуй с пляжа");
+
+        });
+    }
+
     public function user(){
         return $this->hasOne(User::class,"user_id","user_id");
     }
