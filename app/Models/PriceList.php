@@ -20,4 +20,7 @@ class PriceList extends Authenticatable
         'price',
     ];
 
+    public function house(){
+        return $this->belongsTo(House::class,"price_list_id","price_list_id");
+    }
 }

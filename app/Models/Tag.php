@@ -21,4 +21,8 @@ class Tag extends Authenticatable
         'description',
     ];
 
+    public function house_tag(){
+        return $this->hasMany(HouseTag::class,"tag_id","tag_id");
+    }
+
 }

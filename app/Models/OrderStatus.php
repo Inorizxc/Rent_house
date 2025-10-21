@@ -20,4 +20,7 @@ class OrderStatus extends Authenticatable
         'type'
     ];
 
+    public function order(){
+        return $this->hasMany(Order::class,"order_status_id","order_status_id");
+    }
 }

@@ -22,7 +22,11 @@ class HouseTag extends Authenticatable
     ];
 
     public function house(){
-        return $this->belongsToMany(House::class,"HouseId","HouseId");
+        return $this->belongsToMany(House::class,"house_id","house_id");
+    }
+
+    public function tag(){
+        return $this->belongsTo(House::class,"tag_id","tag_id");
     }
 
 }

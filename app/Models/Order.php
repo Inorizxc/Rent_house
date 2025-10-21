@@ -17,10 +17,18 @@ class Order extends Model
         "date_of_order",
         "day_count",
         "customer_id",
-        "order_status",
+        "order_status_id",
         ];
     
     public function house(){
-        return $this->belongsTo(House::class,"IdHouse","HouseId");
+        return $this->hasOne(House::class,"IdHouse","HouseId");
+    }
+
+    public function user(){
+        return $this->hasOne(User::class,"customer_id","user_id");
+    }
+
+    public function order_status(){
+        return $this->hasOne(OrderStatus::class,"order_status_id","order_status_id");
     }
 }

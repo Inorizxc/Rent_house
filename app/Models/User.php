@@ -28,12 +28,16 @@ class User extends Authenticatable
         'card',
     ];
 
+
     public function roles(){
-        return $this->belongsTo(Role::class,"IdRole","IdRole");
+        return $this->belongsTo(Role::class,"role_id","role_id");
     }
 
     public function house(){
-        return $this->hasMany(House::class,"UserId","RentDealerId");
+        return $this->hasMany(House::class,"user_id","user_id");
+    }
+    public function order(){
+        return $this->hasMany(Order::class,"user_id","user_id");
     }
 
 }

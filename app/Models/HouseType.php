@@ -12,7 +12,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 class HouseType extends Authenticatable
 {
     protected $table = "house_types";
-    protected $primaryKey = "house_Type_id";
+    protected $primaryKey = "house_type_id";
     public $incrementing = true;
     
     protected $fillable = [
@@ -21,4 +21,7 @@ class HouseType extends Authenticatable
         'description',
     ];
 
+    public function house(){
+        return $this->belongsToMany(House::class,"house_type_id","house_type_id");
+    }
 }

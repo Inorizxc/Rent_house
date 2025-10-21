@@ -20,5 +20,10 @@ class HouseService extends Authenticatable
         'house_id',
         'service_id',
     ];
-
+    public function house(){
+        return $this->hasOne(House::class,"house_id","house_id");
+    }
+    public function service(){
+        return $this->hasOne(Service::class,"service_id","service_id");
+    }
 }

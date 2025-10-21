@@ -30,14 +30,29 @@ class House extends Authenticatable
     ];
 
     public function user(){
-        return $this->belongsTo(User::class,"RentDealerId","UserId");
+        return $this->hasOne(User::class,"user_id","user_id");
     }
     
     public function order(){
-        return $this->hasMany(Order::class,"HouseId","IdHouse");
+        return $this->hasMany(Order::class,"house_id","house_id");
     }
 
-    public function tags(){
-        return $this->belongsToMany(Tag::class,"HouseId","HouseId");
+    public function house_tag(){
+        return $this->hasMany(HouseTag::class,"house_id","house_id");
+    }
+    public function price_list(){
+        return $this->hasMany(PriceList::class,"price_list_id","price_list_id");
+    }
+
+    public function order_calendar(){
+        return $this->hasMany(OrderCalendar::class,"calendar_id","calendar_id");
+    }
+
+    public function rent_type(){
+        return $this->hasOne(RentType::class,"rent_type_id","rent_type_id");
+    }
+
+    public function house_type(){
+        return $this->hasOne(HouseType::class,"house_type_id","house_type_id");
     }
 }

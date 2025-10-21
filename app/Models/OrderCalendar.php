@@ -16,4 +16,8 @@ class OrderCalendar extends Model
         "house_id",
         "order_date",
         ];
+    
+    public function house(){
+        return $this->hasOne(House::class,"house_id","house_id");
+    }
 }

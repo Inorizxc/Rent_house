@@ -21,4 +21,8 @@ class Service extends Authenticatable
         'description',
     ];
 
+    public function house_service(){
+        return $this->hasMany(HouseService::class,"service_id","service_id");
+    }
+
 }
