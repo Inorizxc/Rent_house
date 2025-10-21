@@ -18,6 +18,7 @@ class Order extends Model
         "day_count",
         "customer_id",
         "order_status_id",
+        "original_data",
         ];
     
     public function house(){

@@ -83,6 +83,7 @@ Route::match(['GET','POST'], '/', function (Request $request) {
 });
 
 Route::get('/users', \App\Livewire\UsersPage::class)->name('users');
+Route::get('/houses', \App\Livewire\HousesPage::class)->name('houses');
 
 
 Route::view('dashboard', 'dashboard')

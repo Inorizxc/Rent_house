@@ -13,12 +13,13 @@ class UsersPage extends Component
 {
     use WithPagination;
 
-    public string $search = '';
+    public string $search = '';       // применённый фильтр
+    public string $searchInput = '';  // ввод пользователя
 
     /** id редактируемой строки: null = ничего, 0 = новая, >0 = существующая */
     public ?int $editingRowId = null;
 
-    /** активная ячейка (имя поля), чтобы открыть конкретный input */
+    /** активная ячейка */
     public ?string $editingField = null;
 
     /** буфер данных редактируемой строки */
@@ -33,16 +34,20 @@ class UsersPage extends Component
         'card'       => '',
     ];
 
-    /** новый пароль (хэшируем, текущее значение не показываем) */
     public string $passwordNew = '';
 
-    public function updatingSearch(){ $this->resetPage(); }
+    // Копирует текст из поля поиска в фильтр
+    public function applySearch()
+    {
+        $this->search = $this->searchInput;
+        $this->resetPage();
+    }
 
     /* ---------- создание / редактирование ---------- */
 
     public function startCreate()
     {
-        $this->editingRowId = 0; // новая строка
+        $this->editingRowId = 0;
         $this->editingField = 'name';
         $this->row = [
             'role_id'    => null,
@@ -114,14 +119,12 @@ class UsersPage extends Component
         $this->validate($rules);
 
         if ($this->editingRowId === 0) {
-            // create
             $data = $this->row;
             $data['password'] = Hash::make($this->passwordNew);
-            unset($data['user_id']); // автоинкремент
+            unset($data['user_id']);
             User::create($data);
             session()->flash('ok','Пользователь создан');
         } else {
-            // update
             $u = User::findOrFail($this->editingRowId);
             $u->fill($this->row);
             if ($this->passwordNew !== '') {
@@ -146,7 +149,7 @@ class UsersPage extends Component
     public function render()
     {
         $users = User::query()
-            ->with('roles') // имя отношения в твоей модели
+            ->with('roles')
             ->when($this->search, function($q){
                 $s = "%{$this->search}%";
                 $q->where(function($w) use ($s){
@@ -162,6 +165,6 @@ class UsersPage extends Component
         $roles = Role::orderBy('name')->get(['role_id','name']);
 
         return view('livewire.users-page', compact('users','roles'))
-            ->layout('components.layouts.app'); // или ->layout('layouts.app')
+            ->layout('components.layouts.app');
     }
 }

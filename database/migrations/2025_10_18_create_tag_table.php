@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('tags', function (Blueprint $table) {
-            $table->string("tag_id") ->unique();
+            $table->id("tag_id") ->unique();
             $table->string("name");
             $table->string("description");
             $table->timestamps();

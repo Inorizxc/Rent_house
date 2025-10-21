@@ -25,7 +25,7 @@ class House extends Authenticatable
         'adress',
         'area',
         'is_deleted',
-        'lnd',
+        'lng',
         'lat',
     ];
 
