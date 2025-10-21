@@ -22,6 +22,7 @@ return new class extends Migration
             $table->text("password");
             $table->text("phone");
             $table->text("card");
+            $table->boolean("need_verification");
             $table->timestamps();
         });
     }
