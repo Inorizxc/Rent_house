@@ -26,10 +26,12 @@ class User extends Authenticatable
         'password',
         'phone',
         'card',
+        'need_verification',
     ];
 
     protected $hidden = ['password', 'remember_token'];
-    protected $casts  = ['birth_date' => 'date'];
+    protected $casts  = ['birth_date' => 'date',
+                        "need_verification"=> 'boolean'];
 
 
     public function roles(){
