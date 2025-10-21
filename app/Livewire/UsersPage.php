@@ -15,109 +15,138 @@ class UsersPage extends Component
 
     public string $search = '';
 
-    // Поля формы
-    public ?int $editingId = null;
-    public ?int $role_id = null;
-    public string $name = '';
-    public ?string $sename = null;
-    public ?string $patronymic = null;
-    public ?string $birth_date = null; // 'Y-m-d'
-    public string $email = '';
-    public string $password = '';
-    public ?string $phone = null;
-    public ?string $card = null;
+    /** id редактируемой строки: null = ничего, 0 = новая, >0 = существующая */
+    public ?int $editingRowId = null;
 
-    protected function rules()
-    {
-        return [
-            'role_id'    => ['required','integer','exists:roles,role_id'],
-            'name'       => ['required','string','min:2'],
-            'sename'     => ['nullable','string'],
-            'patronymic' => ['nullable','string'],
-            'birth_date' => ['nullable','date'],
-            'email'      => [
-                'required','email',
-                Rule::unique('users','email')->ignore($this->editingId, 'user_id')
-            ],
-            'password'   => [$this->editingId ? 'nullable' : 'required','string','min:6'],
-            'phone'      => ['nullable','string'],
-            'card'       => ['nullable','string'],
-        ];
-    }
+    /** активная ячейка (имя поля), чтобы открыть конкретный input */
+    public ?string $editingField = null;
+
+    /** буфер данных редактируемой строки */
+    public array $row = [
+        'role_id'    => null,
+        'name'       => '',
+        'sename'     => '',
+        'patronymic' => '',
+        'birth_date' => null,
+        'email'      => '',
+        'phone'      => '',
+        'card'       => '',
+    ];
+
+    /** новый пароль (хэшируем, текущее значение не показываем) */
+    public string $passwordNew = '';
 
     public function updatingSearch(){ $this->resetPage(); }
 
-    public function create()
+    /* ---------- создание / редактирование ---------- */
+
+    public function startCreate()
     {
-        $this->resetForm();
-        $this->dispatch('open-form');
+        $this->editingRowId = 0; // новая строка
+        $this->editingField = 'name';
+        $this->row = [
+            'role_id'    => null,
+            'name'       => '',
+            'sename'     => '',
+            'patronymic' => '',
+            'birth_date' => null,
+            'email'      => '',
+            'phone'      => '',
+            'card'       => '',
+        ];
+        $this->passwordNew = '';
     }
 
-    public function edit(int $id)
+    public function startEdit(int $userId)
     {
-        $u = User::findOrFail($id);
-        $this->editingId  = $u->user_id;
-        $this->role_id    = $u->role_id;
-        $this->name       = $u->name;
-        $this->sename     = $u->sename;
-        $this->patronymic = $u->patronymic;
-        $this->birth_date = optional($u->birth_date)->format('Y-m-d');
-        $this->email      = $u->email;
-        $this->password   = ''; // пароль не показываем
-        $this->phone      = $u->phone;
-        $this->card       = $u->card;
+        $u = User::findOrFail($userId);
 
-        $this->dispatch('open-form');
+        $this->editingRowId = $u->user_id;
+        $this->editingField = null;
+
+        $this->row = [
+            'role_id'    => $u->role_id,
+            'name'       => $u->name,
+            'sename'     => $u->sename,
+            'patronymic' => $u->patronymic,
+            'birth_date' => optional($u->birth_date)->format('Y-m-d'),
+            'email'      => $u->email,
+            'phone'      => $u->phone,
+            'card'       => $u->card,
+        ];
+        $this->passwordNew = '';
     }
 
-    public function save()
+    public function setField(int $userId, string $field)
     {
-        $data = $this->validate();
+        if ($this->editingRowId !== $userId) {
+            $userId === 0 ? $this->startCreate() : $this->startEdit($userId);
+        }
+        $this->editingField = $field;
+    }
 
-        if ($this->editingId) {
-            if (!empty($data['password'])) {
-                $data['password'] = Hash::make($data['password']);
-            } else {
-                unset($data['password']);
-            }
-            User::where('user_id', $this->editingId)->update($data);
-        } else {
-            $data['password'] = Hash::make($data['password']);
-            // НЕ передаём user_id при создании — пусть БД автоинкрементит
-            unset($data['user_id']);
+    public function cancelEdit()
+    {
+        $this->editingRowId = null;
+        $this->editingField = null;
+        $this->reset('row','passwordNew');
+    }
+
+    public function saveRow()
+    {
+        $rules = [
+            'row.role_id'    => ['required','integer','exists:roles,role_id'],
+            'row.name'       => ['required','string','min:2'],
+            'row.sename'     => ['nullable','string'],
+            'row.patronymic' => ['nullable','string'],
+            'row.birth_date' => ['nullable','date'],
+            'row.email'      => [
+                'required','email',
+                Rule::unique('users','email')->ignore(
+                    $this->editingRowId && $this->editingRowId>0 ? $this->editingRowId : null,
+                    'user_id'
+                )
+            ],
+            'row.phone'      => ['nullable','string'],
+            'row.card'       => ['nullable','string'],
+            'passwordNew'    => [$this->editingRowId === 0 ? 'required' : 'nullable','string','min:6'],
+        ];
+        $this->validate($rules);
+
+        if ($this->editingRowId === 0) {
+            // create
+            $data = $this->row;
+            $data['password'] = Hash::make($this->passwordNew);
+            unset($data['user_id']); // автоинкремент
             User::create($data);
+            session()->flash('ok','Пользователь создан');
+        } else {
+            // update
+            $u = User::findOrFail($this->editingRowId);
+            $u->fill($this->row);
+            if ($this->passwordNew !== '') {
+                $u->password = Hash::make($this->passwordNew);
+            }
+            $u->save();
+            session()->flash('ok','Изменения сохранены');
         }
 
-        session()->flash('ok','Пользователь сохранён');
-        $this->dispatch('close-form');
-        $this->resetForm();
+        $this->cancelEdit();
     }
 
-    public function delete(int $id)
+    public function deleteUser(int $userId)
     {
-        User::where('user_id',$id)->delete();
+        User::where('user_id',$userId)->delete();
         session()->flash('ok','Пользователь удалён');
-        if ($this->editingId === $id) $this->resetForm();
+        if ($this->editingRowId === $userId) $this->cancelEdit();
     }
 
-    private function resetForm()
-    {
-        $this->editingId = null;
-        $this->role_id = null;
-        $this->name = '';
-        $this->sename = null;
-        $this->patronymic = null;
-        $this->birth_date = null;
-        $this->email = '';
-        $this->password = '';
-        $this->phone = null;
-        $this->card = null;
-    }
+    /* ---------- render ---------- */
 
     public function render()
     {
         $users = User::query()
-            ->with('roles') // имя отношения в твоей модели = roles()
+            ->with('roles') // имя отношения в твоей модели
             ->when($this->search, function($q){
                 $s = "%{$this->search}%";
                 $q->where(function($w) use ($s){
@@ -128,13 +157,11 @@ class UsersPage extends Component
                 });
             })
             ->orderByDesc('user_id')
-            ->paginate(12);
+            ->paginate(15);
 
         $roles = Role::orderBy('name')->get(['role_id','name']);
 
-        // если layout у тебя в resources/views/components/layouts/app.blade.php:
         return view('livewire.users-page', compact('users','roles'))
-            ->layout('components.layouts.app');
-        // если перенесёшь — замени на ->layout('layouts.app')
+            ->layout('components.layouts.app'); // или ->layout('layouts.app')
     }
 }
