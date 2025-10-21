@@ -15,10 +15,16 @@
         </div>
     </div>
 
-    {{-- Сообщение об успехе --}}
+    {{-- Сообщение об успехе (закрываемое) --}}
     @if (session('ok'))
-        <div class="alert alert-success mb-3">
+        <div x-data="{ open: true }" x-show="open" class="alert alert-success mb-3 relative pr-10">
             {{ session('ok') }}
+            <button
+                type="button"
+                class="absolute right-2 top-1/2 -translate-y-1/2 btn btn-ghost px-2 py-1"
+                aria-label="Закрыть"
+                @click="open = false"
+            >✕</button>
         </div>
     @endif
 
@@ -66,6 +72,12 @@
                             @endforeach
                         </select>
                         @error('form.user_id') <div class="err">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block mb-1 text-sm text-gray-400">Цена (price_id)</label>
+                        <input type="number" class="input" wire:model.defer="form.price_id" placeholder="Например 15000">
+                        @error('form.price_id') <div class="err">{{ $message }}</div> @enderror
                     </div>
 
                     <div>
@@ -142,84 +154,125 @@
     @endif
 
     {{-- Грид карточек домов --}}
-    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+<div class="houses-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
 
-        @forelse($houses as $h)
-            @php
-                // пробуем найти физический файл: storage/houses/{id}.{ext}
-                $img = null;
-                $try = ['jpg','jpeg','png','webp','gif'];
-                foreach ($try as $ext) {
-                    $p = public_path('storage/houses/'.$h->house_id.'.'.$ext);
-                    if (file_exists($p)) { $img = asset('storage/houses/'.$h->house_id.'.'.$ext); break; }
-                }
-            @endphp
+    @forelse($houses as $h)
+        @php
+            $img = null;
+            $try = ['jpg','jpeg','png','webp','gif'];
+            foreach ($try as $ext) {
+                $p = public_path('storage/houses/'.$h->house_id.'.'.$ext);
+                if (file_exists($p)) { $img = asset('storage/houses/'.$h->house_id.'.'.$ext); break; }
+            }
+        @endphp
 
-            <div class="card overflow-hidden">
-                {{-- Фото или иконка --}}
-                @if($img)
-                    <img src="{{ $img }}" alt="Дом #{{ $h->house_id }}" class="w-full h-44 object-cover">
-                @else
-                    <div class="w-full h-44 flex items-center justify-center bg-[#0f0f0f] border-b border-[#2a2a2a] text-[#1DB954]/80">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <path d="M3 15l4-4 3 3 5-5 6 6"></path>
-                            <circle cx="9" cy="7.5" r="1.5"></circle>
-                        </svg>
-                        <span class="ml-2 text-sm text-gray-400">Нет фото</span>
-                    </div>
-                @endif
+        <article class="card overflow-hidden bg-[#121212] border border-[#2a2a2a] rounded-xl shadow-md transition-all duration-200 hover:-translate-y-1 hover:shadow-xl">
+            {{-- Фото или иконка --}}
+            @if($img)
+                <img src="{{ $img }}" alt="Дом #{{ $h->house_id }}" class="w-full h-44 object-cover">
+            @else
+                <div class="w-full h-44 flex items-center justify-center bg-[#181818] border-b border-[#2a2a2a] text-[#1DB954]/80">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <path d="M3 15l4-4 3 3 5-5 6 6"></path>
+                        <circle cx="9" cy="7.5" r="1.5"></circle>
+                    </svg>
+                </div>
+            @endif
 
-                <div class="p-4">
-                    <div class="text-lg font-extrabold mb-1">
+            <div class="p-4">
+                {{-- Заголовок + цена --}}
+                <div class="flex items-start justify-between gap-3">
+                    <h2 class="text-base font-semibold text-white leading-snug line-clamp-2">
                         {{ $h->adress ?: 'Адрес не указан' }}
-                    </div>
+                    </h2>
 
-                    <div class="text-sm text-gray-400 mb-2">
-                        @if($h->house_type) Тип: {{ $h->house_type->name ?? $h->house_type_id }} • @endif
-                        @if($h->rent_type) Аренда: {{ $h->rent_type->name ?? $h->rent_type_id }} • @endif
-                        @if(!is_null($h->area))
-                            Площадь:
-                            {{ is_numeric($h->area)
-                                ? rtrim(rtrim(number_format((float)$h->area, 2, '.', ' '), '0'), '.')
-                                : $h->area
-                            }} м²
-                        @endif
-                    </div>
+                    
+                </div>
 
-                    @if($h->lng && $h->lat)
-                        <div class="text-xs text-gray-500">Координаты: {{ $h->lat }}, {{ $h->lng }}</div>
+                {{-- Метаданные строкой с иконками --}}
+                <ul class="mt-3 space-y-1.5 text-[13px] text-gray-300">
+                    @if(!is_null($h->area))
+                        <li class="flex items-center gap-2">
+                            <span class="inline-flex w-5 h-5 items-center justify-center rounded bg-[#1E1E1E] border border-[#2a2a2a]">㎡</span>
+                            <span class="text-gray-400">Площадь:</span>
+                            <span class="font-medium text-gray-200">
+                                {{ is_numeric($h->area)
+                                    ? rtrim(rtrim(number_format((float)$h->area, 2, '.', ' '), '0'), '.')
+                                    : $h->area
+                                }} м²
+                            </span>
+                        </li>
                     @endif
 
-                    <div class="mt-3 flex flex-wrap gap-2 text-xs text-gray-300">
+                    @if($h->house_type)
+                        <li class="flex items-center gap-2">
+                            <span class="inline-flex w-5 h-5 items-center justify-center rounded bg-[#1E1E1E] border border-[#2a2a2a]">🏠</span>
+                            <span class="text-gray-400">Тип дома:</span>
+                            <span class="font-medium text-gray-200">{{ $h->house_type->name ?? $h->house_type_id }}</span>
+                        </li>
+                    @endif
+
+                    @if($h->rent_type)
+                        <li class="flex items-center gap-2">
+                            <span class="inline-flex w-5 h-5 items-center justify-center rounded bg-[#1E1E1E] border border-[#2a2a2a]">⏱</span>
+                            <span class="text-gray-400">Аренда:</span>
+                            <span class="font-medium text-gray-200">{{ $h->rent_type->name ?? $h->rent_type_id }}</span>
+                        </li>
+                    @endif
+                    
+                    @if(is_numeric($h->price_id))
+                        <li class="flex items-center gap-2">
+                            <span class="inline-flex w-5 h-5 items-center justify-center rounded bg-[#1E1E1E] border border-[#2a2a2a]">💸</span>
+                            <span class="text-gray-400">Цена:</span>
+                            {{ number_format((int)$h->price_id, 0, '.', ' ') }} ₽
+                        </li>
+                    @endif
+
+
+                    @if($h->lng && $h->lat)
+                        <li class="flex items-center gap-2">
+                            <span class="inline-flex w-5 h-5 items-center justify-center rounded bg-[#1E1E1E] border border-[#2a2a2a]">📍</span>
+                            <span class="font-medium text-gray-200">{{ $h->lat }}, {{ $h->lng }}</span>
+                        </li>
+                    @endif
+                </ul>
+
+                {{-- Чипы + действия --}}
+                <div class="mt-3 flex items-center justify-between">
+                    <div class="flex flex-wrap gap-2 text-[11px]">
                         @if($h->user)
-                            <span class="px-2 py-1 rounded-full bg-[#1E1E1E] border border-[#2a2a2a]">🙋 {{ $h->user->name }}</span>
+                            @php
+                                $fio = trim(implode(' ', array_filter([
+                                    $h->user->sename ?? '',
+                                    $h->user->name ?? '',
+                                    $h->user->patronymic ?? '',
+                                ])));
+                            @endphp
+                            <span class="px-2 py-1 rounded-full bg-[#1E1E1E] border border-[#2a2a2a] text-gray-300">
+                                🙋 {{ $fio ?: 'Без имени' }}
+                            </span>
                         @endif
-                        <span class="px-2 py-1 rounded-full bg-[#1E1E1E] border border-[#2a2a2a]">ID: {{ $h->house_id }}</span>
                     </div>
 
-                    <div class="mt-4 flex items-center justify-between">
-                        <button class="btn btn-accent" disabled>Заказать</button>
-                        <div class="flex gap-2">
-                            <button class="btn btn-primary" wire:click="startEdit({{ $h->house_id }})">✏️</button>
-                            <button class="btn btn-ghost text-red-500"
-                                    onclick="return confirm('Удалить дом?')"
-                                    wire:click="delete({{ $h->house_id }})">🗑️</button>
-                        </div>
+                    <div class="flex items-center gap-2">
+                        <a class="btn btn-accent no-underline hover:no-underline text-sm" href="#" role="button">Подробнее</a>
+                        <button class="btn btn-primary" wire:click="startEdit({{ $h->house_id }})">✏️</button>
+                        <button class="btn btn-ghost text-red-500"
+                                onclick="return confirm('Удалить дом?')"
+                                wire:click="delete({{ $h->house_id }})">🗑️</button>
                     </div>
                 </div>
             </div>
+        </article>
 
-        @empty
-            <div class="col-span-full">
-                <div class="card p-6 text-center text-gray-400">Домов пока нет. Добавь первый дом!</div>
+    @empty
+        <div class="col-span-full">
+            <div class="card p-6 text-center text-gray-400 bg-[#181818] border border-[#2a2a2a] rounded-xl">
+                Домов пока нет. Добавь первый дом!
             </div>
-        @endforelse
-
-    </div>
-
-    {{-- Пагинация --}}
-    <div class="mt-6 pagination-wrap">
-        {{ $houses->links() }}
-    </div>
+        </div>
+    @endforelse
 </div>

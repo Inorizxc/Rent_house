@@ -14,6 +14,7 @@ class HousesPage extends Component
 {
     use WithPagination, WithFileUploads;
 
+    
     public string $search = '';
     public string $searchInput = '';
 
@@ -92,14 +93,14 @@ class HousesPage extends Component
     {
         $rules = [
             'form.user_id'        => ['nullable','integer','exists:users,user_id'],
-            'form.price_id'       => ['nullable','integer'],
+            'form.price_id'       => ['nullable','integer','min:0'],
             'form.rent_type_id'   => ['nullable','integer'],
             'form.house_type_id'  => ['nullable','integer'],
             'form.calendar_id'    => ['nullable','integer'],
             'form.adress'         => ['required','string','min:3'],
             'form.area'           => ['nullable','numeric','min:0'],
             'form.is_deleted'     => ['nullable','integer','in:0,1'],
-            'form.lng'            => ['nullable','numeric'], // << было lnd
+            'form.lng'            => ['nullable','numeric'],
             'form.lat'            => ['nullable','numeric'],
             'imageTmp'            => ['nullable','image','max:8192'], // ~8MB
         ];

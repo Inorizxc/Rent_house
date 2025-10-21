@@ -120,6 +120,10 @@ body {
   color: #b7f7cf;
   border-color: rgba(29,185,84,.3);
 }
+/* -------- Подчёркивание у ссылок -------- */
+a.btn {
+    text-decoration: none !important;
+}
 
 /* -------- Таблица -------- */
 .table{
@@ -254,4 +258,139 @@ body {
   .btn{ padding:.55rem .9rem; }
   .table thead th:nth-last-child(1),
   .table tbody td:nth-last-child(1){ position: sticky; right:0; background:#161616; }
+}
+
+/* Грид карточек домов */
+.users-page .grid {
+  gap: 2rem; /* отступ между карточками */
+}
+
+/* Каждая карточка — небольшая тень и плавное отделение */
+.users-page .card {
+  border-radius: 14px;
+  background: #121212;
+  border: 1px solid #2a2a2a;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.users-page .card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.45);
+}
+
+
+.users-page .grid {
+    gap: 2rem;              /* расстояние между карточками */
+    padding: 0rem;          /* отступы от краёв */
+}
+
+.users-page .card {
+    margin-bottom: 1rem;    /* нижний отступ на случай разных высот */
+    border-radius: 14px;
+    background: #121212;
+    border: 1px solid #2a2a2a;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.users-page .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+}
+
+/* Карточка дома */
+.card {
+    position: relative;
+    background: #121212;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+}
+
+/* Изображение карточки */
+.card img {
+    display: block;
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Затемнение снизу на фото */
+.card::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+    background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+    pointer-events: none;
+}
+
+/* Внутренние отступы */
+.card > .p-4,
+.card > .px-6,
+.card > .py-5 {
+    padding: 1.5rem !important;
+}
+
+/* Заголовок */
+.card h2 {
+    color: #fff;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    font-size: 1.05rem;
+    line-height: 1.4;
+    letter-spacing: 0.2px;
+}
+
+/* Мелкий текст */
+.card .text-gray-400 {
+    color: #9b9b9b !important;
+}
+
+.card .text-gray-500 {
+    color: #7a7a7a !important;
+}
+
+/* Блок с ФИО */
+.card .text-gray-300 {
+    color: #d6d6d6;
+}
+
+
+/* Кнопки */
+.card .btn {
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.card .btn:hover {
+    transform: scale(1.05);
+}
+
+.btn-accent {
+    background-color: #1DB954;
+    color: white;
+    border: none;
+}
+
+.btn-accent:hover {
+    background-color: #19a94b;
+}
+
+/* Контейнер карточек (несколько в ряд) */
+.houses-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.75rem;
+    padding: 1.5rem;
 }
