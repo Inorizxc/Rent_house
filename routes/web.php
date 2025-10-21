@@ -82,6 +82,9 @@ Route::match(['GET','POST'], '/', function (Request $request) {
     ]);
 });
 
+Route::get('/users', \App\Livewire\UsersPage::class)->name('users');
+
+
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
