@@ -13,7 +13,10 @@ return new class extends Migration
     {
         Schema::create('houses', function (Blueprint $table) {
             $table->id("house_id") ->unique();
-            $table->string("user_id");
+            $table->foreignId("user_id")->constrained("users",
+            "user_id",
+            "user_id"
+            )->onDelete("cascade");
             $table->text("price_id");
             $table->text("rent_type_id");
             $table->text("house_type_id");

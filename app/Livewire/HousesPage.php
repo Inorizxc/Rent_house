@@ -125,6 +125,7 @@ class HousesPage extends Component
             foreach (Storage::disk('public')->files('houses') as $f) {
                 if (preg_match('/^houses\/'.$h->house_id.'\.(jpg|jpeg|png|webp|gif)$/i', $f)) {
                     Storage::disk('public')->delete($f);
+                    
                 }
             }
             $this->imageTmp->storeAs('houses', $h->house_id.'.'.$ext, 'public');

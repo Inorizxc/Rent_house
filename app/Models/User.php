@@ -37,7 +37,8 @@ class User extends Authenticatable
         parent::boot();
 
         static::deleting(function ($user){
-            $user->house()->delete();
+            //$user->house()->delete();
+            $user -> foreign('user_id')->refeneces('user_id')->on('houses')->onDelete("cascade");
         });
     }
 
