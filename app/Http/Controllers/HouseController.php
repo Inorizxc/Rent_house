@@ -37,7 +37,7 @@ class HouseController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Chat $chat)
+    public function edit()
     {
         //
     }
@@ -45,7 +45,7 @@ class HouseController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Chat $chat)
+    public function update(Request $request)
     {
         //
     }
@@ -53,7 +53,7 @@ class HouseController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Chat $chat)
+    public function destroy()
     {
         //
     }
