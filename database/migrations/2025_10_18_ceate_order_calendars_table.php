@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('order_calendars', function (Blueprint $table) {
             $table->id("order_calendar_id") ->unique();
-            $table->string("house_id");
+            $table->foreignId("house_id")->constrained("houses",
+        "house_id",
+        "house_id")->onDelete("cascade")->onUpdate("cascade");
             $table->text("order_date");
             $table->timestamps();
         });

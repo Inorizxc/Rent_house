@@ -17,10 +17,6 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             UserSeeder::class,
-            OrderStatusSeeder::class,
-            OrderSeeder::class,
-            OrderCalendarSeeder::class,
-            PriceListSeeder::class,
             RentTypeSeeder::class,
             HouseTypeSeeder::class,
             TagSeeder::class,
@@ -28,6 +24,10 @@ class DatabaseSeeder extends Seeder
             ServiceSeeder::class,
             HouseServiceSeeder::class,
             HouseSeeder::class,
+            OrderStatusSeeder::class,
+            OrderSeeder::class,
+            OrderCalendarSeeder::class,
+            PriceListSeeder::class,
         ]);
     }
 }

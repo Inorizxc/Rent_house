@@ -16,8 +16,10 @@ class OrderCalendar extends Model
         "house_id",
         "order_date",
         ];
-    
+    protected $casts = [
+        "order_date"=>"date"
+    ];
     public function house(){
-        return $this->hasOne(House::class,"house_id","house_id");
+        return $this->belongsTo(House::class,"house_id","house_id");
     }
 }
