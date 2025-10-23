@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
-
+use App\Http\Controllers\HouseController;
 
 Route::get('/tables', function () {
     return view('welcom');
@@ -84,7 +84,7 @@ Route::match(['GET','POST'], '/', function (Request $request) {
 
 Route::get('/users', \App\Livewire\UsersPage::class)->name('users');
 Route::get('/houses', \App\Livewire\HousesPage::class)->name('houses');
-
+//Route::get("/houses",[HouseController::class,"index"]); сука кирюха вот что бы все через такое сделал
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])

@@ -3,18 +3,17 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\House;
+use App\Models\User;
 
 
-class HouseController extends Controller
+class UserController extends Controller
 {
-    //
     public function index(){
-        $houses = House::orderBy("timestamp", "desc")->get();
-        return view("houses.index", ["houses"=>$houses]);
+        $users = User::orderBy("timestamp", "desc")->get();
+        return view("users.index", ["houses"=>$users]);
     }
     public function show(string $id){
-        return view("houses.show",["houses"=> House::find ($id)]);
+        return view("users.show",["users"=> User::find ($id)]);
     }
 
     public function create(){
@@ -57,5 +56,4 @@ class HouseController extends Controller
     {
         //
     }
-
 }
