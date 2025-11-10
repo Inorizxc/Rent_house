@@ -10,14 +10,14 @@ class UserController extends Controller
 {
     public function index(){
         $users = User::orderBy("timestamp", "desc")->get();
-        return view("users.index", ["houses"=>$users]);
+        return view("users.index", ["users"=>$users]);
     }
     public function show(string $id){
         return view("users.show",["users"=> User::find ($id)]);
     }
 
     public function create(){
-
+        return view('users.create');
     }
 
 
@@ -26,34 +26,51 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'author' => 'required|string|max:100'
+        ]);
+
+        User::create($validated);
+
+        return redirect()->route('users.index')
+            ->with('success', 'User created successfully.');
     }
 
     /**
-     * Display the specified resource.
-     */
-    
-    /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Chat $chat)
+    public function edit()
     {
-        //
+        return view('users.edit', compact('user'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Chat $chat)
+    public function update(Request $request, User $users)
     {
-        //
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'name' => 'required|string',
+            'sename' => 'required|string|max:100'
+        ]);
+
+        $users->update($validated);
+
+        return redirect()->route('users.index')
+            ->with('success', 'User updated successfully.');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Chat $chat)
+    public function destroy(User $user)
     {
-        //
+        $user->delete();
+
+        return redirect()->route('users.index')
+            ->with('success', 'User deleted successfully.');
     }
 }
