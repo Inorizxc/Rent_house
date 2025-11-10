@@ -3,21 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Houses</title>
 
-    <title>{{ config('app.name', 'Сайт аренды домов') }}</title>
-
-    {{-- Подключаем общий и кастомный CSS через Vite --}}
-    @vite([
-        'resources/css/users.css'
-    ])
+    @vite(['resources/css/app.css'])
     @livewireStyles
 </head>
-<body class="bg-gray-50 text-gray-900 min-h-screen">
-    <div class="min-h-screen flex flex-col">
-        {{-- Основное содержимое страниц Livewire --}}
-        {{ $slot }}
+<body class="bg-[#0f0f0f] text-white min-h-screen">
+    <div class="container mx-auto py-6">
+        @yield('content')
     </div>
 
     @livewireScripts
+    <script defer src="//unpkg.com/alpinejs"></script>
 </body>
 </html>

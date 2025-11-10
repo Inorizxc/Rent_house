@@ -83,8 +83,10 @@ Route::match(['GET','POST'], '/', function (Request $request) {
 });
 
 Route::get('/users', \App\Livewire\UsersPage::class)->name('users');
-Route::get('/houses', \App\Livewire\HousesPage::class)->name('houses');
-//Route::get("/houses",[HouseController::class,"index"]); сука кирюха вот что бы все через такое сделал
+// Route::get('/houses', \App\Livewire\HousesPage::class)->name('houses');
+// Route::get('/houses', [HouseController::class, 'index'])->name('houses');
+// Route::get('/houses', [HouseController::class, 'index'])->name('houses.index');
+Route::resource('houses', HouseController::class);
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])

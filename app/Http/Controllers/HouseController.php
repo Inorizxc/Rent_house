@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\House;
 
+use App\Models\House;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use App\Http\Requests\HouseRequest;
 
 class HouseController extends Controller
 {
@@ -17,18 +21,30 @@ class HouseController extends Controller
         return view("houses.show",["houses"=> House::find ($id)]);
     }
 
-    public function create(){
-
+    public function create()
+    {
+        $house = new House();
+        $users = User::orderBy('name')->get(['user_id','name','sename','patronymic']);
+        return view('houses.create', compact('house','users'));
     }
 
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        //
+    public function store(HouseRequest $request)
+{
+    $data = $request->validated();
+    unset($data['image']); // поле не хранится в таблице
+
+    $house = House::create($data);
+
+    if ($request->hasFile('image')) {
+        $this->storeImage($house, $request->file('image'));
     }
+
+    return redirect()->route('houses.index')->with('ok', 'Дом создан');
+}
 
     /**
      * Display the specified resource.
@@ -37,25 +53,45 @@ class HouseController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Chat $chat)
+    public function edit(House $house)
     {
-        //
+        $users = User::orderBy('name')->get(['user_id','name','sename','patronymic']);
+        return view('houses.edit', compact('house','users'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Chat $chat)
-    {
-        //
+    public function update(HouseRequest $request, House $house)
+{
+    $data = $request->validated();
+    unset($data['image']);
+
+    $house->update($data);
+
+    if ($request->hasFile('image')) {
+        $this->storeImage($house, $request->file('image'));
     }
+
+    return redirect()->route('houses.index')->with('ok', 'Изменения сохранены');
+}
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Chat $chat)
+    public function destroy(House $house)
     {
-        //
+        // удалим возможную картинку
+        foreach (['jpg','jpeg','png','webp','gif'] as $ext) {
+            $old = "houses/{$house->house_id}.{$ext}";
+            if (Storage::disk('public')->exists($old)) {
+                Storage::disk('public')->delete($old);
+            }
+        }
+        $house->delete();
+
+        return redirect()->route('houses.index')->with('ok','Дом удалён');
     }
+
 
 }

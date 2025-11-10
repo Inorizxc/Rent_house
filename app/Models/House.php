@@ -8,6 +8,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Model;
 
 class House extends Authenticatable
 {
@@ -64,4 +66,35 @@ class House extends Authenticatable
     public function house_type(){
         return $this->hasOne(HouseType::class,"house_type_id","house_type_id");
     }
+
+
+    protected $casts = [
+        'lat' => 'float',
+        'lng' => 'float',
+        'area' => 'float',
+        'is_deleted' => 'boolean',
+    ];
+    
+    // Чтобы route('houses.edit', $house) подставлял house_id
+    public function getRouteKeyName(): string
+    {
+        return 'house_id';
+    }
+
+    // Связи (подправь под фактические таблицы)
+
+
+    // URL картинки: storage/houses/{id}.ext или плейсхолдер
+    public function getImageUrlAttribute(): string
+    {
+        $disk = Storage::disk('public');
+        foreach (['jpg','jpeg','png','webp','gif'] as $ext) {
+            $path = "houses/{$this->house_id}.{$ext}";
+            if ($disk->exists($path)) {
+                return asset("storage/{$path}");
+            }
+        }
+        return asset('images/house-placeholder.svg'); // добавим файл ниже
+    }
+
 }
