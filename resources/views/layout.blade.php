@@ -80,6 +80,16 @@
         .panel-body {
             margin-top: 4px;
         }
+
+        .panel.collapsed {
+            width: 40px;
+            min-width: 40px;
+        }
+
+        .panel.collapsed .panel-title,
+        .panel.collapsed .panel-body {
+            display: none;
+        }
     </style>
 </head>
 <body>
