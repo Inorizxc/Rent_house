@@ -251,6 +251,8 @@
                 <div class="info-label">Тип дома:</div> ${house.house_type_id ?? '—'}
                 <div class="info-label">Цена:</div> ${house.price_id ?? '—'}
                 <div class="info-label">Координаты:</div> ${house.lat}, ${house.lng}
+
+                ${photosHtml}
             </div>
         `;
 
