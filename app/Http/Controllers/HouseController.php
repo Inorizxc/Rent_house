@@ -53,11 +53,7 @@ class HouseController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-<<<<<<< HEAD
     public function edit(House $house)
-=======
-    public function edit()
->>>>>>> 946bc8ca84f366ebea0e1e83ee58b0e58936d179
     {
         $users = User::orderBy('name')->get(['user_id','name','sename','patronymic']);
         return view('houses.edit', compact('house','users'));
@@ -66,7 +62,6 @@ class HouseController extends Controller
     /**
      * Update the specified resource in storage.
      */
-<<<<<<< HEAD
     public function update(HouseRequest $request, House $house)
 {
     $data = $request->validated();
@@ -76,11 +71,6 @@ class HouseController extends Controller
 
     if ($request->hasFile('image')) {
         $this->storeImage($house, $request->file('image'));
-=======
-    public function update(Request $request)
-    {
-        //
->>>>>>> 946bc8ca84f366ebea0e1e83ee58b0e58936d179
     }
 
     return redirect()->route('houses.index')->with('ok', 'Изменения сохранены');
@@ -89,11 +79,7 @@ class HouseController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-<<<<<<< HEAD
     public function destroy(House $house)
-=======
-    public function destroy()
->>>>>>> 946bc8ca84f366ebea0e1e83ee58b0e58936d179
     {
         // удалим возможную картинку
         foreach (['jpg','jpeg','png','webp','gif'] as $ext) {
