@@ -25,3 +25,4 @@ yarn-error.log
 /public/hot
 storage/logs/laravel.log
 storage/framework/views/*
+storage/logs/laravel.log
