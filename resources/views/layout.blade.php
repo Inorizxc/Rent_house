@@ -47,7 +47,7 @@
             border-right: 1px solid #ddd;
             padding: 12px;
             overflow-y: auto;
-            /* width: calc(var(--index) * 5); */
+            /* width: calc(var(--index) * 10); */
             width: 280px;
         }
         #left-panel {

@@ -193,7 +193,7 @@
                 const areaNum = parseFloat(el.area);
                 if (!isNaN(areaNum)) {
                     if (areaMin !== null && areaNum < areaMin) return false;
-                    if (areaMax !== null && areaNum > pareaMax) return false;
+                    if (areaMax !== null && areaNum > areaMax) return false;
                 }
             }
 
