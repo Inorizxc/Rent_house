@@ -8,8 +8,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-
-class Tag extends Authenticatable
+use Illuminate\Database\Eloquent\Model;
+class Tag extends Model
 {
     protected $table = "tags";
     protected $primaryKey = "tag_id";

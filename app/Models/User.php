@@ -45,7 +45,9 @@ class User extends Authenticatable
     public function roles(){
         return $this->belongsTo(Role::class,"role_id","role_id");
     }
-
+    public function photo(){
+        return $this->hasMany(Role::class,"user_id","user_id");
+    }
     public function house(){
         return $this->hasMany(House::class,"user_id","user_id");
     }

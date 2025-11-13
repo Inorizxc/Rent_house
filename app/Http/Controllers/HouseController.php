@@ -29,6 +29,9 @@ class HouseController extends Controller
     }
 
 
+    
+
+
     /**
      * Store a newly created resource in storage.
      */
@@ -38,7 +41,7 @@ class HouseController extends Controller
     unset($data['image']); // поле не хранится в таблице
 
     $house = House::create($data);
-
+    
     if ($request->hasFile('image')) {
         $this->storeImage($house, $request->file('image'));
     }

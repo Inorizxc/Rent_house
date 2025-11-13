@@ -8,8 +8,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-
-class Service extends Authenticatable
+use Illuminate\Database\Eloquent\Model;
+class Service extends Model
 {
     protected $table = "services";
     protected $primaryKey = "service_id";

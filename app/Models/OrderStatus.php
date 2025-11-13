@@ -8,8 +8,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-
-class OrderStatus extends Authenticatable
+use Illuminate\Database\Eloquent\Model;
+class OrderStatus extends Model
 {
     protected $table = "order_statuses";
     protected $primaryKey = "order_status_id";

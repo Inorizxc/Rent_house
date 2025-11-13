@@ -11,7 +11,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Model;
 
-class House extends Authenticatable
+class House extends Model
 {
     protected $table = "houses";
     protected $primaryKey = "house_id";
@@ -30,12 +30,18 @@ class House extends Authenticatable
         'lng',
         'lat',
     ];
+    protected $casts = [
+        'lat' => 'float',
+        'lng' => 'float',
+        'area' => 'float',
+        'is_deleted' => 'boolean',
+    ];
 
     protected static function boot(){
 
         parent::boot();
         static::deleting(function ($house){
-            info ("Нахуй с пляжа");
+            info ("ЕЕЕСТЬ удаление");
 
         });
     }
@@ -43,7 +49,9 @@ class House extends Authenticatable
     public function user(){
         return $this->belongsTo(User::class,"user_id","user_id");
     }
-    
+    public function photo(){
+        return $this->hasMany(Photo::class,"house_id","house_id");
+    }
     public function order(){
         return $this->hasMany(Order::class,"house_id","house_id");
     }
@@ -68,12 +76,7 @@ class House extends Authenticatable
     }
 
 
-    protected $casts = [
-        'lat' => 'float',
-        'lng' => 'float',
-        'area' => 'float',
-        'is_deleted' => 'boolean',
-    ];
+    
     
     // Чтобы route('houses.edit', $house) подставлял house_id
     public function getRouteKeyName(): string
