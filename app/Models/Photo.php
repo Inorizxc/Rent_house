@@ -8,8 +8,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-
-
+use Illuminate\Http\UploadedFile;
+use App\Models\House;
 class Photo extends Model
 {
     protected $table = "photos";
@@ -20,7 +20,8 @@ class Photo extends Model
         'photo_id',
         'house_id',
         "user_id",
-        'route',
+        'path',
+        'name',
     ];
 
     public function house(){
@@ -29,5 +30,24 @@ class Photo extends Model
     public function user(){
         return $this->belongsTo(User::class,"user_id","user_id");
     }
+
+    public static function saveUploadedFile(UploadedFile $file, House $house): Photo
+    {
+        // Генерируем уникальное имя файла
+        $fileName = uniqid() . '.' . $file->getClientOriginalExtension();
+        
+        // Путь для сохранения: houses/{house_id}/{file_name}
+        $path = $file->storeAs("image/{$house->house_id}", $fileName, 'public');
+
+        // Создаем запись в базе
+        return self::create([
+            'house_id' => $house->house_id,
+            'user_id' => $house->user_id, 
+            'path' => $path,
+            'name' => $file->getClientOriginalName(),
+        ]);
+    }
+
+    
 
 }

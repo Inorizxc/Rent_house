@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Models\House;
 use App\Models\User;
+use App\Models\Photo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -41,7 +42,7 @@ class HouseController extends Controller
     unset($data['image']); // поле не хранится в таблице
 
     $house = House::create($data);
-    
+
     if ($request->hasFile('image')) {
         $this->storeImage($house, $request->file('image'));
     }
@@ -49,13 +50,6 @@ class HouseController extends Controller
     return redirect()->route('houses.index')->with('ok', 'Дом создан');
 }
 
-    /**
-     * Display the specified resource.
-     */
-    
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(House $house)
     {
         $users = User::orderBy('name')->get(['user_id','name','sename','patronymic']);
@@ -67,16 +61,28 @@ class HouseController extends Controller
      */
     public function update(HouseRequest $request, House $house)
 {
-    $data = $request->validated();
-    unset($data['image']);
+        $data = $request->validated();
+        //unset($data['image']);
 
-    $house->update($data);
+        
 
-    if ($request->hasFile('image')) {
-        $this->storeImage($house, $request->file('image'));
-    }
+    //if ($request->hasFile('image')) {
+    //    $this->storeImage($house, $request->file('image'));
+    //}
+//
 
-    return redirect()->route('houses.index')->with('ok', 'Изменения сохранены');
+        $validated = $request->validate([
+            "image" =>'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+        
+        
+        $file = $request->file("image");
+
+        $photo = Photo::saveUploadedFile($file,$house);
+            
+         
+        $house->update($data);
+        return redirect()->route('houses.index')->with('ok', 'Изменения сохранены');
 }
 
     /**

@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id("photo_id");
             $table->foreignId("house_id");
             $table->foreignId("user_id");
-            $table->string("route");
+            $table->string("path");
+            $table->string("name");
             $table->timestamps();
         });
     }

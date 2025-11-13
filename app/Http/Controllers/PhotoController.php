@@ -18,17 +18,29 @@ class PhotoController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
-    {
-        //
-    }
+    
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            "image.*" =>'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+        $uploadedPhotos =[];
+        foreach($request->file('photo') as $photo){
+            $path = $photo->store('image','public');
+
+            $image = [
+                'house_id' =>$house->id,
+                'user_id' =>$house->user_id,
+                'route' =>$path,
+                'house_id' =>$house->id,
+
+            ];
+        }   
+        return response()->json($uploadedPhotos);
     }
 
     /**

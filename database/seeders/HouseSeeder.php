@@ -24,8 +24,8 @@ class HouseSeeder extends Seeder
             "adress"=>"Ул. Пушикна, дом Колотушкина",
             "area"=>"150 квадратов",
             "is_deleted"=>"None",
-            "lng"=>"Че то",
-            "lat"=>"Че то"],
+            "lng"=>"46.015446",
+            "lat"=>"51.564847"],
 
         ];
 
