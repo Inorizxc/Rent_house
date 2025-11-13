@@ -7,6 +7,13 @@ use Illuminate\Http\Request;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 use App\Http\Controllers\HouseController;
+use App\Http\Controllers\RouterController;
+
+
+Route::get('/map', [RouterController::class, 'map']);
+Route::get('/map2', [RouterController::class, 'map2']);
+
+
 
 Route::get('/tables', function () {
     return view('welcom');
