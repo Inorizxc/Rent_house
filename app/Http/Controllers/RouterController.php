@@ -16,7 +16,6 @@ class RouterController extends Controller
     public function map2()
     {
         $houses = House::with('photo')->get();
-        return view('map2', ['houses' => $houses->all()]);
+        return view('map2', ['houses' => $houses]);
     }
 }
- 46.006579 

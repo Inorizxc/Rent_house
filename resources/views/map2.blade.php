@@ -84,10 +84,10 @@
     </div>
     
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script>
+    <script >
         
     const houses = @json($houses);
-
+    console.log(houses);
 
     let defaultLat  = 51.533338;
     let defaultLng  = 46.034176;
@@ -238,37 +238,106 @@
     }
 
     function selectHouse(houseId, centerOnMap = false) {
-        activeHouseId = houseId;
+    activeHouseId = houseId;
+    
 
-        const house = houses.find(el => Number(el.house_id) === Number(houseId));
-        if (!house) return;
+    const house = houses.find(el => Number(el.house_id) === Number(houseId));
+    if (!house) return;
+    
+    const photos = house.photo || [];
 
-        houseInfoDiv.innerHTML = `
-            <div id="house-info-card">
-                <div class="info-label">ID дома:</div> ${house.house_id}
-                <div class="info-label">Адрес:</div> ${house.adress ?? '—'}
-                <div class="info-label">Площадь:</div> ${house.area ?? '—'}
-                <div class="info-label">Тип дома:</div> ${house.house_type_id ?? '—'}
-                <div class="info-label">Цена:</div> ${house.price_id ?? '—'}
-                <div class="info-label">Координаты:</div> ${house.lat}, ${house.lng}
+let photosHtml = "";
 
-                ${photosHtml}
+if (photos.length > 0) {
+    photosHtml = `
+        <div class="info-label">Фотографии:</div>
+        <div class="photo-carousel">
+            <button class="photo-nav prev" type="button">❮</button>
+            <div class="photos-viewport">
+                <div class="photos-strip">
+                    ${photos.map(p => `
+                        <img
+                            src="/storage/${p.path}"
+                            class="house-photo"
+                            alt="${p.name}"
+                        >
+                    `).join('')}
+                </div>
             </div>
-        `;
+            <button class="photo-nav next" type="button">❯</button>
+        </div>
+    `;
+} else {
+    photosHtml = `
+        <div class="info-label">Фотографии:</div>
+        <div class="no-photos">Нет фотографий</div>
+    `;
+}
 
-        Array.from(document.getElementsByClassName('house-item')).forEach(el => {
-            el.classList.toggle('active', Number(el.dataset.id) === Number(houseId));
-        });
 
-        if (centerOnMap && house.lat && house.lng) {
-            const lat = parseFloat(house.lat);
-            const lng = parseFloat(house.lng);
-            if (!isNaN(lat) && !isNaN(lng)) {
-                map.setView([lat, lng], 17);
-            }
+    houseInfoDiv.innerHTML = `
+        <div id="house-info-card">
+            <div class="info-label">ID дома:</div> ${house.house_id}
+            <div class="info-label">Адрес:</div> ${house.adress ?? '—'}
+            <div class="info-label">Площадь:</div> ${house.area ?? '—'}
+            <div class="info-label">Тип дома:</div> ${house.house_type_id ?? '—'}
+            <div class="info-label">Цена:</div> ${house.price_id ?? '—'}
+            <div class="info-label">Координаты:</div> ${house.lat}, ${house.lng}
+
+            <br>
+            ${photosHtml}
+        </div>
+    `;
+
+    // подсветка в списке
+    Array.from(document.getElementsByClassName('house-item')).forEach(el => {
+        el.classList.toggle('active', Number(el.dataset.id) === Number(houseId));
+    });
+
+    // центрируем карту
+    if (centerOnMap && house.lat && house.lng) {
+        const lat = parseFloat(house.lat);
+        const lng = parseFloat(house.lng);
+        if (!isNaN(lat) && !isNaN(lng)) {
+            map.setView([lat, lng], 17);
         }
     }
     
+    // запускаем карусель для этого дома
+    initPhotoCarousel();
+}
+    function initPhotoCarousel() {
+    const carousel = houseInfoDiv.querySelector('.photo-carousel');
+    if (!carousel) return;
+
+    const viewport = carousel.querySelector('.photos-viewport');
+    const strip = carousel.querySelector('.photos-strip');
+    const photosEls = Array.from(strip.querySelectorAll('.house-photo'));
+    const prevBtn = carousel.querySelector('.photo-nav.prev');
+    const nextBtn = carousel.querySelector('.photo-nav.next');
+
+    if (photosEls.length === 0) return;
+
+    let currentIndex = 0;
+    const total = photosEls.length;
+
+    function show(index) {
+        if (index < 0) index = total - 1;
+        if (index >= total) index = 0;
+        currentIndex = index;
+
+        const slideWidth = viewport.clientWidth; // ширина видимого окна
+        strip.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
+    }
+
+    prevBtn.addEventListener('click', () => show(currentIndex - 1));
+    nextBtn.addEventListener('click', () => show(currentIndex + 1));
+
+    show(0);
+}
+
+
+
 
     resetBtn.addEventListener('click', () => {
         searchInput.value   = '';
