@@ -9,7 +9,12 @@
 
     
     <style>
+        
         @yield('style')
+
+        * {
+        box-sizing: border-box;
+    }
         /* ====== ШРИФТ ====== */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
@@ -168,10 +173,77 @@ header nav a[href*="dashboard"]:hover {
     background: #f5f5f7;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
+
+/* Общий стиль хедера */
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+
+    height: 70px;
+    padding: 0 24px;
+
+    background: #ffffff;
+    border-bottom: 1px solid #e5e5e5;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+/* ЛОГОТИП */
+.app-header .logo {
+    font-family: 'Poppins', sans-serif;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+
+    color: #1c1c1c;
+    text-decoration: none;
+
+    transition: opacity .2s ease;
+}
+
+.app-header .logo:hover {
+    opacity: 0.7;
+}
+
+/* Навигация справа */
+.nav-links {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.nav-links a {
+    padding: 9px 18px;
+    font-size: 14px;
+    text-decoration: none;
+    font-weight: 500;
+
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    color: #333;
+
+    transition: 0.2s ease;
+}
+
+.nav-links a:hover {
+    background: #f2f2f2;
+    border-color: #d0d0d0;
+}
+
     </style>
 </head>
 <body>
-    <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6 not-has-[nav]:hidden">
+    <header class="app-header">
+        <a href="{{ url('/') }}" class="logo">Zlovito</a>
             @if (Route::has('login'))
                 <nav class="flex items-center justify-end gap-4">
                     @auth

@@ -4,6 +4,10 @@
     Тестовая страница
 @endsection
 
+@section('style')
+    
+@endsection
+
 @section("main_content")
 
 @endsection
