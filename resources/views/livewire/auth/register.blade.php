@@ -28,13 +28,13 @@ new #[Layout('components.layouts.auth')] class extends Component {
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
             
         ]);
-
+        $hashedPassword = Hash::make('password');
         event(new Registered(($user = User::create([
             'name' =>$validated["name"],
             'sename' =>$validated["sename"],
             'patronymic' =>$validated["patronymic"],
             "email" => $validated['email'],
-            "password" => $validated['password'],
+            "password" => $hashedPassword,
             "role_id" => "3",
         ]
     
