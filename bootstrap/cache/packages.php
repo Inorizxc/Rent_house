@@ -84,4 +84,11 @@
       0 => 'Pest\\Laravel\\PestServiceProvider',
     ),
   ),
+  'toin0u/geocoder-laravel' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Geocoder\\Laravel\\Providers\\GeocoderService',
+    ),
+  ),
 );

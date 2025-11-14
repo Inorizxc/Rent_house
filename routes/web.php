@@ -16,7 +16,7 @@ Route::get('/map2', [RouterController::class, 'map2']);
 
 
 Route::get('/tables', function () {
-    return view('welcom');
+    return view('welcome');
 })->name('home');
 
 Route::match(['GET','POST'], '/', function (Request $request) {
