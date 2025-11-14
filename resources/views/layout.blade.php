@@ -7,151 +7,125 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
+    
     <style>
-        
+        @yield('style')
+        /* ====== ШРИФТ ====== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
-        * {
-            box-sizing: border-box;
-        }
-        
-        .element {
-            --index: calc(1vw * 1vh);
-        }
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    padding-top: 72px; /* чтобы контент не прятался под шапкой */
+    background: #f6f6f7;
+}
 
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            overflow: hidden;
-        }
-        #map {
-            position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 0;
-        }
-        .overlay {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            height: 100vh;
-            width: 100vw;
-            pointer-events: none;
-        }
-        .panel {
-            pointer-events: auto;
-            display: flex;
-            flex-direction: column;
-            background: #f7f7f9;
-            border-right: 1px solid #ddd;
-            padding: 12px;
-            overflow-y: auto;
-            /* width: calc(var(--index) * 10); */
-            width: 280px;
-        }
-        #left-panel {
-            background: #f7f7f9;
-        }
-        #middle-panel {
-            background: #ffffff;
-        }
+/* ====== HEADER ====== */
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
 
-        #right-panel {
-            background: #f7f7f9;
-            border-right: none;
-            border-left: 1px solid #ddd;
-        }
-        .map-spacer {
-            flex: 1;
-            pointer-events: none;
-        }
-        .panel-header {
-            align-items: center;
-            justify-content: space-between;
-            min-height: 36px;
-            margin-bottom: 8px;
-        }
-        .panel-title {
-            font-size: 16px;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-        .panel-body {
-            margin-top: 4px;
-        }
+    background: #ffffff;
+    border-bottom: 1px solid #e5e5e5;
 
-        .panel.collapsed {
-            width: 40px;
-            min-width: 40px;
-        }
+    padding: 14px 24px;
 
-        .panel.collapsed .panel-title,
-        .panel.collapsed .panel-body {
-            display: none;
-        }
-        .photo-carousel {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+
+    z-index: 1000;
+}
+
+/* ====== NAVIGATION ====== */
+header nav {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* ССЫЛКИ */
+header nav a {
+    padding: 9px 18px;
+    border-radius: 8px;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    text-decoration: none;
+
+    color: #333;
+    background: #ffffff;
+
+    border: 1px solid #e0e0e0;
+
+    transition: 0.2s ease;
+}
+
+/* Ховер */
+header nav a:hover {
+    background: #f2f2f2;
+    border-color: #d0d0d0;
+}
+
+/* Акцентная кнопка (Dashboard) */
+header nav a[href*="dashboard"] {
+    border-color: #c7c7c7;
+    background: #fafafa;
+}
+
+header nav a[href*="dashboard"]:hover {
+    background: #f0f0f0;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 600px) {
+    header {
+        padding: 12px 16px;
     }
 
-    /* Окошко, через которое смотрим на ленту */
-    .photos-viewport {
-        overflow: hidden;
-        width: 100%;
+    header nav a {
+        padding: 7px 14px;
+        font-size: 13px;
     }
+}
 
-    /* Лента со слайдами */
-    .photos-strip {
-        display: flex;
-        transition: transform 0.3s ease;
-    }
-
-    /* Один слайд = ширина окна */
-    .house-photo {
-        flex: 0 0 100%;
-        width: 100%;
-        height: 180px;
-        object-fit: cover;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-    }
-
-    .photo-nav {
-        flex: 0 0 auto;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        border: 1px solid #ccc;
-        background: #f5f5f7;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 16px;
-        line-height: 1;
-        padding: 0;
-        transition: background 0.2s, transform 0.1s;
-    }
-
-    .photo-nav:hover {
-        background: #e0e0ee;
-        transform: scale(1.05);
-    }
-
-    .no-photos {
-        font-size: 14px;
-        color: #777;
-    }
-        
-
-
-        
     </style>
 </head>
 <body>
+    <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6 not-has-[nav]:hidden">
+            @if (Route::has('login'))
+                <nav class="flex items-center justify-end gap-4">
+                    @auth
+                        <a
+                            href="{{ url('/dashboard') }}"
+                            class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal"
+                        >
+                            Dashboard
+                        </a>
+                    @else
+                        <a
+                            href="{{ route('login') }}"
+                            class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] text-[#1b1b18] border border-transparent hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
+                        >
+                            Log in
+                        </a>
+
+                        @if (Route::has('register'))
+                            <a
+                                href="{{ route('register') }}"
+                                class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal">
+                                Register
+                            </a>
+                        @endif
+                    @endauth
+                </nav>
+            @endif
+        </header>
     <div>
         @yield('main_content')
     </div>

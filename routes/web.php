@@ -11,7 +11,7 @@ use App\Http\Controllers\RouterController;
 
 
 Route::get('/map', [RouterController::class, 'map']);
-Route::get('/map2', [RouterController::class, 'map2']);
+Route::get('/map2', [RouterController::class, 'map2'])->name('map');
 
 
 
