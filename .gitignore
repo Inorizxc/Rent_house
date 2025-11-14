@@ -23,7 +23,5 @@ yarn-error.log
 /.vscode
 /.zed
 /public/hot
-storage/logs/laravel.log
+storage/logs/*
 storage/framework/views/*
-storage/logs/laravel.log
-storage/logs/laravel.log

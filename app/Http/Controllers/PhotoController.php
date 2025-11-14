@@ -31,6 +31,7 @@ class PhotoController extends Controller
         $uploadedPhotos =[];
         foreach($request->file('photo') as $photo){
             $path = $photo->store('image','public');
+
         }   
         return response()->json($uploadedPhotos);
     }

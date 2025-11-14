@@ -15,7 +15,7 @@ class RouterController extends Controller
 
     public function map2()
     {
-        $houses = House::with('photos')->get();
-        return view('map2', ['houses' => $houses->all()]);
+        $houses = House::with('photo')->get();
+        return view('map2', ['houses' => $houses]);
     }
 }

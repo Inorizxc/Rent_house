@@ -90,6 +90,65 @@
         .panel.collapsed .panel-body {
             display: none;
         }
+        .photo-carousel {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    /* Окошко, через которое смотрим на ленту */
+    .photos-viewport {
+        overflow: hidden;
+        width: 100%;
+    }
+
+    /* Лента со слайдами */
+    .photos-strip {
+        display: flex;
+        transition: transform 0.3s ease;
+    }
+
+    /* Один слайд = ширина окна */
+    .house-photo {
+        flex: 0 0 100%;
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+
+    .photo-nav {
+        flex: 0 0 auto;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 1px solid #ccc;
+        background: #f5f5f7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+        padding: 0;
+        transition: background 0.2s, transform 0.1s;
+    }
+
+    .photo-nav:hover {
+        background: #e0e0ee;
+        transform: scale(1.05);
+    }
+
+    .no-photos {
+        font-size: 14px;
+        color: #777;
+    }
+        
+
+
+        
     </style>
 </head>
 <body>
