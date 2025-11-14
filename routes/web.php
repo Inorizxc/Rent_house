@@ -11,12 +11,12 @@ use App\Http\Controllers\RouterController;
 
 
 Route::get('/map', [RouterController::class, 'map']);
-Route::get('/map2', [RouterController::class, 'map2']);
+Route::get('/map2', [RouterController::class, 'map2'])->name('map');
 
 
 
 Route::get('/tables', function () {
-    return view('welcom');
+    return view('welcome');
 })->name('home');
 
 Route::match(['GET','POST'], '/', function (Request $request) {
