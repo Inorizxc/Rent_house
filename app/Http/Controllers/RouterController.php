@@ -9,8 +9,8 @@ class RouterController extends Controller
 {
     public function map()
     {
-        $houses = new House();
-        return view('map', ['houses' => $houses->all()]);
+        $houses = House::with('photo')->get();
+        return view('map', ['houses' => $houses]);
     }
 
     public function map2()

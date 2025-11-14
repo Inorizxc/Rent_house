@@ -478,7 +478,6 @@
 
 
     function fillSelectOptions() {
-        const rentTypes  = new Set();
         const houseTypes = new Set();
 
         houses.forEach(el => {

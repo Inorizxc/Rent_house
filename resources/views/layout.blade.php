@@ -6,6 +6,9 @@
     <title>@yield('title')</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=a2cd05de-c1e4-457b-8092-a8b0ebd9db10&lang=ru_RU" type="text/javascript"></script>
+
 
     
     <style>
@@ -240,6 +243,8 @@ header nav a[href*="dashboard"]:hover {
 }
 
     </style>
+
+    @yield('head')
 </head>
 <body>
     <header class="app-header">

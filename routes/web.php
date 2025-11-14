@@ -11,7 +11,7 @@ use App\Http\Controllers\RouterController;
 
 
 Route::get('/map', [RouterController::class, 'map']);
-Route::get('/', [RouterController::class, 'map2'])->name('map');
+Route::get('/map2', [RouterController::class, 'map2'])->name('map');
 
 
 
@@ -19,7 +19,7 @@ Route::get('/tables', function () {
     return view('welcome');
 })->name('home');
 
-Route::match(['GET','POST'], '/admin', function (Request $request) {
+Route::match(['GET','POST'], '/', function (Request $request) {
 
     $tables = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name;");
     $tableNames = collect($tables)->pluck('name');
