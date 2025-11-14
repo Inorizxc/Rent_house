@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\Role;
+
+use App\Services\YandexGeocoder;
 class ShowRoles extends Command
 {
     /**
@@ -30,6 +32,9 @@ class ShowRoles extends Command
         foreach ($roles as $role) {
             $this->info("{$role->uniq_name} + {$role->role_id}+ {$count}");
         }
+        
+        $geocoder = new YandexGeocoder();
+        print_r($geocoder->getCoordinates("Навашина+9")); 
 
     }
 }
