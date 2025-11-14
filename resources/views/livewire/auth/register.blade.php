@@ -28,7 +28,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
             
         ]);
-        $hashedPassword = Hash::make('password');
+        $hashedPassword = Hash::make($validated['password']);
         event(new Registered(($user = User::create([
             'name' =>$validated["name"],
             'sename' =>$validated["sename"],

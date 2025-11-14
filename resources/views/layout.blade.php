@@ -92,6 +92,80 @@ header nav a[href*="dashboard"]:hover {
         padding: 7px 14px;
         font-size: 13px;
     }
+}   
+
+
+/* Контейнер аватарки */
+.user-menu {
+    position: relative;
+}
+
+/* Кнопка-аватарка */
+.user-avatar-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid #d0d0d0;
+    background: #fff;
+    font-size: 20px;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.user-avatar-btn:hover {
+    background: #f5f5f5;
+    border-color: #bfbfbf;
+}
+
+/* Выпадающее меню */
+.user-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+
+    background: #fff;
+    border: 1px solid #dcdcdc;
+    border-radius: 10px;
+    width: 160px;
+
+    box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+
+    padding: 6px 0;    /* ← нет торчащего фона сверху/снизу */
+    display: none;
+
+    z-index: 999;
+}
+
+/* Показ меню */
+.user-dropdown.show {
+    display: block;
+}
+
+/* Пункты меню */
+.user-dropdown-item {
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #333;
+
+    cursor: pointer;
+    user-select: none;
+
+    transition: background 0.15s;
+}
+
+/* 1px-отступ между кнопками */
+.user-dropdown-item + .user-dropdown-item {
+    border-top: 1px solid #eeeeee;
+}
+
+/* Ховер */
+.user-dropdown-item:hover {
+    background: #f5f5f7;
 }
 
     </style>
@@ -108,53 +182,22 @@ header nav a[href*="dashboard"]:hover {
                             Dashboard
                         </a>
                         <div class="user-menu-wrapper" style="position:relative;">
-                    <button id="userMenuBtn"
-                        style="
-                            width:36px;height:36px;
-                            border-radius:999px;
-                            border:1px solid #d0d0d0;
-                            background:#ffffff;
-                            display:flex;align-items:center;justify-content:center;
-                            cursor:pointer;
-                            font-size:20px;
-                            transition:background 0.2s,transform 0.1s;
-                        ">
-                        🙍
-                    </button>
+                    <div class="user-menu">
+                    <button class="user-avatar-btn" id="userMenuToggle">😊</button>
 
-                    <!-- DROPDOWN MENU -->
-                    <div id="userMenuDropdown"
-                         style="
-                            position:absolute;
-                            top:45px;
-                            right:0;
-                            width:160px;
-
-                            background:#ffffff;
-                            border:1px solid #e2e2e5;
-                            border-radius:8px;
-
-                            box-shadow:0 4px 18px rgba(0,0,0,0.08);
-                            padding:6px 0;
-
-                            display:none;
-                         ">
-                        <a href="#"
-                           style="display:block;padding:10px 16px;font-size:14px;
-                                  color:#1f2933;text-decoration:none;">
-                            Профиль
-                        </a>
-                        <a href="#"
-                           style="display:block;padding:10px 16px;font-size:14px;
-                                  color:#1f2933;text-decoration:none;">
-                            Настройки
-                        </a>
-                        <a href="#"
-                           style="display:block;padding:10px 16px;font-size:14px;
-                                  color:#1f2933;text-decoration:none;">
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="user-dropdown-item">Профиль</div>
+                        <div class="user-dropdown-item">Настройки</div>
+                        <div class="user-dropdown-item">
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" style="all: unset; cursor: pointer; display: block; width: 100%;">
                             Выход
-                        </a>
+                        </button>
+                    </form>
+                </div>
                     </div>
+                </div>
                 </div>
                     @else
                         <a
@@ -176,22 +219,27 @@ header nav a[href*="dashboard"]:hover {
             @endif
         </header>
         <script>
-document.addEventListener("DOMContentLoaded", () => {
-    const btn = document.getElementById("userMenuBtn");
-    const menu = document.getElementById("userMenuDropdown");
+            const toggle = document.getElementById('userMenuToggle');
+            const dropdown = document.getElementById('userDropdown');
 
-    if (!btn || !menu) return;
+            toggle.addEventListener('click', () => {
+                dropdown.classList.toggle('show');
+            });
 
-    btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        menu.style.display = menu.style.display === "block" ? "none" : "block";
-    });
+            document.addEventListener('click', (e) => {
+                if (!toggle.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
 
-    document.addEventListener("click", () => {
-        menu.style.display = "none";
-    });
-});
-</script>
+
+
+
+
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+            document.getElementById('logoutForm').submit();
+        });
+        </script>
     <div>
         @yield('main_content')
     </div>
