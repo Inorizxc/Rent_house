@@ -64,6 +64,6 @@ class PhotoController extends Controller
      */
     public function destroy(Photo $photo)
     {
-        //
+        unlink($photo->path);
     }
 }

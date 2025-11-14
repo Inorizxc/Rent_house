@@ -26,7 +26,18 @@ class HouseSeeder extends Seeder
             "is_deleted"=>"None",
             "lng"=>"46.015446",
             "lat"=>"51.564847"],
-
+            ["house_id"=>"2",
+            "user_id"=>"1",
+            "price_id"=>"1",
+            "rent_type_id"=>"1",
+            "house_type_id"=>"1",
+            "calendar_id"=>"1",
+            "adress"=>"Ул. Степана разина 93",
+            "area"=>"150 квадратов",
+            "is_deleted"=>"None",
+            "lng"=>"46.006579",
+            "lat"=>"51.547796"],
+            
         ];
 
         foreach ($houses as $house) {
