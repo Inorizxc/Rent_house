@@ -624,6 +624,14 @@ if (photos.length > 0) {
         el.classList.toggle('active', Number(el.dataset.id) === Number(houseId));
     });
 
+
+    if (centerOnMap && house.lat && house.lng) {
+        const lat = parseFloat(house.lat);
+        const lng = parseFloat(house.lng);
+        if (!isNaN(lat) && !isNaN(lng)) {
+            map.setView([lat, lng], 17);
+        }
+    }
     
     // запускаем карусель для этого дома
     initPhotoCarousel();

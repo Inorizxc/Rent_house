@@ -11,14 +11,14 @@
     <style>
         @yield('style')
         /* ====== ШРИФТ ====== */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
-body {
-    margin: 0;
-    font-family: 'Inter', sans-serif;
-    padding-top: 72px; /* чтобы контент не прятался под шапкой */
-    background: #f6f6f7;
-}
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            padding-top: 72px; /* чтобы контент не прятался под шапкой */
+            background: #f6f6f7;
+        }
 
 /* ====== HEADER ====== */
 header {
@@ -107,6 +107,55 @@ header nav a[href*="dashboard"]:hover {
                         >
                             Dashboard
                         </a>
+                        <div class="user-menu-wrapper" style="position:relative;">
+                    <button id="userMenuBtn"
+                        style="
+                            width:36px;height:36px;
+                            border-radius:999px;
+                            border:1px solid #d0d0d0;
+                            background:#ffffff;
+                            display:flex;align-items:center;justify-content:center;
+                            cursor:pointer;
+                            font-size:20px;
+                            transition:background 0.2s,transform 0.1s;
+                        ">
+                        🙍
+                    </button>
+
+                    <!-- DROPDOWN MENU -->
+                    <div id="userMenuDropdown"
+                         style="
+                            position:absolute;
+                            top:45px;
+                            right:0;
+                            width:160px;
+
+                            background:#ffffff;
+                            border:1px solid #e2e2e5;
+                            border-radius:8px;
+
+                            box-shadow:0 4px 18px rgba(0,0,0,0.08);
+                            padding:6px 0;
+
+                            display:none;
+                         ">
+                        <a href="#"
+                           style="display:block;padding:10px 16px;font-size:14px;
+                                  color:#1f2933;text-decoration:none;">
+                            Профиль
+                        </a>
+                        <a href="#"
+                           style="display:block;padding:10px 16px;font-size:14px;
+                                  color:#1f2933;text-decoration:none;">
+                            Настройки
+                        </a>
+                        <a href="#"
+                           style="display:block;padding:10px 16px;font-size:14px;
+                                  color:#1f2933;text-decoration:none;">
+                            Выход
+                        </a>
+                    </div>
+                </div>
                     @else
                         <a
                             href="{{ route('login') }}"
@@ -126,6 +175,23 @@ header nav a[href*="dashboard"]:hover {
                 </nav>
             @endif
         </header>
+        <script>
+document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("userMenuBtn");
+    const menu = document.getElementById("userMenuDropdown");
+
+    if (!btn || !menu) return;
+
+    btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.style.display = menu.style.display === "block" ? "none" : "block";
+    });
+
+    document.addEventListener("click", () => {
+        menu.style.display = "none";
+    });
+});
+</script>
     <div>
         @yield('main_content')
     </div>

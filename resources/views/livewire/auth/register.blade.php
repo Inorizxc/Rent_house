@@ -44,7 +44,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
         Session::regenerate();
 
-        $this->redirectIntended(redirect()->route('map2'), navigate: true);
+        $this->redirectIntended(route('map', absolute: false), navigate: false);
+
     }
 }; ?>
 
