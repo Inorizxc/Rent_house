@@ -13,7 +13,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
     public string $email = '';
     public string $password = '';
     public string $password_confirmation = '';
-
+    public string $sename = '';
+    public string $patronymic = '';
     /**
      * Handle an incoming registration request.
      */
@@ -21,17 +22,29 @@ new #[Layout('components.layouts.auth')] class extends Component {
     {
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
+            'sename' => ['required', 'string', 'max:255'],
+            'patronymic' => ['string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
+            
         ]);
 
-        event(new Registered(($user = User::create($validated))));
+        event(new Registered(($user = User::create([
+            'name' =>$validated["name"],
+            'sename' =>$validated["sename"],
+            'patronymic' =>$validated["patronymic"],
+            "email" => $validated['email'],
+            "password" => $validated['password'],
+            "role_id" => "3",
+        ]
+    
+    ))));
 
         Auth::login($user);
 
         Session::regenerate();
 
-        $this->redirectIntended(route('map', absolute: false), navigate: true);
+        $this->redirectIntended(redirect()->route('map2'), navigate: true);
     }
 }; ?>
 
@@ -45,18 +58,38 @@ new #[Layout('components.layouts.auth')] class extends Component {
         <!-- Name -->
         <flux:input
             wire:model="name"
-            :label="__('Name')"
+            :label="__('Имя')"
             type="text"
             required
             autofocus
             autocomplete="name"
-            :placeholder="__('Full name')"
+            :placeholder="__('Имя')"
+        />
+
+        <flux:input
+            wire:model="sename"
+            :label="__('Фамилия')"
+            type="text"
+            required
+            autofocus
+            autocomplete="sename"
+            :placeholder="__('Фамилия')"
+        />
+
+        <flux:input
+            wire:model="patronymic"
+            :label="__('Отчество')"
+            type="text"
+            required
+            autofocus
+            autocomplete="patronymic"
+            :placeholder="__('Отчество')"
         />
 
         <!-- Email Address -->
         <flux:input
             wire:model="email"
-            :label="__('Email address')"
+            :label="__('Электронная почта')"
             type="email"
             required
             autocomplete="email"
@@ -66,22 +99,22 @@ new #[Layout('components.layouts.auth')] class extends Component {
         <!-- Password -->
         <flux:input
             wire:model="password"
-            :label="__('Password')"
+            :label="__('Пароль')"
             type="password"
             required
             autocomplete="new-password"
-            :placeholder="__('Password')"
+            :placeholder="__('Пароль')"
             viewable
         />
 
         <!-- Confirm Password -->
         <flux:input
             wire:model="password_confirmation"
-            :label="__('Confirm password')"
+            :label="__('Подтверждение пароля')"
             type="password"
             required
             autocomplete="new-password"
-            :placeholder="__('Confirm password')"
+            :placeholder="__('Подтверждение пароля')"
             viewable
         />
 

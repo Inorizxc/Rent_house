@@ -84,10 +84,10 @@ class House extends Model
         return 'house_id';
     }
 
-    // Связи (подправь под фактические таблицы)
+   
 
 
-    // URL картинки: storage/houses/{id}.ext или плейсхолдер
+    
     public function getImageUrlAttribute(): string
     {
         $disk = Storage::disk('public');
@@ -99,5 +99,6 @@ class House extends Model
         }
         return asset('images/house-placeholder.svg'); // добавим файл ниже
     }
+
 
 }

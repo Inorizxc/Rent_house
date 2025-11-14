@@ -33,13 +33,10 @@ class Photo extends Model
 
     public static function saveUploadedFile(UploadedFile $file, House $house): Photo
     {
-        // Генерируем уникальное имя файла
         $fileName = uniqid() . '.' . $file->getClientOriginalExtension();
-        
-        // Путь для сохранения: houses/{house_id}/{file_name}
+
         $path = $file->storeAs("image/{$house->house_id}", $fileName, 'public');
 
-        // Создаем запись в базе
         return self::create([
             'house_id' => $house->house_id,
             'user_id' => $house->user_id, 

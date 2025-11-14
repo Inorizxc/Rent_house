@@ -18,13 +18,13 @@ return new class extends Migration
             "role_id")->onUpdate("cascade")->onDelete("cascade");
             $table->text("name");
             $table->text("sename");
-            $table->text("patronymic");
-            $table->text("birth_date");
+            $table->text("patronymic")->nullable();
+            $table->text("birth_date")->nullable();
             $table->text("email");
             $table->text("password");
-            $table->text("phone");
-            $table->text("card");
-            $table->boolean("need_verification");
+            $table->text("phone")->nullable();
+            $table->text("card")->nullable();
+            $table->boolean("need_verification")->nullable();
             $table->timestamps();
         });
     }
