@@ -23,7 +23,7 @@ class House extends Model
         'price_id',   
         'rent_type_id',
         'house_type_id',
-        'calendar_id',
+        'house_calendar_id',
         'adress',
         'area',
         'is_deleted',
@@ -63,8 +63,8 @@ class House extends Model
         return $this->hasMany(PriceList::class,"price_list_id","price_list_id");
     }
 
-    public function order_calendar(){
-        return $this->hasMany(OrderCalendar::class,"calendar_id","calendar_id");
+    public function house_calendar(){
+        return $this->hasMany(HouseCalendar::class,"house_calendar_id","house_calendar_id");
     }
 
     public function rent_type(){
