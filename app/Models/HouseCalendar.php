@@ -4,20 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class OrderCalendar extends Model
+class HouseCalendar extends Model
 {
-    protected $table = "order_calendars";
-    protected $primaryKey = "order_calendar_id";
+    protected $table = "house_calendar";
+    protected $primaryKey = "house_calendar_id";
     public $incrementing = true;
     
     protected $fillable =
     [
-        "order_calendar_id",
+        "house_calendar_id",
         "house_id",
-        "order_date",
+        "first_date",
+        "second_date"
         ];
     protected $casts = [
-        "order_date"=>"date"
+        "first_date"=>"date",
+        "second_date"=>"date"
     ];
     public function house(){
         return $this->belongsTo(House::class,"house_id","house_id");

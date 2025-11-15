@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
             HouseSeeder::class,
             OrderStatusSeeder::class,
             OrderSeeder::class,
-            OrderCalendarSeeder::class,
+            HouseCalendarSeeder::class,
             PriceListSeeder::class,
         ]);
     }

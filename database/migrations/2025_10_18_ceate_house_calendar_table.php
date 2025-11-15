@@ -11,17 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('order_calendars', function (Blueprint $table) {
-            $table->id("order_calendar_id") ->unique();
+        Schema::create('house_calendar', function (Blueprint $table) {
+            $table->id("house_calendar_id") ->unique();
             $table->foreignId("house_id")->constrained("houses",
         "house_id",
         "house_id")->onDelete("cascade")->onUpdate("cascade");
-            $table->text("order_date");
+            $table->text("first_date");
+            $table->text("second_date");
             $table->timestamps();
         });
     }
     public function down(): void
     {
-        Schema::dropIfExists('order_calendars');
+        Schema::dropIfExists('house_calendars');
     }
 };
