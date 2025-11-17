@@ -12,10 +12,4 @@ class RouterController extends Controller
         $houses = House::with('photo')->get();
         return view('map', ['houses' => $houses]);
     }
-
-    public function map2()
-    {
-        $houses = House::with('photo')->get();
-        return view('map2', ['houses' => $houses]);
-    }
 }

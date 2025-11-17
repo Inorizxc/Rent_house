@@ -327,6 +327,63 @@
 .photo-nav:active {
     transform: translateY(-50%) scale(0.96);
 }
+
+    .house-actions {
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .house-btn,
+    .house-btn-secondary {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: background 0.2s, border-color 0.2s, transform 0.1s;
+    }
+
+    .house-btn {
+        background: #4f46e5;
+        border-color: #4f46e5;
+        color: #ffffff;
+    }
+
+    .house-btn:hover {
+        background: #4338ca;
+        border-color: #4338ca;
+        transform: translateY(-1px);
+    }
+
+    .house-btn-secondary {
+        background: #ffffff;
+        border-color: #e5e7eb;
+        color: #111827;
+    }
+
+    .house-btn-secondary:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+        transform: translateY(-1px);
+    }
+
+    /* Убрать промо-надпись */
+    .ymaps-2-1-79-map-copyrights-promo {
+        display: none !important;
+    }
+
+    /* Убрать копирайт внизу справа */
+    .ymaps-2-1-79-copyright__wrap {
+        display: none !important;
+    }
+
+
 @endsection
 
 
@@ -594,21 +651,41 @@
                     <div class="no-photos">Нет фотографий</div>
                 `;
             }
+            const hasCoords = house.lat && house.lng;
+
+            const actionsHtml = `
+                <div class="house-actions">
+                    ${hasCoords ? `
+                        <a href="/house/${house.house_id}" class="house-btn-secondary">
+                            Подробнее
+                        </a>
+                        <a
+                            href="https://yandex.ru/maps/?rtext=~${house.lat},${house.lng}&rtt=taxi"
+                            target="_blank"
+                            rel="noopener"
+                            class="house-btn"
+                        >
+                            🚕 Заказать такси
+                        </a>
+                    ` : ''}
+                </div>
+            `;
 
 
                 houseInfoDiv.innerHTML = `
-                    <div id="house-info-card">
-                        <div class="info-label">ID дома:</div> ${house.house_id}
-                        <div class="info-label">Адрес:</div> ${house.adress ?? '—'}
-                        <div class="info-label">Площадь:</div> ${house.area ?? '—'}
-                        <div class="info-label">Тип дома:</div> ${house.house_type_id ?? '—'}
-                        <div class="info-label">Цена:</div> ${house.price_id ?? '—'}
-                        <div class="info-label">Координаты:</div> ${house.lat}, ${house.lng}
+                <div id="house-info-card">
+                    <div class="info-label">ID дома:</div> ${house.house_id}
+                    <div class="info-label">Адрес:</div> ${house.adress ?? '—'}
+                    <div class="info-label">Площадь:</div> ${house.area ?? '—'}
+                    <div class="info-label">Тип дома:</div> ${house.house_type_id ?? '—'}
+                    <div class="info-label">Цена:</div> ${house.price_id ?? '—'}
+                    <div class="info-label">Координаты:</div> ${house.lat}, ${house.lng}
 
-                        <br>
-                        ${photosHtml}
-                    </div>
-                `;
+                    <br>
+                    ${photosHtml}
+                    ${actionsHtml}
+                </div>
+            `;
 
                 // подсветка в списке
                 Array.from(document.getElementsByClassName('house-item')).forEach(el => {
@@ -728,6 +805,25 @@
 
 
             updateView();
+
+
+            const hash = window.location.hash;
+
+            if (hash && hash.startsWith('#house-')) {
+                const idStr = hash.replace('#house-', '');
+                const houseIdFromHash = parseInt(idStr, 10);
+
+                if (!Number.isNaN(houseIdFromHash)) {
+                    selectHouse(houseIdFromHash, true);
+
+                    const itemEl = document.querySelector(
+                        `.house-item[data-id="${houseIdFromHash}"]`
+                    );
+                    if (itemEl) {
+                        itemEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                    }
+                }
+            }
         }
     );
     

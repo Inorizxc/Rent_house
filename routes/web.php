@@ -10,8 +10,11 @@ use App\Http\Controllers\HouseController;
 use App\Http\Controllers\RouterController;
 
 
-Route::get('/map', [RouterController::class, 'map']);
-Route::get('/map2', [RouterController::class, 'map2'])->name('map');
+Route::get('/map', [RouterController::class, 'map'])->name('map');
+Route::get('/map2', [RouterController::class, 'map2']);
+
+Route::get('/house/{id}', [HouseController::class, 'show'])->name('house.show');
+
 
 
 
@@ -93,6 +96,7 @@ Route::get('/users', \App\Livewire\UsersPage::class)->name('users');
 // Route::get('/houses', \App\Livewire\HousesPage::class)->name('houses');
 // Route::get('/houses', [HouseController::class, 'index'])->name('houses');
 // Route::get('/houses', [HouseController::class, 'index'])->name('houses.index');
+
 Route::resource('houses', HouseController::class);
 
 Route::view('dashboard', 'dashboard')

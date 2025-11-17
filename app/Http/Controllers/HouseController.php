@@ -18,8 +18,10 @@ class HouseController extends Controller
         $houses = House::orderBy("timestamp", "desc")->get();
         return view("houses.index", ["houses"=>$houses]);
     }
-    public function show(string $id){
-        return view("houses.show",["houses"=> House::find ($id)]);
+    public function show(string $id)
+    {
+        $house = House::with(['photo', 'user'])->findOrFail($id);
+        return view('houses.show', compact('house'));
     }
 
     public function create()
