@@ -12,7 +12,8 @@ class ChatController extends Controller
      */
     public function index()
     {
-        //
+        $chat = Chat::with('users')->get();
+        return view('chats.index', ['chats' => $chat]);
     }
 
     /**
@@ -20,7 +21,7 @@ class ChatController extends Controller
      */
     public function create()
     {
-        //
+       return view('chat.create');
     }
 
     /**
@@ -36,7 +37,7 @@ class ChatController extends Controller
      */
     public function show(Chat $chat)
     {
-        //
+        return view('chat.show', ['chats' ->$chat]);
     }
 
     /**
@@ -60,6 +61,6 @@ class ChatController extends Controller
      */
     public function destroy(Chat $chat)
     {
-        //
+        $chat ->delete();
     }
 }

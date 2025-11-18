@@ -12,15 +12,16 @@ class MessageController extends Controller
      */
     public function index()
     {
-        //
+        $message = Message::with('chast')->get();
+        return view('message.index', ['chats' => $message]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Chat $chat_id,String $text)
     {
-        //
+        return view('message.create');
     }
 
     /**
