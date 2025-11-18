@@ -91,12 +91,22 @@ class House extends Model
     public function getImageUrlAttribute(): string
     {
         $disk = Storage::disk('public');
+
+        $photo = $this->relationLoaded('photo')
+            ? $this->photo->first()
+            : $this->photo()->first();
+
+        if ($photo && $photo->path && $disk->exists($photo->path)) {
+            return asset("storage/{$photo->path}");
+        }
+
         foreach (['jpg','jpeg','png','webp','gif'] as $ext) {
             $path = "houses/{$this->house_id}.{$ext}";
             if ($disk->exists($path)) {
                 return asset("storage/{$path}");
             }
         }
+
         return asset('images/house-placeholder.svg'); // добавим файл ниже
     }
 

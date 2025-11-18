@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-
+use App\Models\House;
 
 class UserController extends Controller
 {
@@ -13,7 +13,19 @@ class UserController extends Controller
         return view("users.index", ["users"=>$users]);
     }
     public function show(string $id){
-        return view("users.show",["users"=> User::find ($id)]);
+        $user = User::with(['house' => function ($query) {
+            $query->with(['rent_type','house_type','photo'])
+                ->where(function ($q) {
+                    $q->whereNull('is_deleted')
+                        ->orWhere('is_deleted', false);
+                })
+                ->orderByDesc('house_id');
+        }])->findOrFail($id);
+
+        return view("users.show",[
+            "user"=> $user,
+            "houses"=> $user->house,
+        ]);
     }
 
     public function create(){
@@ -22,8 +34,8 @@ class UserController extends Controller
 
     
     public function showHouses(){
-        $houses = House::with('users')->get();
-        return view('house.showHouses', ['houses' => $message]);
+        $houses = House::with('user')->get();
+        return view('users.showHouses', ['houses' => $houses]);
     }
     /**
      * Store a newly created resource in storage.

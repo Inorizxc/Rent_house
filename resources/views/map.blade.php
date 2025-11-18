@@ -259,75 +259,6 @@
         color: var(--text-main);
     }
 
-    /* Карусель блока с фото */
-.photo-carousel {
-    margin-top: 10px;
-    position: relative;      /* стрелки будут позиционироваться относительно всей карусели */
-}
-
-/* Окошко с картинкой */
-.photos-viewport {
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    height: 230px;
-    border-radius: 10px;
-}
-
-/* Лента со слайдами */
-.photos-strip {
-    display: flex;
-    height: 100%;
-    transition: transform 0.35s ease;
-}
-
-/* Картинка */
-.house-photo {
-    flex: 0 0 100%;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* Стрелки поверх картинки, по центру по высоте */
-.photo-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);   /* центр по высоте */
-    width: 36px;
-    height: 36px;
-    border-radius: 999px;
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    background: rgba(255, 255, 255, 0.65);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 17px;
-    line-height: 1;
-    padding: 0;
-    transition: background 0.2s, transform 0.15s, border-color 0.2s;
-    z-index: 2;                     /* точно поверх картинки */
-}
-
-.photo-nav.prev {
-    left: 10px;
-}
-
-.photo-nav.next {
-    right: 10px;
-}
-
-.photo-nav:hover {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0, 0, 0, 0.2);
-    transform: translateY(-50%) scale(1.05);
-}
-
-.photo-nav:active {
-    transform: translateY(-50%) scale(0.96);
-}
-
     .house-actions {
         margin-top: 10px;
         display: flex;
@@ -623,34 +554,17 @@
                 if (!house) return;
                 
                 const photos = house.photo || [];
-
-            let photosHtml = "";
-
-            if (photos.length > 0) {
-                photosHtml = `
-                    <div class="info-label">Фотографии:</div>
-                    <div class="photo-carousel">
-                        <button class="photo-nav prev" type="button">❮</button>
-                        <div class="photos-viewport">
-                            <div class="photos-strip">
-                                ${photos.map(p => `
-                                    <img
-                                        src="/storage/${p.path}"
-                                        class="house-photo"
-                                        alt="${p.name}"
-                                    >
-                                `).join('')}
-                            </div>
-                        </div>
-                        <button class="photo-nav next" type="button">❯</button>
-                    </div>
-                `;
-            } else {
-                photosHtml = `
-                    <div class="info-label">Фотографии:</div>
-                    <div class="no-photos">Нет фотографий</div>
-                `;
-            }
+                const photosHtml = window.PhotoCarousel
+                    ? PhotoCarousel.render(photos, {
+                        label: 'Фотографии:',
+                        emptyText: 'Нет фотографий',
+                        getSrc: (photo) => photo?.path ? `/storage/${photo.path}` : '',
+                        getAlt: (photo, index) => photo?.name || `Фотография ${index + 1}`,
+                    })
+                    : `
+                        <div class="info-label">Фотографии:</div>
+                        <div>Нет фотографий</div>
+                    `;
             const hasCoords = house.lat && house.lng;
 
             const actionsHtml = `
@@ -701,39 +615,9 @@
                     }
                 }
                 
-                // запускаем карусель для этого дома
-                initPhotoCarousel();
-            }
-    
-            
-            function initPhotoCarousel() {
-                const carousel = houseInfoDiv.querySelector('.photo-carousel');
-                if (!carousel) return;
-
-                const viewport = carousel.querySelector('.photos-viewport');
-                const strip = carousel.querySelector('.photos-strip');
-                const photosEls = Array.from(strip.querySelectorAll('.house-photo'));
-                const prevBtn = carousel.querySelector('.photo-nav.prev');
-                const nextBtn = carousel.querySelector('.photo-nav.next');
-
-                if (photosEls.length === 0) return;
-
-                let currentIndex = 0;
-                const total = photosEls.length;
-
-                function show(index) {
-                    if (index < 0) index = total - 1;
-                    if (index >= total) index = 0;
-                    currentIndex = index;
-
-                    const slideWidth = viewport.clientWidth; // ширина видимого окна
-                    strip.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
+                if (window.PhotoCarousel) {
+                    PhotoCarousel.initAll(houseInfoDiv);
                 }
-
-                prevBtn.addEventListener('click', () => show(currentIndex - 1));
-                nextBtn.addEventListener('click', () => show(currentIndex + 1));
-
-                show(0);
             }
 
 

@@ -1,84 +1,98 @@
 <?php
 
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
-use Laravel\Fortify\Features;
-use Livewire\Volt\Volt;
 use App\Http\Controllers\HouseController;
 use App\Http\Controllers\RouterController;
+use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
+use Laravel\Fortify\Features;
+use Livewire\Volt\Volt;
 
 
-Route::get('/map', [RouterController::class, 'map'])->name('map');
-Route::get('/map2', [RouterController::class, 'map2']);
+Route::controller(RouterController::class)->group(function () {
+    Route::get('/map', 'map')->name('map');
+    Route::get('/map2', 'map2')->name('map.alt');
+});
 
-Route::get('/house/{id}', [HouseController::class, 'show'])->name('house.show');
+Route::controller(HouseController::class)->group(function () {
+    Route::get('/house/{id}', 'show')->name('house.show');
+});
 
-
+Route::prefix('profile/{id}')
+    ->controller(UserController::class)
+    ->group(function () {
+        Route::get('/', 'show')->name('profile.show');
+        Route::get('/houses', 'showHouses')->name('users.showHouses');
+    });
 
 
 Route::get('/tables', function () {
     return view('welcome');
 })->name('home');
 
-Route::match(['GET','POST'], '/', function (Request $request) {
-
-    $tables = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name;");
-    $tableNames = collect($tables)->pluck('name');
+Route::match(['GET', 'POST'], '/', function (Request $request) {
+    $tableNames = collect(DB::select("
+        SELECT name
+        FROM sqlite_master
+        WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+        ORDER BY name
+    "))->pluck('name');
 
     $selectedTable = $request->get('table');
-    
-    $limit = min(max((int)$request->get('per', 10), 1), 100);
+    if ($selectedTable && !$tableNames->contains($selectedTable)) {
+        $selectedTable = null;
+    }
+
+    $limit = (int) $request->get('per', 10);
+    $limit = max(1, min($limit, 100));
+
+    $page = max((int) $request->get('page', 1), 1);
 
     $columns = collect();
     if ($selectedTable) {
         $columns = collect(DB::select("PRAGMA table_info('$selectedTable')"));
     }
 
-    $page = max((int)$request->get('page', 1), 1);
-
-    $columns = collect();
-    if ($selectedTable){
-        $columns = collect(DB::select("PRAGMA table_info('$selectedTable')"));
-    }
-
     if ($request->isMethod('post') && $selectedTable) {
-        $blocked = ['id','created_at','updated_at','deleted_at'];
+        $blocked = ['id', 'created_at', 'updated_at', 'deleted_at'];
         $fillable = $columns
             ->pluck('name')
-            ->reject(fn($c) => in_array($c, $blocked, true))
+            ->reject(fn ($column) => in_array($column, $blocked, true))
             ->values()
             ->all();
 
         $payload = $request->only($fillable);
-
-        foreach ($payload as $k => $v) {
-            if ($v === '') $payload[$k] = null;
+        foreach ($payload as $key => $value) {
+            if ($value === '') {
+                $payload[$key] = null;
+            }
         }
 
         if (!empty($payload)) {
             DB::table($selectedTable)->insert($payload);
+
             return redirect('/')
                 ->withInput(['table' => $selectedTable])
                 ->with('status', "Запись добавлена в «{$selectedTable}»");
         }
     }
 
-    $rows   = collect();
-    $total  = 0;
-    $pages  = 1;
+    $rows  = collect();
+    $total = 0;
+    $pages = 1;
+
     if ($selectedTable) {
         $total = DB::table($selectedTable)->count();
-        $pages = max((int)ceil($total / $limit), 1);
-        // держим page в границах [1..pages]
+        $pages = max((int) ceil($total / $limit), 1);
         $page  = min($page, $pages);
-        $rows  = DB::table($selectedTable)
-            ->offset(($page-1)*$limit)
+
+        $rows = DB::table($selectedTable)
+            ->offset(($page - 1) * $limit)
             ->limit($limit)
             ->get();
     }
-
 
     return view('test', [
         'tables'        => $tableNames,
@@ -93,11 +107,17 @@ Route::match(['GET','POST'], '/', function (Request $request) {
 });
 
 Route::get('/users', \App\Livewire\UsersPage::class)->name('users');
-// Route::get('/houses', \App\Livewire\HousesPage::class)->name('houses');
-// Route::get('/houses', [HouseController::class, 'index'])->name('houses');
-// Route::get('/houses', [HouseController::class, 'index'])->name('houses.index');
+
 
 Route::resource('houses', HouseController::class);
+
+
+
+// Route::middleware(['auth'])->group(function () {
+    
+// });
+
+
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])

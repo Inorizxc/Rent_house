@@ -20,7 +20,7 @@ class HouseController extends Controller
     }
     public function show(string $id)
     {
-        $house = House::with(['photo', 'user'])->findOrFail($id);
+        $house = House::with(['user'])->findOrFail($id);
         return view('houses.show', compact('house'));
     }
 
