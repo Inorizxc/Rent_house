@@ -24,5 +24,4 @@ class RentType extends Model
     public function house(){
         return $this->hasMany(House::class,"rent_type_id","rent_type_id");
     }
-
 }

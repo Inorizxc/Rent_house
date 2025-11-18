@@ -20,7 +20,11 @@ class UserController extends Controller
         return view('users.create');
     }
 
-
+    
+    public function showHouses(){
+        $houses = House::with('users')->get();
+        return view('house.showHouses', ['houses' => $message]);
+    }
     /**
      * Store a newly created resource in storage.
      */

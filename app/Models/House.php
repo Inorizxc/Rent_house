@@ -78,7 +78,7 @@ class House extends Model
 
     
     
-    // Чтобы route('houses.edit', $house) подставлял house_id
+    
     public function getRouteKeyName(): string
     {
         return 'house_id';

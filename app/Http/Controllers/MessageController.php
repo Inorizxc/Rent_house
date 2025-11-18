@@ -12,7 +12,7 @@ class MessageController extends Controller
      */
     public function index()
     {
-        $message = Message::with('chast')->get();
+        $message = Message::with('chats')->get();
         return view('message.index', ['chats' => $message]);
     }
 

@@ -65,7 +65,7 @@ class PhotoController extends Controller
      */
     public function destroy(Photo $photo)
     {
-        unlink($photo->path);
+        Storage::delete($photo->path);
         $photo->delete();
     }
 }
