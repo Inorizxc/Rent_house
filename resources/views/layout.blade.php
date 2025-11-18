@@ -260,23 +260,41 @@ header nav a[href*="dashboard"]:hover {
                             Dashboard
                         </a>
                         <div class="user-menu-wrapper" style="position:relative;">
-                    <div class="user-menu">
-                    <button class="user-avatar-btn" id="userMenuToggle">😊</button>
+                            <div class="user-menu">
+                                <button
+                                    class="user-avatar-btn"
+                                    id="userMenuToggle"
+                                    type="button"
+                                    aria-haspopup="true"
+                                    aria-expanded="false"
+                                >
+                                    😊
+                                </button>
 
-                    <div class="user-dropdown" id="userDropdown">
-                        <div class="user-dropdown-item">Профиль</div>
-                        <div class="user-dropdown-item">Настройки</div>
-                        <div class="user-dropdown-item">
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" style="all: unset; cursor: pointer; display: block; width: 100%;">
-                            Выход
-                        </button>
-                    </form>
-                </div>
-                    </div>
-                </div>
-                </div>
+                                <div class="user-dropdown" id="userDropdown" role="menu">
+                                    <div class="user-dropdown-item" role="menuitem">
+                                        <a href="{{ route('profile.show', auth()->id()) }}" style="all: unset; cursor: pointer; display: block; width: 100%; text-decoration: none; color: inherit;">
+                                            Профиль
+                                        </a>
+                                    </div>
+
+                                    <form
+                                        method="POST"
+                                        action="{{ route('logout') }}"
+                                        class="user-dropdown-item"
+                                        role="menuitem"
+                                    >
+                                        @csrf
+                                        <button
+                                            type="submit"
+                                            style="all: unset; cursor: pointer; display: block; width: 100%;"
+                                        >
+                                            Выход
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     @else
                         <a
                             href="{{ route('login') }}"
@@ -296,28 +314,45 @@ header nav a[href*="dashboard"]:hover {
                 </nav>
             @endif
         </header>
+        @auth
         <script>
-            const toggle = document.getElementById('userMenuToggle');
-            const dropdown = document.getElementById('userDropdown');
+            document.addEventListener('DOMContentLoaded', () => {
+                const toggle = document.getElementById('userMenuToggle');
+                const dropdown = document.getElementById('userDropdown');
 
-            toggle.addEventListener('click', () => {
-                dropdown.classList.toggle('show');
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!toggle.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.classList.remove('show');
+                if (!toggle || !dropdown) {
+                    return;
                 }
+
+                const closeDropdown = () => dropdown.classList.remove('show');
+
+                toggle.addEventListener('click', () => {
+                    dropdown.classList.toggle('show');
+                    toggle.setAttribute(
+                        'aria-expanded',
+                        dropdown.classList.contains('show')
+                    );
+                });
+
+                document.addEventListener('click', (event) => {
+                    if (
+                        !toggle.contains(event.target) &&
+                        !dropdown.contains(event.target)
+                    ) {
+                        closeDropdown();
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        closeDropdown();
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
             });
-
-
-
-
-
-            document.getElementById('logoutBtn').addEventListener('click', () => {
-            document.getElementById('logoutForm').submit();
-        });
         </script>
+        @endauth
     <div>
         @yield('main_content')
     </div>

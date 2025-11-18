@@ -25,3 +25,4 @@ yarn-error.log
 /public/hot
 storage/logs/*
 storage/framework/views/*
+storage/app/public/*

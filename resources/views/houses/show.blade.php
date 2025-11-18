@@ -191,6 +191,17 @@
         color: #111827;
     }
 
+    .contact-value a {
+        color: #4f46e5;
+        text-decoration: none;
+        transition: color 0.2s, text-decoration 0.2s;
+    }
+
+    .contact-value a:hover {
+        color: #4338ca;
+        text-decoration: underline;
+    }
+
     .actions {
         margin-top: 16px;
         display: flex;
@@ -337,8 +348,18 @@
                 <div class="contact-row">
                     <div class="contact-label">Контактное лицо</div>
                     <div class="contact-value">
-                        @if(isset($house->user))
-                            {{ $house->user->name ?? 'Пользователь' }}
+                        @if(isset($house->user) && $house->user->user_id)
+                            @php
+                                $fio = trim(
+                                    ($house->user->sename ?? '') . ' ' .
+                                    ($house->user->name ?? '') . ' ' .
+                                    ($house->user->patronymic ?? '')
+                                );
+                                $fio = $fio ?: 'Пользователь #' . $house->user->user_id;
+                            @endphp
+                            <a href="{{ route('profile.show', $house->user->user_id) }}">
+                                {{ $fio }}
+                            </a>
                         @else
                             Не указано
                         @endif
