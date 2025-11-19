@@ -328,6 +328,10 @@
 
 
 @section('main_content')
+    @php
+        $isOwner = auth()->check() && auth()->id() === $user->user_id;
+    @endphp
+
     <div class="profile-wrapper">
         {{-- Шапка профиля --}}
         <div class="profile-header">
@@ -351,21 +355,25 @@
                     <p><strong>Email:</strong> {{ $user->email ?? 'не указан' }}</p>
                 </div>
 
-                <div class="profile-sidebar-bottom">
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="profile-sidebar-button">
-                            Выйти из аккаунта
-                        </button>
-                    </form>
-                </div>
+                @if($isOwner)
+                    <div class="profile-sidebar-bottom">
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="profile-sidebar-button">
+                                Выйти из аккаунта
+                            </button>
+                        </form>
+                    </div>
+                @endif
             </aside>
 
             <section class="profile-main">
                 <div class="profile-tabs">
                     <button class="profile-tab-btn active" data-tab="houses">Дома</button>
-                    <button class="profile-tab-btn" data-tab="orders">Заказы</button>
-                    <button class="profile-tab-btn" data-tab="settings">Настройки</button>
+                    @if($isOwner)
+                        <button class="profile-tab-btn" data-tab="orders">Заказы</button>
+                        <button class="profile-tab-btn" data-tab="settings">Настройки</button>
+                    @endif
                     <div class="profile-tabs-spacer"></div>
                 </div>
 

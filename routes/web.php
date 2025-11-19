@@ -24,7 +24,7 @@ Route::controller(HouseController::class)->group(function () {
 Route::prefix('profile/{id}')
     ->controller(UserController::class)
     ->group(function () {
-        Route::get('/', 'show')->name('profile.show')->middleware(UserCheck::class);
+        Route::get('/', 'show')->name('profile.show');
         Route::get('/houses', 'showHouses')->name('users.showHouses');
     });
 
