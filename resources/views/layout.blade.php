@@ -249,7 +249,7 @@ header nav a[href*="dashboard"]:hover {
 </head>
 <body>
     <header class="app-header">
-        <a href="{{ url('/') }}" class="logo">Zlovito</a>
+        <a href="{{ url('/map') }}" class="logo">Zlovito</a>
             @if (Route::has('login'))
                 <nav class="flex items-center justify-end gap-4">
                     @auth
