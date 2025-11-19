@@ -28,5 +28,8 @@ Route::middleware('auth')->group(function () {
         ->name('verification.verify');
 });
 
+
+
+
 Route::post('logout', App\Livewire\Actions\Logout::class)
     ->name('logout');

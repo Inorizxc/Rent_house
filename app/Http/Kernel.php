@@ -41,11 +41,7 @@ class Kernel extends HttpKernel
             'throttle:60,1',
             'bindings',
         ],
-        'profile'=>[
-            \App\Http\Middleware\UserCheck::class,
-            \App\Http\Middleware\Authenticate::class,
-            \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
-        ],
+        
     ];
 
     /**
