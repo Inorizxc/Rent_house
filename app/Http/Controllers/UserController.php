@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\House;
+use App\Models\Role;
 
 class UserController extends Controller
 {
@@ -13,13 +14,16 @@ class UserController extends Controller
         return view("users.index", ["users"=>$users]);
     }
     public function show(string $id){
-        $user = User::with(['house' => function ($query) {
-            $query->with(['rent_type','house_type','photo'])
-                ->where(function ($q) {
-                    $q->whereNull('is_deleted')
-                        ->orWhere('is_deleted', false);
-                })
-                ->orderByDesc('house_id');
+        $user = User::with([
+            'roles', 
+
+            'house' => function ($query) {
+                $query->with(['rent_type','house_type','photo'])
+                    ->where(function ($q) {
+                        $q->whereNull('is_deleted')
+                            ->orWhere('is_deleted', false);
+                    })
+                    ->orderByDesc('house_id');
         }])->findOrFail($id);
 
         return view("users.show",[
