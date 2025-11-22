@@ -1,7 +1,9 @@
 <?php
 
 
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\HouseController;
+use App\Http\Controllers\HouseChatController;
 use App\Http\Controllers\RouterController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -18,6 +20,22 @@ Route::controller(RouterController::class)->group(function () {
 
 Route::controller(HouseController::class)->group(function () {
     Route::get('/house/{id}', 'show')->name('house.show');
+    Route::post('/houses/get-coordinates', 'getCoordinates')->name('houses.get-coordinates')->middleware('auth');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::controller(HouseChatController::class)->group(function () {
+        Route::get('/house/{houseId}/chat', 'show')->name('house.chat');
+        Route::post('/house/{houseId}/chat/message', 'sendMessage')->name('house.chat.send');
+        Route::get('/house/{houseId}/chat/messages', 'getMessages')->name('house.chat.messages');
+    });
+
+    Route::get('/chats', [ChatController::class, 'index'])->name('chats.index');
+    Route::get('/chats/{chatId}', [ChatController::class, 'show'])->name('chats.show');
+    Route::post('/chats/{chatId}/message', [ChatController::class, 'sendMessage'])->name('chats.send');
+    Route::get('/chats/{chatId}/messages', [ChatController::class, 'getMessages'])->name('chats.messages');
+    Route::get('/user/{userId}/chat', [ChatController::class, 'startWithUser'])->name('chats.start');
+    Route::get('/chats/unread/count', [ChatController::class, 'getUnreadCount'])->name('chats.unread.count');
 });
 
 Route::prefix('profile/{id}')

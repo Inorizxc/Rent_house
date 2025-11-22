@@ -380,6 +380,12 @@ a {
                             </button>
                         </form>
                     </div>
+                @elseif(auth()->check() && auth()->id() != $user->user_id)
+                    <div class="profile-sidebar-bottom">
+                        <a href="{{ route('chats.start', $user->user_id) }}" class="profile-sidebar-button" style="display: block; text-align: center; text-decoration: none; padding: 10px;">
+                            Написать сообщение
+                        </a>
+                    </div>
                 @endif
             </aside>
 

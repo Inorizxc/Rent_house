@@ -492,16 +492,18 @@
 
             
             function fillSelectOptions() {
-                const houseTypes = new Set();
+                const houseTypes = new Map();
 
                 houses.forEach(el => {
-                    if (el.house_type_id) houseTypes.add(el.house_type_id);
+                    if (el.house_type && el.house_type.name) {
+                        houseTypes.set(el.house_type.house_type_id, el.house_type.name);
+                    }
                 });
 
-                houseTypes.forEach(v => {
+                houseTypes.forEach((name, id) => {
                     const opt = document.createElement('option');
-                    opt.value = v;
-                    opt.textContent = v;
+                    opt.value = id;
+                    opt.textContent = name;
                     houseTypeSel.appendChild(opt);
                 });
             }
@@ -586,17 +588,17 @@
             `;
 
 
+                const houseTypeName = house.house_type?.name ?? '—';
+                
                 houseInfoDiv.innerHTML = `
                 <div id="house-info-card">
-                    <div class="info-label">ID дома:</div> ${house.house_id}
                     <div class="info-label">Адрес:</div> ${house.adress ?? '—'}
-                    <div class="info-label">Площадь:</div> ${house.area ?? '—'}
-                    <div class="info-label">Тип дома:</div> ${house.house_type_id ?? '—'}
-                    <div class="info-label">Цена:</div> ${house.price_id ?? '—'}
-                    <div class="info-label">Координаты:</div> ${house.lat}, ${house.lng}
-
-                    <br>
+                    
                     ${photosHtml}
+                    
+                    <div class="info-label">Тип дома:</div> ${houseTypeName}
+                    <div class="info-label">Цена:</div> ${house.price_id ?? '—'}
+
                     ${actionsHtml}
                 </div>
             `;
@@ -656,11 +658,11 @@
                         const div = document.createElement('div');
                         div.className = 'house-item' + (Number(h.house_id) === Number(activeHouseId) ? ' active' : '');
                         div.dataset.id = h.house_id;
+                        const houseTypeName = h.house_type?.name ?? '—';
                         div.innerHTML = `
                             <div><strong>#${h.house_id}</strong> — ${h.adress ?? 'Адрес не указан'}</div>
                             <div>
-                                Тип аренды: ${h.rent_type_id ?? '—'} |
-                                Тип дома: ${h.house_type_id ?? '—'} |
+                                Тип дома: ${houseTypeName} |
                                 Цена: ${h.price_id ?? '—'}
                             </div>
                         `;

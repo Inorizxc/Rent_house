@@ -381,9 +381,15 @@
                 </div>
 
                 <div class="actions">
-                    <a href="tel:{{ $house->user->phone ?? '' }}" class="btn-primary">
-                        Чат
-                    </a>
+                    @auth
+                        <a href="{{ route('house.chat', $house->house_id) }}" class="btn-primary">
+                            Чат
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}" class="btn-primary">
+                            Войти для чата
+                        </a>
+                    @endauth
 
                     <a href="{{ route('map') }}#house-{{ $house->house_id }}" class="btn-secondary">
                         Показать на карте

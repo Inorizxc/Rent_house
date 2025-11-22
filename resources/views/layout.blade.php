@@ -167,6 +167,20 @@ header nav a[href*="dashboard"]:hover {
     transition: background 0.15s;
 }
 
+/* Имя пользователя в меню */
+.user-dropdown-item.user-name {
+    font-weight: 600;
+    color: #1f2933;
+    border-bottom: 1px solid #eeeeee;
+    margin-bottom: 4px;
+    padding-bottom: 12px;
+    cursor: default;
+}
+
+.user-dropdown-item.user-name:hover {
+    background: transparent;
+}
+
 /* 1px-отступ между кнопками */
 .user-dropdown-item + .user-dropdown-item {
     border-top: 1px solid #eeeeee;
@@ -238,10 +252,29 @@ header nav a[href*="dashboard"]:hover {
     transition: 0.2s ease;
 }
 
-.nav-links a:hover {
-    background: #f2f2f2;
-    border-color: #d0d0d0;
-}
+    .nav-links a:hover {
+        background: #f2f2f2;
+        border-color: #d0d0d0;
+    }
+
+    /* Индикатор непрочитанных сообщений */
+    .chat-link-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .chat-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        width: 12px;
+        height: 12px;
+        background: #3b82f6;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
 
     </style>
 
@@ -253,12 +286,40 @@ header nav a[href*="dashboard"]:hover {
             @if (Route::has('login'))
                 <nav class="flex items-center justify-end gap-4">
                     @auth
-                        <a
-                            href="{{ url('/dashboard') }}"
-                            class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal"
-                        >
-                            Dashboard
-                        </a>
+                        @php
+                            $currentUser = auth()->user();
+                            $unreadCount = 0;
+                            
+                            if ($currentUser) {
+                                // Получаем все чаты пользователя
+                                $chats = \App\Models\Chat::where('user_id', $currentUser->user_id)
+                                    ->orWhere('rent_dealer_id', $currentUser->user_id)
+                                    ->get();
+                                
+                                // Подсчитываем чаты с непрочитанными сообщениями
+                                foreach ($chats as $chat) {
+                                    $lastMessage = \App\Models\Message::where('chat_id', $chat->chat_id)
+                                        ->latest('created_at')
+                                        ->first();
+                                    
+                                    // Если последнее сообщение отправлено не текущим пользователем, то есть непрочитанные
+                                    if ($lastMessage && $lastMessage->user_id != $currentUser->user_id) {
+                                        $unreadCount++;
+                                    }
+                                }
+                            }
+                        @endphp
+                        <div class="chat-link-wrapper" id="chatLinkWrapper">
+                            <a
+                                href="{{ route('chats.index') }}"
+                                class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal"
+                            >
+                                Чат
+                            </a>
+                            @if($unreadCount > 0)
+                                <span class="chat-badge" id="chatBadge"></span>
+                            @endif
+                        </div>
                         <div class="user-menu-wrapper" style="position:relative;">
                             <div class="user-menu">
                                 <button
@@ -272,6 +333,14 @@ header nav a[href*="dashboard"]:hover {
                                 </button>
 
                                 <div class="user-dropdown" id="userDropdown" role="menu">
+                                    @php
+                                        $currentUser = auth()->user();
+                                        $userName = trim(($currentUser->name ?? '') . ' ' . ($currentUser->sename ?? ''));
+                                        $userName = $userName ?: 'Пользователь';
+                                    @endphp
+                                    <div class="user-dropdown-item user-name" role="menuitem">
+                                        {{ $userName }}
+                                    </div>
                                     <div class="user-dropdown-item" role="menuitem">
                                         <a href="{{ route('profile.show', auth()->id()) }}" style="all: unset; cursor: pointer; display: block; width: 100%; text-decoration: none; color: inherit;">
                                             Профиль
@@ -350,6 +419,54 @@ header nav a[href*="dashboard"]:hover {
                         toggle.setAttribute('aria-expanded', 'false');
                     }
                 });
+
+                // Обновление индикатора непрочитанных сообщений в реальном времени
+                const chatLinkWrapper = document.getElementById('chatLinkWrapper');
+                
+                if (chatLinkWrapper) {
+                    function updateUnreadCount() {
+                        fetch('{{ route("chats.unread.count") }}', {
+                            method: 'GET',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            },
+                            credentials: 'same-origin'
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            const unreadCount = data.unreadCount || 0;
+                            const chatBadge = document.getElementById('chatBadge');
+                            
+                            if (unreadCount > 0) {
+                                // Показываем индикатор, если его нет
+                                if (!chatBadge) {
+                                    const badge = document.createElement('span');
+                                    badge.className = 'chat-badge';
+                                    badge.id = 'chatBadge';
+                                    chatLinkWrapper.appendChild(badge);
+                                }
+                            } else {
+                                // Скрываем индикатор, если он есть
+                                if (chatBadge) {
+                                    chatBadge.remove();
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error updating unread count:', error);
+                        });
+                    }
+
+                    // Обновляем каждые 5 секунд
+                    updateUnreadCount(); // Первое обновление сразу
+                    setInterval(updateUnreadCount, 5000);
+                }
             });
         </script>
         @endauth

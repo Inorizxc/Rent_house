@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class Chat extends Model
 {
@@ -18,5 +19,13 @@ class Chat extends Model
 
     public function message(){
         return $this->hasMany(Message::class,'chat_id','chat_id');
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
+
+    public function rentDealer(){
+        return $this->belongsTo(User::class, 'rent_dealer_id', 'user_id');
     }
 }
