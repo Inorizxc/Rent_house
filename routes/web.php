@@ -4,8 +4,6 @@
 use App\Http\Controllers\HouseController;
 use App\Http\Controllers\RouterController;
 use App\Http\Controllers\UserController;
-use App\Http\Middleware\UserCheck;
-use App\Http\Middleware\HouseOwnerCheck;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -21,12 +19,15 @@ Route::controller(RouterController::class)->group(function () {
 Route::controller(HouseController::class)->group(function () {
     Route::get('/house/{id}', 'show')->name('house.show');
 });
-//
+
 Route::prefix('profile/{id}')
     ->controller(UserController::class)
     ->group(function () {
         Route::get('/', 'show')->name('profile.show');
-        //Route::get('/houses', 'showHouses')->name('users.showHouses');
+        Route::get('/houses', 'showHouses')->name('users.showHouses');
+        Route::get('/tab/houses', 'tabHouses')->name('profile.tab.houses');
+        Route::get('/tab/orders', 'tabOrders')->name('profile.tab.orders');
+        Route::get('/tab/settings', 'tabSettings')->name('profile.tab.settings');
     });
 
 

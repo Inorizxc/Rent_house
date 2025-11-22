@@ -18,7 +18,7 @@ class UserSeeder extends Seeder
         $users = [
             ["user_id"=>"1","role_id"=>"1","name"=>"Артем","sename"=>"Казаков","patronymic"=>"Максимович","birth_date"=>"22.06.2004","email"=>"temich@mail.ru","password"=>$pass,"phone"=>"89776435855","card"=>"1111 2222 3333 4444",
             "need_verification" =>false],
-            ["user_id"=>"2","role_id"=>"3","name"=>"Кирилл","sename"=>"Шпурт","patronymic"=>"Валерьевич","birth_date"=>"22.06.2004","email"=>"temich@mail.ru","password"=>"password","phone"=>"89776435855","card"=>"1111 2222 3333 4444",
+            ["user_id"=>"2","role_id"=>"2","name"=>"Кирилл","sename"=>"Шпурт","patronymic"=>"Валерьевич","birth_date"=>"22.06.2004","email"=>"rent@mail.ru","password"=>$pass,"phone"=>"89776435855","card"=>"1111 2222 3333 4444",
             "need_verification" =>false],
         ];
         foreach ($users as $user) {

@@ -37,8 +37,9 @@
     33 => 'Pest\\Laravel\\PestServiceProvider',
     34 => 'Geocoder\\Laravel\\Providers\\GeocoderService',
     35 => 'App\\Providers\\AppServiceProvider',
-    36 => 'App\\Providers\\FortifyServiceProvider',
-    37 => 'App\\Providers\\VoltServiceProvider',
+    36 => 'App\\Providers\\AuthServiceProvider',
+    37 => 'App\\Providers\\FortifyServiceProvider',
+    38 => 'App\\Providers\\VoltServiceProvider',
   ),
   'eager' => 
   array (
@@ -63,8 +64,9 @@
     18 => 'Pest\\Laravel\\PestServiceProvider',
     19 => 'Geocoder\\Laravel\\Providers\\GeocoderService',
     20 => 'App\\Providers\\AppServiceProvider',
-    21 => 'App\\Providers\\FortifyServiceProvider',
-    22 => 'App\\Providers\\VoltServiceProvider',
+    21 => 'App\\Providers\\AuthServiceProvider',
+    22 => 'App\\Providers\\FortifyServiceProvider',
+    23 => 'App\\Providers\\VoltServiceProvider',
   ),
   'deferred' => 
   array (

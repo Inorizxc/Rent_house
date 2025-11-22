@@ -14,9 +14,13 @@ class UserController extends Controller
         return view("users.index", ["users"=>$users]);
     }
     public function show(string $id){
-        $user = User::with([
-            'roles', 
+        // Редиректим на вкладку houses по умолчанию
+        return redirect()->route('profile.tab.houses', $id);
+    }
 
+    public function tabHouses(string $id, Request $request){
+        $user = User::with([
+            'roles',
             'house' => function ($query) {
                 $query->with(['rent_type','house_type','photo'])
                     ->where(function ($q) {
@@ -26,9 +30,105 @@ class UserController extends Controller
                     ->orderByDesc('house_id');
         }])->findOrFail($id);
 
-        return view("users.show",[
-            "user"=> $user,
-            "houses"=> $user->house,
+        // Используем Policy для проверки доступа (разрешает гостям просматривать)
+        $currentUser = auth()->user();
+        // Для гостей доступ разрешен, проверку делаем только для авторизованных
+        if ($currentUser) {
+            $this->authorize('view', $user);
+        }
+
+        // Проверяем, является ли текущий пользователь владельцем
+        $isOwner = $currentUser && $currentUser->canEditProfile($user);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return view("users.partials.houses-tab", [
+                "user" => $user,
+                "houses" => $user->house,
+                "isOwner" => $isOwner,
+            ])->render();
+        }
+
+        // Если не AJAX запрос, возвращаем полную страницу
+        return view("users.show", [
+            "user" => $user,
+            "houses" => $user->house,
+            "isOwner" => $isOwner,
+        ]);
+    }
+
+    public function tabOrders(string $id, Request $request){
+        $user = User::with([
+            'roles',
+            'house' => function ($query) {
+                $query->with(['rent_type','house_type','photo'])
+                    ->where(function ($q) {
+                        $q->whereNull('is_deleted')
+                            ->orWhere('is_deleted', false);
+                    })
+                    ->orderByDesc('house_id');
+        }])->findOrFail($id);
+
+        // Проверяем доступ к приватным данным (только владелец)
+        $currentUser = auth()->user();
+        if (!$currentUser) {
+            abort(403, 'Требуется авторизация');
+        }
+
+        // Используем Policy для проверки доступа к приватным данным
+        $this->authorize('viewPrivateData', $user);
+
+        $isOwner = true; // Если дошли сюда, значит это владелец
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return view("users.partials.orders-tab", [
+                "user" => $user,
+                "isOwner" => $isOwner,
+            ])->render();
+        }
+
+        // Если не AJAX запрос, возвращаем полную страницу
+        return view("users.show", [
+            "user" => $user,
+            "houses" => $user->house,
+            "isOwner" => $isOwner,
+        ]);
+    }
+
+    public function tabSettings(string $id, Request $request){
+        $user = User::with([
+            'roles',
+            'house' => function ($query) {
+                $query->with(['rent_type','house_type','photo'])
+                    ->where(function ($q) {
+                        $q->whereNull('is_deleted')
+                            ->orWhere('is_deleted', false);
+                    })
+                    ->orderByDesc('house_id');
+        }])->findOrFail($id);
+
+        // Проверяем доступ к приватным данным (только владелец)
+        $currentUser = auth()->user();
+        if (!$currentUser) {
+            abort(403, 'Требуется авторизация');
+        }
+
+        // Используем Policy для проверки доступа к приватным данным
+        $this->authorize('viewPrivateData', $user);
+
+        $isOwner = true; // Если дошли сюда, значит это владелец
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return view("users.partials.settings-tab", [
+                "user" => $user,
+                "isOwner" => $isOwner,
+            ])->render();
+        }
+
+        // Если не AJAX запрос, возвращаем полную страницу
+        return view("users.show", [
+            "user" => $user,
+            "houses" => $user->house,
+            "isOwner" => $isOwner,
         ]);
     }
 

@@ -1,3 +1,5 @@
+
+
 <div class="p-6">
     @if (session()->has('ok'))
         <div class="mb-4 rounded border px-4 py-2 bg-green-50 text-green-800">
@@ -21,9 +23,15 @@
         </div>
 
         {{-- создание теперь через контроллер --}}
-        <a href="{{ route('houses.create') }}" class="px-4 py-2 rounded bg-blue-600 text-white">
-            Добавить дом
-        </a>
+        @php
+            $currentUser = auth()->user();
+            $canCreateHouse = $currentUser && $currentUser->canCreateHouse();
+        @endphp
+        @if($canCreateHouse)
+            <a href="{{ route('houses.create') }}" class="px-4 py-2 rounded bg-blue-600 text-white">
+                Добавить дом
+            </a>
+        @endif
     </div>
 
     {{-- Сетка карточек --}}
@@ -76,18 +84,28 @@
                         </div>
                     </dl>
 
-                    <div class="mt-4 flex items-center justify-between gap-2">
-                        <a href="{{ route('houses.edit', $h) }}" class="px-3 py-2 border rounded">Редактировать</a>
+                    @php
+                        $canEditThisHouse = $currentUser && $currentUser->canEditHouse($h);
+                        $canDeleteThisHouse = $currentUser && $currentUser->canDeleteHouse($h);
+                    @endphp
+                    @if($canEditThisHouse || $canDeleteThisHouse)
+                        <div class="mt-4 flex items-center justify-between gap-2">
+                            @if($canEditThisHouse)
+                                <a href="{{ route('houses.edit', $h) }}" class="px-3 py-2 border rounded">Редактировать</a>
+                            @endif
 
-                        <form method="POST" action="{{ route('houses.destroy', $h) }}"
-                              onsubmit="return confirm('Удалить дом #{{ $h->house_id }}?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="px-3 py-2 border rounded text-red-600">
-                                Удалить
-                            </button>
-                        </form>
-                    </div>
+                            @if($canDeleteThisHouse)
+                                <form method="POST" action="{{ route('houses.destroy', $h) }}"
+                                      onsubmit="return confirm('Удалить дом #{{ $h->house_id }}?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="px-3 py-2 border rounded text-red-600">
+                                        Удалить
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
         @empty

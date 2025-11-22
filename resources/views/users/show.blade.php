@@ -337,7 +337,10 @@ a {
 
 @section('main_content')
     @php
-        $isOwner = auth()->check() && auth()->id() === $user->user_id;
+        $currentUser = auth()->user();
+        // Используем методы модели для проверки прав
+        $isOwner = $currentUser && $currentUser->canEditProfile($user);
+        $canViewProfile = !$currentUser || $currentUser->canViewProfile($user);
     @endphp
 
     <div class="profile-wrapper">
@@ -360,7 +363,12 @@ a {
             <aside class="profile-sidebar">
                 <div class="profile-sidebar-top">
                     <p><strong>Роль:</strong> {{ $user->roles->name }}</p>
-                    <p><strong>Почта:</strong> {{ $user->email ?? 'не указан' }}</p>
+                    {{-- Показываем email только владельцу --}}
+                    @if($isOwner)
+                        <p><strong>Почта:</strong> {{ $user->email ?? 'не указан' }}</p>
+                    @else
+                        <p><strong>Почта:</strong> скрыта</p>
+                    @endif
                 </div>
 
                 @if($isOwner)
@@ -377,111 +385,26 @@ a {
 
             <section class="profile-main">
                 <div class="profile-tabs">
-                    <button class="profile-tab-btn active" data-tab="houses">Дома</button>
+                    <button class="profile-tab-btn active" data-tab="houses" data-route="{{ route('profile.tab.houses', $user->user_id) }}">Дома</button>
                     @if($isOwner)
-                        <button class="profile-tab-btn" data-tab="orders">Заказы</button>
-                        <button class="profile-tab-btn" data-tab="settings">Настройки</button>
+                        <button class="profile-tab-btn" data-tab="orders" data-route="{{ route('profile.tab.orders', $user->user_id) }}">Заказы</button>
+                        <button class="profile-tab-btn" data-tab="settings" data-route="{{ route('profile.tab.settings', $user->user_id) }}">Настройки</button>
                     @endif
                     <div class="profile-tabs-spacer"></div>
                 </div>
 
-                <div class="profile-tab-panels">
+                <div class="profile-tab-panels" data-user-id="{{ $user->user_id }}">
                     <div class="profile-tab-panel active" id="tab-houses">
-                        @if($isOwner)
-                            <div class="profile-houses-header">
-                                <a href="{{ route('houses.create') }}" class="btn-edit">
-                                    Создать
-                                </a>
-                            </div>
-                        @endif
-                        @if($houses->isEmpty())
-                            <div class="profile-empty">
-                                У пользователя пока нет опубликованных домов.
-                            </div>
-                        @else
-                            <div class="houses-grid">
-                                @foreach($houses as $house)
-                                    <article class="house-card">
-                                        @php
-                                            $photoPayload = $house->photo
-                                                ->filter(fn($photo) => !empty($photo->path))
-                                                ->map(fn($photo) => [
-                                                    'path' => $photo->path,
-                                                    'name' => $photo->name,
-                                                ])
-                                                ->values();
-                                        @endphp
-                                        <div
-                                            class="house-image"
-                                            data-house-photos='@json($photoPayload)'
-                                            data-empty-text="Нет фотографий"
-                                        >
-                                            @if($photoPayload->isNotEmpty())
-                                                <img
-                                                    src="{{ asset('storage/' . $photoPayload->first()['path']) }}"
-                                                    alt="Фото дома #{{ $house->house_id }}"
-                                                >
-                                            @else
-                                                <div class="house-image-placeholder">🏠</div>
-                                            @endif
-                                        </div>
-                                        <div class="house-info">
-                                            <h3 class="house-title">
-                                                {{ $house->adress ?? 'Дом #'.$house->house_id }}
-                                            </h3>
-                                            <p class="house-address">
-                                                {{ $house->adress ?? 'Адрес не указан' }}
-                                            </p>
-                                            <div class="house-meta">
-                                                @if(!is_null($house->area))
-                                                    <span class="house-area">
-                                                        {{ number_format($house->area, 0, ',', ' ') }} м²
-                                                    </span>
-                                                @endif
-                                                @if(optional($house->rent_type)->name)
-                                                    <span class="house-rent-type">
-                                                        {{ $house->rent_type->name }}
-                                                    </span>
-                                                @endif
-                                                @if(optional($house->house_type)->name)
-                                                    <span class="house-rent-type">
-                                                        {{ $house->house_type->name }}
-                                                    </span>
-                                                @endif
-                                            </div>
-                                            <div class="house-coordinates">
-                                                <small>
-                                                    Координаты:
-                                                    {{ $house->lat ?? '—' }},
-                                                    {{ $house->lng ?? '—' }}
-                                                </small>
-                                            </div>
-                                            <div class="house-actions">
-                                                <a class="btn-edit" href="{{ route('houses.show', $house->house_id) }}">
-                                                    Просмотр
-                                                </a>
-                                                @if($isOwner)
-                                                    <a class="btn-edit" href="{{ route('houses.edit', $house->house_id) }}">
-                                                        Редактировать
-                                                    </a>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </article>
-                                @endforeach
-                            </div>
-                        @endif
+                        @include('users.partials.houses-tab', ['houses' => $houses, 'isOwner' => $isOwner])
                     </div>
-                    <div class="profile-tab-panel" id="tab-orders">
-                        <div class="profile-empty">
-                            Раздел заказов находится в разработке.
+                    @if($isOwner)
+                        <div class="profile-tab-panel" id="tab-orders">
+                            @include('users.partials.orders-tab')
                         </div>
-                    </div>
-                    <div class="profile-tab-panel" id="tab-settings">
-                        <div class="profile-empty">
-                            Настройки профиля появятся позже.
+                        <div class="profile-tab-panel" id="tab-settings">
+                            @include('users.partials.settings-tab')
                         </div>
-                    </div>
+                    @endif
                 </div>
             </section>
         </div>
@@ -491,37 +414,183 @@ a {
         document.addEventListener('DOMContentLoaded', () => {
             const buttons = document.querySelectorAll('.profile-tab-btn');
             const panels = document.querySelectorAll('.profile-tab-panel');
+            const tabPanels = document.querySelector('.profile-tab-panels');
+            const userId = tabPanels?.dataset.userId;
 
+            // Функция для определения активной вкладки из URL
+            function getActiveTabFromURL() {
+                const path = window.location.pathname;
+                if (path.match(/\/tab\/orders/)) return 'orders';
+                if (path.match(/\/tab\/settings/)) return 'settings';
+                if (path.match(/\/tab\/houses/)) return 'houses';
+                return 'houses'; // По умолчанию (если URL /profile/{id} без /tab)
+            }
+
+            // Функция для загрузки контента вкладки через AJAX
+            async function loadTab(tab, route) {
+                const panel = document.getElementById('tab-' + tab);
+                if (!panel) return;
+
+                // Показываем индикатор загрузки
+                panel.innerHTML = '<div class="profile-empty">Загрузка...</div>';
+
+                try {
+                    const response = await fetch(route, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'text/html',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Ошибка загрузки вкладки');
+                    }
+
+                    const html = await response.text();
+                    panel.innerHTML = html;
+
+                    // Инициализируем фото-карусели после загрузки контента
+                    initPhotoCarousels(panel);
+
+                } catch (error) {
+                    console.error('Ошибка загрузки вкладки:', error);
+                    panel.innerHTML = '<div class="profile-empty">Ошибка загрузки. Попробуйте обновить страницу.</div>';
+                }
+            }
+
+            // Функция для инициализации фото-каруселей
+            function initPhotoCarousels(container) {
+                const photoBlocks = container.querySelectorAll('[data-house-photos]');
+                photoBlocks.forEach(block => {
+                    const raw = block.dataset.housePhotos || '[]';
+                    let photos = [];
+                    try {
+                        photos = JSON.parse(raw);
+                    } catch (e) {
+                        console.warn('Не удалось распарсить фото для карусели', e);
+                    }
+
+                    if (window.PhotoCarousel) {
+                        PhotoCarousel.mount(block, photos, {
+                            hideLabel: true,
+                            emptyText: block.dataset.emptyText || 'Нет фотографий',
+                            getSrc: (photo) => photo?.path ? `/storage/${photo.path}` : '',
+                            getAlt: (photo, index) => photo?.name || `Фотография ${index + 1}`,
+                        });
+                    }
+                });
+            }
+
+            // Функция для переключения вкладки
+            function switchTab(tab, route = null, skipLoad = false) {
+                const btn = Array.from(buttons).find(b => b.dataset.tab === tab);
+                if (!btn) return;
+
+                const panel = document.getElementById('tab-' + tab);
+                
+                // Проверяем, есть ли уже загруженный контент в панели
+                const hasContent = panel && (
+                    panel.querySelector('.houses-grid') !== null ||
+                    (panel.querySelector('.profile-empty') !== null && 
+                     !panel.innerHTML.includes('Загрузка...') && 
+                     panel.textContent.trim() !== 'Загрузка...')
+                );
+
+                // Обновляем активные кнопки и панели
+                buttons.forEach(b => b.classList.remove('active'));
+                panels.forEach(panel => panel.classList.remove('active'));
+                btn.classList.add('active');
+
+                if (panel) {
+                    panel.classList.add('active');
+                }
+
+                // Обновляем URL
+                if (route) {
+                    window.history.pushState({ tab, route }, '', route);
+                }
+
+                // Загружаем контент через AJAX только если его нет и не пропущена загрузка
+                if (route && !skipLoad && !hasContent) {
+                    loadTab(tab, route);
+                } else if (hasContent && panel) {
+                    // Если контент уже есть, просто инициализируем фото-карусели
+                    initPhotoCarousels(panel);
+                }
+            }
+
+            // Обработчик клика по вкладкам
             buttons.forEach(btn => {
-                btn.addEventListener('click', () => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
                     const tab = btn.dataset.tab;
-
-                    buttons.forEach(b => b.classList.remove('active'));
-                    panels.forEach(panel => panel.classList.remove('active'));
-                    btn.classList.add('active');
-                    document.getElementById('tab-' + tab).classList.add('active');
+                    const route = btn.dataset.route;
+                    switchTab(tab, route);
                 });
             });
 
-            const photoBlocks = document.querySelectorAll('[data-house-photos]');
-            photoBlocks.forEach(block => {
-                const raw = block.dataset.housePhotos || '[]';
-                let photos = [];
-                try {
-                    photos = JSON.parse(raw);
-                } catch (e) {
-                    console.warn('Не удалось распарсить фото для карусели', e);
-                }
-
-                if (window.PhotoCarousel) {
-                    PhotoCarousel.mount(block, photos, {
-                        hideLabel: true,
-                        emptyText: block.dataset.emptyText || 'Нет фотографий',
-                        getSrc: (photo) => photo?.path ? `/storage/${photo.path}` : '',
-                        getAlt: (photo, index) => photo?.name || `Фотография ${index + 1}`,
-                    });
+            // Обработчик события popstate (навигация назад/вперед)
+            window.addEventListener('popstate', (e) => {
+                if (e.state && e.state.tab) {
+                    const btn = Array.from(buttons).find(b => b.dataset.tab === e.state.tab);
+                    if (btn) {
+                        buttons.forEach(b => b.classList.remove('active'));
+                        panels.forEach(panel => panel.classList.remove('active'));
+                        btn.classList.add('active');
+                        const panel = document.getElementById('tab-' + e.state.tab);
+                        if (panel) {
+                            panel.classList.add('active');
+                            // Если контент еще не загружен, загружаем его
+                            if (panel.innerHTML.trim() === '' || panel.innerHTML.includes('Загрузка...')) {
+                                loadTab(e.state.tab, e.state.route || btn.dataset.route);
+                            }
+                        }
+                    }
+                } else {
+                    // Если нет state, определяем вкладку из URL
+                    const activeTab = getActiveTabFromURL();
+                    const btn = Array.from(buttons).find(b => b.dataset.tab === activeTab);
+                    if (btn) {
+                        buttons.forEach(b => b.classList.remove('active'));
+                        panels.forEach(panel => panel.classList.remove('active'));
+                        btn.classList.add('active');
+                        const panel = document.getElementById('tab-' + activeTab);
+                        if (panel) {
+                            panel.classList.add('active');
+                        }
+                    }
                 }
             });
+
+            // Определяем активную вкладку при первой загрузке
+            const activeTab = getActiveTabFromURL();
+            const activePanel = document.getElementById('tab-' + activeTab);
+            
+            // Проверяем, есть ли контент в активной панели
+            const hasContent = activePanel && (
+                activePanel.querySelector('.houses-grid') !== null ||
+                (activePanel.querySelector('.profile-empty') !== null && 
+                 !activePanel.innerHTML.includes('Загрузка...'))
+            );
+            
+            if (activePanel) {
+                // Устанавливаем активную вкладку
+                const btn = Array.from(buttons).find(b => b.dataset.tab === activeTab);
+                if (btn) {
+                    buttons.forEach(b => b.classList.remove('active'));
+                    panels.forEach(panel => panel.classList.remove('active'));
+                    btn.classList.add('active');
+                    activePanel.classList.add('active');
+                }
+                
+                // Если контент уже есть на странице, просто инициализируем его
+                if (hasContent) {
+                    initPhotoCarousels(activePanel);
+                } else if (btn && btn.dataset.route) {
+                    // Если контента нет, загружаем через AJAX
+                    loadTab(activeTab, btn.dataset.route);
+                }
+            }
         });
     </script>
 @endsection

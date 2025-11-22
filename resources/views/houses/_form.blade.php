@@ -1,95 +1,161 @@
 @csrf
 
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    {{-- Пользователь --}}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+    {{-- Пользователь (Арендодатель) --}}
     <div>
-        <label class="block text-sm font-medium mb-1">Пользователь</label>
-        <select name="user_id" class="border rounded w-full px-3 py-2">
-            <option value="">— Не выбран —</option>
-            @foreach ($users as $user)
-                <option value="{{ $user->user_id }}"
-                    {{ old('user_id', $house->user_id ?? '') == $user->user_id ? 'selected' : '' }}>
-                    {{ trim(($user->sename ?? '').' '.($user->name ?? '').' '.($user->patronymic ?? '')) ?: 'User #'.$user->user_id }}
-                </option>
-            @endforeach
-        </select>
-        @error('user_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Арендодатель</label>
+        @if($currentUser && $currentUser->isAdmin())
+            {{-- Для администраторов: выбор из списка --}}
+            <select name="user_id" style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+                <option value="">— Не выбран —</option>
+                @foreach ($users as $user)
+                    @php
+                        $fullName = trim(($user->sename ?? '').' '.($user->name ?? '').' '.($user->patronymic ?? '')) ?: 'User #'.$user->user_id;
+                    @endphp
+                    <option value="{{ $user->user_id }}"
+                        {{ old('user_id', $house->user_id ?? '') == $user->user_id ? 'selected' : '' }}>
+                        {{ $fullName }}
+                    </option>
+                @endforeach
+            </select>
+        @elseif($currentUser)
+            {{-- Для арендодателей: только их имя, без возможности изменить --}}
+            @php
+                $currentUserFullName = trim(($currentUser->sename ?? '').' '.($currentUser->name ?? '').' '.($currentUser->patronymic ?? '')) ?: 'User #'.$currentUser->user_id;
+            @endphp
+            <input type="hidden" name="user_id" value="{{ $currentUser->user_id }}">
+            <input type="text" value="{{ $currentUserFullName }}" disabled 
+                   style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #f5f5f5; color: #666; cursor: not-allowed;">
+        @endif
+        @error('user_id') 
+            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+        @enderror
     </div>
 
     {{-- Адрес --}}
     <div>
-        <label class="block text-sm font-medium mb-1">Адрес *</label>
+        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Адрес <span style="color: #dc2626;">*</span></label>
         <input type="text" name="adress" value="{{ old('adress', $house->adress ?? '') }}"
-               class="border rounded w-full px-3 py-2">
-        @error('adress') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+               style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+        @error('adress') 
+            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+        @enderror
     </div>
 
     {{-- Площадь --}}
     <div>
-        <label class="block text-sm font-medium mb-1">Площадь</label>
+        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Площадь (м²)</label>
         <input type="number" step="0.01" name="area" value="{{ old('area', $house->area ?? '') }}"
-               class="border rounded w-full px-3 py-2">
-        @error('area') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+               style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+        @error('area') 
+            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+        @enderror
     </div>
 
     {{-- Цена --}}
     <div>
-        <label class="block text-sm font-medium mb-1">Цена</label>
+        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Цена</label>
         <input type="number" name="price_id" value="{{ old('price_id', $house->price_id ?? '') }}"
-               class="border rounded w-full px-3 py-2">
-        @error('price_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+               style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+        @error('price_id') 
+            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+        @enderror
     </div>
 
     {{-- Тип аренды --}}
     <div>
-        <label class="block text-sm font-medium mb-1">Тип аренды</label>
-        <input type="number" name="rent_type_id" value="{{ old('rent_type_id', $house->rent_type_id ?? '') }}"
-               class="border rounded w-full px-3 py-2">
-        @error('rent_type_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Тип аренды</label>
+        <select name="rent_type_name" style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+            <option value="">— Не выбран —</option>
+            @foreach ($rentTypes as $rentType)
+                @php
+                    $currentRentTypeName = old('rent_type_name', isset($house->rent_type) && $house->rent_type ? $house->rent_type->name : '');
+                    $selected = $currentRentTypeName == $rentType->name;
+                @endphp
+                <option value="{{ $rentType->name }}" {{ $selected ? 'selected' : '' }}>
+                    {{ $rentType->name }}
+                </option>
+            @endforeach
+        </select>
+        @error('rent_type_name') 
+            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+        @enderror
     </div>
 
     {{-- Тип дома --}}
     <div>
-        <label class="block text-sm font-medium mb-1">Тип дома</label>
-        <input type="number" name="house_type_id" value="{{ old('house_type_id', $house->house_type_id ?? '') }}"
-               class="border rounded w-full px-3 py-2">
-        @error('house_type_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Тип дома</label>
+        <select name="house_type_name" style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+            <option value="">— Не выбран —</option>
+            @foreach ($houseTypes as $houseType)
+                @php
+                    $currentHouseTypeName = old('house_type_name', isset($house->house_type) && $house->house_type ? $house->house_type->name : '');
+                    $selected = $currentHouseTypeName == $houseType->name;
+                @endphp
+                <option value="{{ $houseType->name }}" {{ $selected ? 'selected' : '' }}>
+                    {{ $houseType->name }}
+                </option>
+            @endforeach
+        </select>
+        @error('house_type_name') 
+            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+        @enderror
     </div>
 
-    {{-- Координаты --}}
+    {{-- Широта --}}
     <div>
-        <label class="block text-sm font-medium mb-1">Широта</label>
+        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Широта</label>
         <input type="number" step="0.0000001" name="lat" value="{{ old('lat', $house->lat ?? '') }}"
-               class="border rounded w-full px-3 py-2">
-        @error('lat') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-    </div>
-    <div>
-        <label class="block text-sm font-medium mb-1">Долгота</label>
-        <input type="number" step="0.0000001" name="lng" value="{{ old('lng', $house->lng ?? '') }}"
-               class="border rounded w-full px-3 py-2">
-        @error('lng') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+               style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+        @error('lat') 
+            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+        @enderror
     </div>
 
-    {{-- Фото --}}
-    <div class="sm:col-span-2">
-        <label class="block text-sm font-medium mb-1">Фото</label>
-        <input type="file" name="image" class="block w-full text-sm">
-        @error('image') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+    {{-- Долгота --}}
+    <div>
+        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Долгота</label>
+        <input type="number" step="0.0000001" name="lng" value="{{ old('lng', $house->lng ?? '') }}"
+               style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+        @error('lng') 
+            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+        @enderror
     </div>
 
     {{-- Удалён --}}
     <div>
-        <label class="block text-sm font-medium mb-1">Удалён?</label>
-        <select name="is_deleted" class="border rounded w-full px-3 py-2">
+        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Удалён?</label>
+        <select name="is_deleted" style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
             <option value="0" {{ old('is_deleted', $house->is_deleted ?? 0) == 0 ? 'selected' : '' }}>Нет</option>
             <option value="1" {{ old('is_deleted', $house->is_deleted ?? 0) == 1 ? 'selected' : '' }}>Да</option>
         </select>
+        @error('is_deleted') 
+            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+        @enderror
+    </div>
+
+    {{-- Фото --}}
+    <div style="grid-column: 1 / -1;">
+        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Фото</label>
+        <input type="file" name="image" accept="image/*" 
+               style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+        @error('image') 
+            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+        @enderror
     </div>
 </div>
 
-<div class="mt-6 flex justify-end">
+<div style="margin-top: 32px; display: flex; justify-content: flex-end; gap: 12px;">
+    <a href="{{ route('houses.index') }}" 
+       style="padding: 10px 20px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; color: #333; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.2s ease; display: inline-block;"
+       onmouseover="this.style.background='#f5f5f5'; this.style.borderColor='#d0d0d0';"
+       onmouseout="this.style.background='#fff'; this.style.borderColor='#e0e0e0';">
+        Отмена
+    </a>
     <button type="submit"
-            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            style="padding: 10px 20px; border: none; border-radius: 8px; background: #2563eb; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s ease;"
+            onmouseover="this.style.background='#1d4ed8';"
+            onmouseout="this.style.background='#2563eb';">
         Сохранить
     </button>
 </div>
