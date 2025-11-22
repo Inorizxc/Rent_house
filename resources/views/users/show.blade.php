@@ -323,6 +323,14 @@
     background: #fef2f2;
     border-color: #fca5a5;
 }
+.profile-houses-header {
+    display: flex;
+    justify-content: flex-end; /* прижимаем кнопку вправо */
+    margin-bottom: 12px;       /* отступ от кнопки до домов */
+}
+a {
+    text-decoration: none;
+}
 
 @endsection
 
@@ -351,8 +359,8 @@
         <div class="profile-layout">
             <aside class="profile-sidebar">
                 <div class="profile-sidebar-top">
-                    <p><strong>ID:</strong> {{ $user->user_id }}</p>
-                    <p><strong>Email:</strong> {{ $user->email ?? 'не указан' }}</p>
+                    <p><strong>Роль:</strong> {{ $user->roles->name }}</p>
+                    <p><strong>Почта:</strong> {{ $user->email ?? 'не указан' }}</p>
                 </div>
 
                 @if($isOwner)
@@ -379,6 +387,13 @@
 
                 <div class="profile-tab-panels">
                     <div class="profile-tab-panel active" id="tab-houses">
+                        @if($isOwner)
+                            <div class="profile-houses-header">
+                                <a href="{{ route('houses.create') }}" class="btn-edit">
+                                    Создать
+                                </a>
+                            </div>
+                        @endif
                         @if($houses->isEmpty())
                             <div class="profile-empty">
                                 У пользователя пока нет опубликованных домов.
@@ -445,9 +460,11 @@
                                                 <a class="btn-edit" href="{{ route('houses.show', $house->house_id) }}">
                                                     Просмотр
                                                 </a>
-                                                <a class="btn-edit" href="{{ route('houses.edit', $house->house_id) }}">
-                                                    Редактировать
-                                                </a>
+                                                @if($isOwner)
+                                                    <a class="btn-edit" href="{{ route('houses.edit', $house->house_id) }}">
+                                                        Редактировать
+                                                    </a>
+                                                @endif
                                             </div>
                                         </div>
                                     </article>

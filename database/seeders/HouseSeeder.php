@@ -23,7 +23,7 @@ class HouseSeeder extends Seeder
             "calendar_id"=>"1",
             "adress"=>"Ул. Пушикна, дом Колотушкина",
             "area"=>"150 квадратов",
-            "is_deleted"=>"None",
+            "is_deleted"=>"0",
             "lng"=>"46.015446",
             "lat"=>"51.564847"],
             ["house_id"=>"2",
@@ -34,7 +34,7 @@ class HouseSeeder extends Seeder
             "calendar_id"=>"1",
             "adress"=>"Ул. Степана разина 93",
             "area"=>"150 квадратов",
-            "is_deleted"=>"None",
+            "is_deleted"=>"0",
             "lng"=>"46.006579",
             "lat"=>"51.547796"],
             
