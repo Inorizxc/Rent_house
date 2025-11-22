@@ -5,8 +5,8 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Model\User;
-class UserCheck
+
+class ChatCheckAccess
 {
     /**
      * Handle an incoming request.
@@ -19,10 +19,13 @@ class UserCheck
             return redirect()->intended(route('map'));
         }
 
-        echo User::where("user_id",1);
-        if ($request->user()->user_id != $request->route('id')) {
+
+        $id = $request->route("id");
+        $user1_id = Chat::where("chat_id",$id)->value("user_id");
+        $user2_id = Chat::where("chat_id",$id)->value("rent_dealer_id");
+        if ($request->user()->user_id != $user1_id || $request->user()->user_id != $user2_id) {
             
-            return redirect()->intended(route('map'));
+            return redirect()->intended(route('dashboard'));
         }
 
         return $next($request);

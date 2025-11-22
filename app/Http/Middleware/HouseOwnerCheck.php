@@ -20,7 +20,7 @@ class HouseOwnerCheck
         }
 
         $id = $request->route("id");
-        $house_owner_id = DB::table("houses")->where("user_id",$id)->value("user_id");
+        $house_owner_id = Houses::where("user_id",$id)->value("user_id");
         if ($request->user()->user_id != $house_owner_id) {
             
             return redirect()->intended(route('map'));

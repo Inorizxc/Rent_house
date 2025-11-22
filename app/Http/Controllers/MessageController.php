@@ -21,7 +21,7 @@ class MessageController extends Controller
      */
     public function create(Chat $chat_id,String $text)
     {
-        return view('message.create');
+        Chat::create(["chat_id"=> $chat_id,"message"=>$message]);
     }
 
     /**
@@ -61,6 +61,6 @@ class MessageController extends Controller
      */
     public function destroy(Message $message)
     {
-        //
+        Chat::delete($message);
     }
 }
