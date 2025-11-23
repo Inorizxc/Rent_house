@@ -5,8 +5,8 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Model\User;
-class UserCheck
+
+class CheckAdmin
 {
     /**
      * Handle an incoming request.
@@ -15,16 +15,9 @@ class UserCheck
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if(!auth()->Guard::check()){
-            return redirect()->intended(route('map'));
-        }
-
-        echo User::where("user_id",1);
-        if ($request->user()->user_id != $request->route('id')) {
-            
-            return redirect()->intended(route('map'));
-        }
-
+        if($request->user()->role_id!='1'){
+            abort(403,"Ошибка доступа");
+        };
         return $next($request);
     }
 }
