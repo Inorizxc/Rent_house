@@ -8,6 +8,10 @@ use Livewire\Volt\Component;
 
 new class extends Component {
     public string $name = '';
+    public string $sename = '';
+    public string $patronymic = '';
+    public string $birth_date = '';
+    public string $phone = '';
     public string $email = '';
 
     /**
@@ -15,8 +19,13 @@ new class extends Component {
      */
     public function mount(): void
     {
-        $this->name = Auth::user()->name;
-        $this->email = Auth::user()->email;
+        $user = Auth::user();
+        $this->name = $user->name ?? '';
+        $this->sename = $user->sename ?? '';
+        $this->patronymic = $user->patronymic ?? '';
+        $this->birth_date = $user->birth_date ? $user->birth_date->format('Y-m-d') : '';
+        $this->phone = $user->phone ?? '';
+        $this->email = $user->email ?? '';
     }
 
     /**
@@ -28,14 +37,17 @@ new class extends Component {
 
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
-
+            'sename' => ['required', 'string', 'max:255'],
+            'patronymic' => ['nullable', 'string', 'max:255'],
+            'birth_date' => ['nullable', 'date'],
+            'phone' => ['nullable', 'string', 'max:255'],
             'email' => [
                 'required',
                 'string',
                 'lowercase',
                 'email',
                 'max:255',
-                Rule::unique(User::class)->ignore($user->id)
+                Rule::unique(User::class)->ignore($user->user_id, 'user_id')
             ],
         ]);
 
@@ -72,9 +84,17 @@ new class extends Component {
 <section class="w-full">
     @include('partials.settings-heading')
 
-    <x-settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
+    <x-settings.layout :heading="__('Profile')" :subheading="__('Update your personal information')">
         <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
-            <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
+            <flux:input wire:model="name" :label="__('Имя')" type="text" required autofocus autocomplete="given-name" />
+
+            <flux:input wire:model="sename" :label="__('Фамилия')" type="text" required autocomplete="family-name" />
+
+            <flux:input wire:model="patronymic" :label="__('Отчество')" type="text" autocomplete="additional-name" />
+
+            <flux:input wire:model="birth_date" :label="__('Дата рождения')" type="date" />
+
+            <flux:input wire:model="phone" :label="__('Номер телефона')" type="tel" autocomplete="tel" />
 
             <div>
                 <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />

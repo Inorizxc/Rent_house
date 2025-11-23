@@ -182,6 +182,157 @@
         font-size: 14px;
     }
 
+    /* Стили для вкладки настроек */
+    .settings-tab-content {
+        padding: 0;
+        max-width: 800px;
+    }
+
+    .settings-section {
+        margin-bottom: 20px;
+    }
+
+    .settings-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .settings-section-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        padding: 20px 24px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .settings-section-card:hover {
+        box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
+    }
+
+    .settings-section-title {
+        margin: 0 0 20px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #111827;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    .settings-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .settings-form > div[style*="grid"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+
+    .settings-form-actions {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 8px;
+        padding-top: 16px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .settings-save-button {
+        min-width: 140px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        background: #4f46e5;
+        border: 1px solid #4f46e5;
+        color: #ffffff;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s, transform 0.1s;
+        font-family: inherit;
+        text-decoration: none;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .settings-save-button:hover {
+        background: #4338ca;
+        border-color: #4338ca;
+        transform: translateY(-1px);
+    }
+
+    .settings-save-button:active {
+        transform: translateY(0);
+    }
+
+    .settings-save-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .settings-action-message {
+        color: #10b981;
+        font-size: 14px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .settings-action-message::before {
+        content: "✓";
+        font-size: 16px;
+    }
+
+    .settings-verification {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        padding: 20px 24px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .settings-verification:hover {
+        box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
+    }
+
+    .settings-section-text {
+        font-size: 14px;
+        color: #6b7280;
+        margin: 0 0 20px 0;
+        line-height: 1.6;
+    }
+
+    .verification-button {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        background: #4f46e5;
+        border: 1px solid #4f46e5;
+        color: #ffffff;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s, transform 0.1s;
+        font-family: inherit;
+        text-decoration: none;
+    }
+
+    .verification-button:hover {
+        background: #4338ca;
+        border-color: #4338ca;
+        transform: translateY(-1px);
+    }
+
+    .verification-button:active {
+        transform: translateY(0);
+    }
 
 
     /* Стили для сетки домов */
@@ -328,6 +479,190 @@
     justify-content: flex-end; /* прижимаем кнопку вправо */
     margin-bottom: 12px;       /* отступ от кнопки до домов */
 }
+
+    /* Стили для вкладки заказов */
+    .orders-tab-content {
+        padding: 0;
+    }
+
+    .orders-header {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 12px;
+    }
+
+    .orders-houses-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        margin-top: 8px;
+    }
+
+    .orders-house-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .orders-house-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(15, 23, 42, 0.1);
+    }
+
+    .orders-house-header {
+        padding: 16px;
+        padding-bottom: 8px;
+    }
+
+    .orders-house-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 4px 0;
+    }
+
+    .orders-house-subtitle {
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    .orders-house-photos {
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .orders-house-image {
+        width: 100%;
+        height: 180px;
+        background: #f3f4f6;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .orders-house-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .orders-house-image .photo-carousel {
+        margin-top: 0;
+    }
+
+    .orders-house-image .photos-viewport {
+        height: 180px;
+        border-radius: 0;
+    }
+
+    .orders-house-image-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        background: #f3f4f6;
+        color: #9ca3af;
+    }
+
+    .orders-house-section {
+        padding: 12px 16px;
+        flex: 1;
+    }
+
+    .orders-house-section .settings-section-title {
+        margin-top: 0;
+        margin-bottom: 8px;
+        font-size: 14px;
+        padding-bottom: 4px;
+    }
+
+    .orders-house-description {
+        font-size: 13px;
+    }
+
+    .description-row {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 4px;
+        padding: 3px 0;
+        border-bottom: 1px dashed #e5e7eb;
+    }
+
+    .description-row:last-child {
+        border-bottom: none;
+    }
+
+    .description-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #6b7280;
+    }
+
+    .description-value {
+        font-size: 13px;
+        color: #111827;
+    }
+
+    .orders-house-actions {
+        padding: 12px 16px;
+        display: flex;
+        gap: 8px;
+        border-top: 1px solid #e5e7eb;
+        background: #f9fafb;
+    }
+
+    .orders-house-actions .btn-primary,
+    .orders-house-actions .btn-secondary {
+        flex: 1;
+        padding: 6px 12px;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: background 0.2s, border-color 0.2s, transform 0.1s;
+    }
+
+    .btn-primary {
+        background: #4f46e5;
+        border-color: #4f46e5;
+        color: #ffffff;
+    }
+
+    .btn-primary:hover {
+        background: #4338ca;
+        border-color: #4338ca;
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background: #ffffff;
+        border-color: #e5e7eb;
+        color: #111827;
+    }
+
+    .btn-secondary:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+        transform: translateY(-1px);
+    }
+
 a {
     text-decoration: none;
 }
@@ -497,6 +832,8 @@ a {
                 // Проверяем, есть ли уже загруженный контент в панели
                 const hasContent = panel && (
                     panel.querySelector('.houses-grid') !== null ||
+                    panel.querySelector('.orders-houses-grid') !== null ||
+                    panel.querySelector('.orders-house-card') !== null ||
                     (panel.querySelector('.profile-empty') !== null && 
                      !panel.innerHTML.includes('Загрузка...') && 
                      panel.textContent.trim() !== 'Загрузка...')
@@ -575,6 +912,8 @@ a {
             // Проверяем, есть ли контент в активной панели
             const hasContent = activePanel && (
                 activePanel.querySelector('.houses-grid') !== null ||
+                activePanel.querySelector('.orders-houses-grid') !== null ||
+                activePanel.querySelector('.orders-house-card') !== null ||
                 (activePanel.querySelector('.profile-empty') !== null && 
                  !activePanel.innerHTML.includes('Загрузка...'))
             );

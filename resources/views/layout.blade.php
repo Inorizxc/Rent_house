@@ -302,9 +302,24 @@ header nav a[href*="dashboard"]:hover {
                                         ->latest('created_at')
                                         ->first();
                                     
-                                    // Если последнее сообщение отправлено не текущим пользователем, то есть непрочитанные
-                                    if ($lastMessage && $lastMessage->user_id != $currentUser->user_id) {
-                                        $unreadCount++;
+                                    if (!$lastMessage) {
+                                        continue;
+                                    }
+
+                                    // Определяем, когда пользователь последний раз просматривал чат
+                                    $lastReadAt = null;
+                                    if ($chat->user_id == $currentUser->user_id) {
+                                        $lastReadAt = $chat->user_last_read_at;
+                                    } else {
+                                        $lastReadAt = $chat->rent_dealer_last_read_at;
+                                    }
+
+                                    // Если последнее сообщение отправлено не текущим пользователем
+                                    // и оно было создано после последнего просмотра (или чат никогда не просматривался)
+                                    if ($lastMessage->user_id != $currentUser->user_id) {
+                                        if (!$lastReadAt || $lastMessage->created_at > $lastReadAt) {
+                                            $unreadCount++;
+                                        }
                                     }
                                 }
                             }

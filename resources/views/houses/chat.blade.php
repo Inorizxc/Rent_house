@@ -452,7 +452,8 @@
                         id="messageInput" 
                         placeholder="Введите сообщение..." 
                         rows="1"
-                        oninput="autoResize(this)"></textarea>
+                        oninput="autoResize(this)"
+                        onkeydown="handleKeyDown(event)"></textarea>
                     <button type="submit" class="btn-send" id="sendButton">
                         Отправить
                     </button>
@@ -471,6 +472,17 @@
     function autoResize(textarea) {
         textarea.style.height = 'auto';
         textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    }
+
+    // Обработка нажатия клавиш (Enter для отправки, Shift+Enter для новой строки)
+    function handleKeyDown(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            const form = document.getElementById('chatForm');
+            if (form) {
+                sendMessage(event);
+            }
+        }
     }
 
     // Функция обработки оплаты (пока не реализована)

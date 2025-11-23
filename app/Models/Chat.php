@@ -15,6 +15,13 @@ class Chat extends Model
         'chat_id',
         'user_id',
         'rent_dealer_id',
+        'user_last_read_at',
+        'rent_dealer_last_read_at',
+    ];
+
+    protected $casts = [
+        'user_last_read_at' => 'datetime',
+        'rent_dealer_last_read_at' => 'datetime',
     ];
 
     public function message(){

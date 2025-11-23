@@ -75,6 +75,15 @@ class HouseChatController extends Controller
             $interlocutor = $chat->user ?? $seller;
         }
 
+        // Обновляем время последнего просмотра чата для текущего пользователя
+        $now = now();
+        if ($chat->user_id == $currentUser->user_id) {
+            $chat->user_last_read_at = $now;
+        } else {
+            $chat->rent_dealer_last_read_at = $now;
+        }
+        $chat->save();
+
         return view('houses.chat', [
             'house' => $house,
             'chat' => $chat,
