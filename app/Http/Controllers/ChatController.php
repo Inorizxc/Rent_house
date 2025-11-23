@@ -7,6 +7,7 @@ use App\Models\Message;
 use App\Models\House;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Services\ChatService\ChatService;
 
 class ChatController extends Controller
 {
@@ -16,51 +17,11 @@ class ChatController extends Controller
     public function index()
     {
         $currentUser = auth()->user();
-
         if (!$currentUser) {
             return redirect()->route('login')->with('error', 'Необходима авторизация');
         }
-
-        // Получаем все чаты, где пользователь является участником
-        $chats = Chat::where('user_id', $currentUser->user_id)
-            ->orWhere('rent_dealer_id', $currentUser->user_id)
-            ->with(['user', 'rentDealer'])
-            ->orderBy('updated_at', 'desc')
-            ->get();
-
-        // Для каждого чата определяем собеседника и последнее сообщение
-        $chatsWithInfo = $chats->map(function($chat) use ($currentUser) {
-            $interlocutor = $chat->user_id == $currentUser->user_id 
-                ? $chat->rentDealer 
-                : $chat->user;
-
-            // Получаем последнее сообщение отдельно
-            $lastMessage = Message::where('chat_id', $chat->chat_id)
-                ->with('user')
-                ->latest('created_at')
-                ->first();
-            
-            // Ищем дома собеседника (продавца)
-            $houses = [];
-            if ($interlocutor) {
-                $houses = House::where('user_id', $interlocutor->user_id)
-                    ->where(function($q) {
-                        $q->whereNull('is_deleted')
-                          ->orWhere('is_deleted', false);
-                    })
-                    ->with('photo')
-                    ->orderBy('house_id', 'desc')
-                    ->get();
-            }
-
-            return [
-                'chat' => $chat,
-                'interlocutor' => $interlocutor,
-                'lastMessage' => $lastMessage,
-                'houses' => $houses,
-            ];
-        });
-
+        $chatService = app(ChatService::class);
+        $chatsWithInfo = $chatService->getChatWithInfo();
         return view('chats.index', [
             'chats' => $chatsWithInfo,
             'currentUser' => $currentUser,
@@ -96,27 +57,23 @@ class ChatController extends Controller
 
         $chat = Chat::with(['user', 'rentDealer'])->findOrFail($chatId);
 
-        // Проверяем, что пользователь является участником чата
         if ($chat->user_id != $currentUser->user_id && $chat->rent_dealer_id != $currentUser->user_id) {
             return redirect()->route('chats.index')->with('error', 'У вас нет доступа к этому чату');
         }
-
-        // Определяем собеседника
-        $interlocutor = $chat->user_id == $currentUser->user_id 
-            ? $chat->rentDealer 
-            : $chat->user;
+        $chatService = app(ChatService::class);
+        $interlocutor = $chatService->getInterlocutor($chat);
 
         if (!$interlocutor) {
             return redirect()->route('chats.index')->with('error', 'Собеседник не найден');
         }
 
-        // Загружаем сообщения
+        // Загружаем сообщения ЭТО ВЫНЕСТИ В СЕРВИС СООБЩЕНИЙ
         $messages = Message::where('chat_id', $chat->chat_id)
             ->with('user')
             ->orderBy('created_at', 'asc')
             ->get();
 
-        // Получаем дома собеседника (если он продавец)
+        // Получаем дома собеседника (если он продавец) ЭТО ВЫНЕСТИ В СЕРВИС ДОМОВ
         $houses = House::where('user_id', $interlocutor->user_id)
             ->where(function($q) {
                 $q->whereNull('is_deleted')
@@ -126,17 +83,11 @@ class ChatController extends Controller
             ->orderBy('house_id', 'desc')
             ->get();
 
-        // Если есть только один дом, используем его, иначе null
+        // Если есть только один дом, используем его, иначе null ВЫНЕСТИ В СЕРВИС ДОМА
         $house = $houses->count() == 1 ? $houses->first() : null;
 
         // Обновляем время последнего просмотра чата для текущего пользователя
-        $now = now();
-        if ($chat->user_id == $currentUser->user_id) {
-            $chat->user_last_read_at = $now;
-        } else {
-            $chat->rent_dealer_last_read_at = $now;
-        }
-        $chat->save();
+        $chatService->update($chat);
 
         return view('chats.show', [
             'chat' => $chat,
@@ -161,29 +112,17 @@ class ChatController extends Controller
 
         $otherUser = User::findOrFail($userId);
 
-        // Не позволяем чатовать с самим собой
         if ($currentUser->user_id == $otherUser->user_id) {
             return redirect()->back()->with('error', 'Нельзя начать чат с самим собой');
         }
 
-        // Определяем, кто покупатель, а кто продавец
-        // По умолчанию: текущий пользователь - покупатель (user_id), другой - продавец (rent_dealer_id)
-        // Если другой пользователь тоже покупатель (не продавец), то просто используем эту схему
         $buyerId = $currentUser->user_id;
         $dealerId = $otherUser->user_id;
+        
+        $chatService = app(ChatService::class);
 
-        // Ищем существующий чат или создаем новый
-        $chat = Chat::where(function($query) use ($buyerId, $dealerId) {
-                $query->where('user_id', $buyerId)
-                      ->where('rent_dealer_id', $dealerId);
-            })
-            ->orWhere(function($query) use ($buyerId, $dealerId) {
-                $query->where('user_id', $dealerId)
-                      ->where('rent_dealer_id', $buyerId);
-            })
-            ->first();
+        $chat = $chatService->getUsersChat($buyerId,$dealerId);
 
-        // Если чата нет, создаем новый
         if (!$chat) {
             $chat = Chat::create([
                 'user_id' => $buyerId,
@@ -344,39 +283,9 @@ class ChatController extends Controller
         }
 
         $unreadCount = 0;
+        $chatService = app(ChatService::class);
 
-        // Получаем все чаты пользователя
-        $chats = Chat::where('user_id', $currentUser->user_id)
-            ->orWhere('rent_dealer_id', $currentUser->user_id)
-            ->get();
-
-        // Подсчитываем чаты с непрочитанными сообщениями
-        foreach ($chats as $chat) {
-            $lastMessage = Message::where('chat_id', $chat->chat_id)
-                ->latest('created_at')
-                ->first();
-
-            if (!$lastMessage) {
-                continue;
-            }
-
-            // Определяем, когда пользователь последний раз просматривал чат
-            $lastReadAt = null;
-            if ($chat->user_id == $currentUser->user_id) {
-                $lastReadAt = $chat->user_last_read_at;
-            } else {
-                $lastReadAt = $chat->rent_dealer_last_read_at;
-            }
-
-            // Если последнее сообщение отправлено не текущим пользователем
-            // и оно было создано после последнего просмотра (или чат никогда не просматривался)
-            if ($lastMessage->user_id != $currentUser->user_id) {
-                if (!$lastReadAt || $lastMessage->created_at > $lastReadAt) {
-                    $unreadCount++;
-                }
-            }
-        }
-
+        $unreadCount= $chatService->getUnreadCount();
         return response()->json(['unreadCount' => $unreadCount]);
     }
 }
