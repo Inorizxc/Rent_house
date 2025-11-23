@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\UserCheck;
 
 use function Clue\StreamFilter\append;
 
@@ -14,12 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'isuser' => App\Http\Middleware\UserCheck::class,
-            'isAdmin' => App\Http\Middleware\CheckAdmin::class,
-            'isHouseOwner' => App\Http\Middleware\HouseOwnerCheck::class,
+            'user' => App\Http\Middleware\UserCheck::class
         ]);
         $middleware->web([
-            
+        
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

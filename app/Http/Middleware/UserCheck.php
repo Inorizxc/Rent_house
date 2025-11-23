@@ -15,11 +15,11 @@ class UserCheck
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if(!auth()->Guard::check()){
+        if(!auth()->check()){
             return redirect()->intended(route('map'));
         }
 
-        echo User::where("user_id",1);
+        
         if ($request->user()->user_id != $request->route('id')) {
             
             return redirect()->intended(route('map'));

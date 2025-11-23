@@ -15,7 +15,7 @@ class HouseOwnerCheck
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if(!auth()->Guard::check()){
+        if(!auth()->check()){
             return redirect()->intended(route('map'));
         }
 
