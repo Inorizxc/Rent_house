@@ -14,10 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'user' => app\Http\Middleware\UserCheck::class
+            'isuser' => App\Http\Middleware\UserCheck::class,
+            'isAdmin' => App\Http\Middleware\CheckAdmin::class,
+            'isHouseOwner' => App\Http\Middleware\HouseOwnerCheck::class,
         ]);
         $middleware->web([
-            'user'
+            
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
