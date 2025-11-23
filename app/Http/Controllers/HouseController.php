@@ -198,8 +198,11 @@ class HouseController extends Controller
         
         $house->save();
 
-        if ($request->hasFile('image')) {
-            Photo::saveUploadedFile($request->file('image'), $house);
+        // Обработка множественных изображений
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                Photo::saveUploadedFile($image, $house);
+            }
         }
 
         return redirect()->route('houses.index')->with('ok', 'Дом создан');
@@ -211,7 +214,7 @@ class HouseController extends Controller
         $this->authorize('update', $house);
 
         // Загружаем связи для отображения текущих значений
-        $house->load(['rent_type', 'house_type']);
+        $house->load(['rent_type', 'house_type', 'photo']);
 
         $currentUser = auth()->user();
         
@@ -321,14 +324,29 @@ class HouseController extends Controller
             }
         }
 
-        // Обработка изображения (если загружено)
-        if ($request->hasFile('image')) {
-            $validated = $request->validate([
-                "image" => 'image|mimes:jpeg,png,jpg,gif|max:4096',
-            ]);
-            
-            $file = $request->file("image");
-            $photo = Photo::saveUploadedFile($file, $house);
+        // Обработка удаления фотографий
+        if ($request->has('deleted_photos') && !empty($request->input('deleted_photos'))) {
+            $deletedPhotosIds = json_decode($request->input('deleted_photos'), true);
+            if (is_array($deletedPhotosIds)) {
+                foreach ($deletedPhotosIds as $photoId) {
+                    $photo = Photo::find($photoId);
+                    if ($photo && $photo->house_id == $house->house_id) {
+                        // Удаляем файл из хранилища
+                        if ($photo->path && Storage::disk('public')->exists($photo->path)) {
+                            Storage::disk('public')->delete($photo->path);
+                        }
+                        // Удаляем запись из БД
+                        $photo->delete();
+                    }
+                }
+            }
+        }
+        
+        // Обработка множественных изображений (если загружено)
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                Photo::saveUploadedFile($image, $house);
+            }
         }
             
         $house->update($data);

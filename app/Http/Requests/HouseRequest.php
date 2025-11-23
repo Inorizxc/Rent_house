@@ -40,7 +40,8 @@ class HouseRequest extends FormRequest
             'lng'             => ['nullable','numeric'],
             'lat'             => ['nullable','numeric'],
             'is_deleted'      => ['required','in:0,1'],
-            'image'           => ['nullable','image','max:4096'],
+            'images.*'        => ['nullable','image','mimes:jpeg,png,jpg,gif','max:4096'],
+            'deleted_photos'  => ['nullable','string'],
         ];
     }
 }

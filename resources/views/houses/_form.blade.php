@@ -146,9 +146,42 @@
     {{-- Фото --}}
     <div style="grid-column: 1 / -1;">
         <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Фото</label>
-        <input type="file" name="image" accept="image/*" 
+        
+        {{-- Существующие фотографии (только для редактирования) --}}
+        @if(isset($house) && $house->house_id && $house->photo && $house->photo->count() > 0)
+        <div id="existing-photos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;">
+            @foreach($house->photo as $photo)
+            <div class="photo-item" data-photo-id="{{ $photo->photo_id }}" style="position: relative; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #f5f5f5;">
+                <img src="{{ asset('storage/' . $photo->path) }}" alt="Фото" 
+                     style="width: 100%; height: 150px; object-fit: cover; display: block;">
+                <button type="button" class="delete-photo-btn" data-photo-id="{{ $photo->photo_id }}" 
+                        style="position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border: none; border-radius: 50%; background: rgba(220, 38, 38, 0.9); color: #fff; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: 0.2s ease;"
+                        onmouseover="this.style.background='rgba(220, 38, 38, 1)';"
+                        onmouseout="this.style.background='rgba(220, 38, 38, 0.9)';"
+                        title="Удалить фото">
+                    ×
+                </button>
+            </div>
+            @endforeach
+        </div>
+        @endif
+        
+        {{-- Поле для загрузки новых фотографий --}}
+        <input type="file" name="images[]" id="images-input" accept="image/*" multiple
                style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
-        @error('image') 
+        <p style="font-size: 12px; color: #666; margin-top: 4px;">Можно выбрать несколько фотографий одновременно</p>
+        
+        {{-- Предпросмотр выбранных файлов --}}
+        <div id="preview-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; display: none;">
+        </div>
+        
+        {{-- Скрытое поле для хранения ID удаленных фотографий --}}
+        <input type="hidden" name="deleted_photos" id="deleted-photos-input" value="">
+        
+        @error('images.*') 
+            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+        @enderror
+        @error('images') 
             <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
         @enderror
     </div>
@@ -368,5 +401,107 @@
             fetchCoordinates(addressInput.value);
         }, 500);
     }
+})();
+
+// Обработка фотографий
+(function() {
+    const imagesInput = document.getElementById('images-input');
+    const previewContainer = document.getElementById('preview-container');
+    const deletedPhotosInput = document.getElementById('deleted-photos-input');
+    let deletedPhotos = [];
+    
+    // Загружаем список удаленных фотографий из скрытого поля
+    if (deletedPhotosInput && deletedPhotosInput.value) {
+        try {
+            deletedPhotos = JSON.parse(deletedPhotosInput.value);
+        } catch(e) {
+            deletedPhotos = [];
+        }
+    }
+    
+    // Предпросмотр выбранных файлов
+    if (imagesInput) {
+        imagesInput.addEventListener('change', function(e) {
+            previewContainer.innerHTML = '';
+            previewContainer.style.display = 'none';
+            
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            
+            previewContainer.style.display = 'grid';
+            
+            files.forEach((file, index) => {
+                if (!file.type.startsWith('image/')) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'preview-item';
+                    div.style.cssText = 'position: relative; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #f5f5f5;';
+                    div.dataset.fileIndex = index;
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.cssText = 'width: 100%; height: 150px; object-fit: cover; display: block;';
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'remove-preview-btn';
+                    removeBtn.textContent = '×';
+                    removeBtn.style.cssText = 'position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border: none; border-radius: 50%; background: rgba(220, 38, 38, 0.9); color: #fff; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: 0.2s ease;';
+                    removeBtn.onmouseover = function() { this.style.background = 'rgba(220, 38, 38, 1)'; };
+                    removeBtn.onmouseout = function() { this.style.background = 'rgba(220, 38, 38, 0.9)'; };
+                    removeBtn.onclick = function() {
+                        // Находим индекс элемента в контейнере
+                        const previewItems = Array.from(previewContainer.children);
+                        const itemIndex = previewItems.indexOf(div);
+                        
+                        // Удаляем файл из input
+                        const dt = new DataTransfer();
+                        const filesArray = Array.from(imagesInput.files);
+                        if (itemIndex >= 0 && itemIndex < filesArray.length) {
+                            filesArray.splice(itemIndex, 1);
+                            filesArray.forEach(f => dt.items.add(f));
+                            imagesInput.files = dt.files;
+                        }
+                        
+                        // Удаляем превью
+                        div.remove();
+                        
+                        // Если превью пусто, скрываем контейнер
+                        if (previewContainer.children.length === 0) {
+                            previewContainer.style.display = 'none';
+                        }
+                    };
+                    
+                    div.appendChild(img);
+                    div.appendChild(removeBtn);
+                    previewContainer.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    }
+    
+    // Удаление существующих фотографий
+    document.querySelectorAll('.delete-photo-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const photoId = this.dataset.photoId;
+            const photoItem = this.closest('.photo-item');
+            
+            if (confirm('Удалить это фото?')) {
+                // Добавляем ID в список удаленных
+                if (!deletedPhotos.includes(photoId)) {
+                    deletedPhotos.push(photoId);
+                    deletedPhotosInput.value = JSON.stringify(deletedPhotos);
+                }
+                
+                // Скрываем элемент (удаление произойдет на сервере)
+                photoItem.style.opacity = '0.5';
+                photoItem.style.pointerEvents = 'none';
+                this.disabled = true;
+            }
+        });
+    });
 })();
 </script>
