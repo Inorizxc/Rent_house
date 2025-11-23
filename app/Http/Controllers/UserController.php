@@ -6,9 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\House;
 use App\Models\Role;
+use App\Services\UserService as UserService;
 
 class UserController extends Controller
 {
+    
     public function index(){
         $users = User::orderBy("timestamp", "desc")->get();
         return view("users.index", ["users"=>$users]);
@@ -19,16 +21,8 @@ class UserController extends Controller
     }
 
     public function tabHouses(string $id, Request $request){
-        $user = User::with([
-            'roles',
-            'house' => function ($query) {
-                $query->with(['rent_type','house_type','photo'])
-                    ->where(function ($q) {
-                        $q->whereNull('is_deleted')
-                            ->orWhere('is_deleted', false);
-                    })
-                    ->orderByDesc('house_id');
-        }])->findOrFail($id);
+        $userService = app(UserService::class);
+        $user = $userService->getUserWithRoleHouse($id);
 
         // Используем Policy для проверки доступа (разрешает гостям просматривать)
         $currentUser = auth()->user();
@@ -57,16 +51,8 @@ class UserController extends Controller
     }
 
     public function tabOrders(string $id, Request $request){
-        $user = User::with([
-            'roles',
-            'house' => function ($query) {
-                $query->with(['rent_type','house_type','photo'])
-                    ->where(function ($q) {
-                        $q->whereNull('is_deleted')
-                            ->orWhere('is_deleted', false);
-                    })
-                    ->orderByDesc('house_id');
-        }])->findOrFail($id);
+        $userService = app(UserService::class);
+        $user = $userService->getUserWithRoleHouse($id);
 
         // Проверяем доступ к приватным данным (только владелец)
         $currentUser = auth()->user();
@@ -95,16 +81,8 @@ class UserController extends Controller
     }
 
     public function tabSettings(string $id, Request $request){
-        $user = User::with([
-            'roles',
-            'house' => function ($query) {
-                $query->with(['rent_type','house_type','photo'])
-                    ->where(function ($q) {
-                        $q->whereNull('is_deleted')
-                            ->orWhere('is_deleted', false);
-                    })
-                    ->orderByDesc('house_id');
-        }])->findOrFail($id);
+        $userService = app(UserService::class);
+        $user = $userService->getUserWithRoleHouse($id);
 
         // Проверяем доступ к приватным данным (только владелец)
         $currentUser = auth()->user();
