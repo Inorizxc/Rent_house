@@ -88,8 +88,10 @@ class ChatService{
         $chat->save();
     }
 
-    public function getUnreadChat(){
-        $chats = $chatService->getUserChats();
+    public function getUnreadCount(){
+        $currentUser = auth()->user();
+        $chats = ChatService::getUserChats();
+        $unreadCount=0;
         foreach ($chats as $chat) {
             $lastMessage = Message::where('chat_id', $chat->chat_id)
                 ->latest('created_at')
