@@ -7,51 +7,45 @@ use App\Models\Chat;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Services\ChatService\ChatService;
+use App\Services\MessageService\MessageService;
+
 
 class HouseChatController extends Controller
-{
+{   
+
+
     /**
      * Показать чат для конкретного дома
      */
     public function show($houseId)
     {
+
+        $chatService = app(ChatService::class);
+        $messageService = app(MessageService::class);
+
         $house = House::with(['user', 'photo'])->findOrFail($houseId);
         $currentUser = auth()->user();
 
-        // Проверяем, что пользователь авторизован
         if (!$currentUser) {
             return redirect()->route('login')->with('error', 'Необходима авторизация для доступа к чату');
         }
 
         $seller = $house->user;
 
-        // Проверяем, что продавец существует
         if (!$seller) {
             return redirect()->back()->with('error', 'Продавец не найден');
         }
 
-        // Не позволяем чатовать с самим собой
         if ($currentUser->user_id == $seller->user_id) {
             return redirect()->back()->with('error', 'Нельзя начать чат с самим собой');
         }
 
-        // Определяем кто покупатель (user_id), а кто продавец (rent_dealer_id)
-        // Текущий пользователь - покупатель, владелец дома - продавец
         $buyerId = $currentUser->user_id;
         $dealerId = $seller->user_id;
 
-        // Ищем существующий чат или создаем новый
-        $chat = Chat::where(function($query) use ($buyerId, $dealerId) {
-                $query->where('user_id', $buyerId)
-                      ->where('rent_dealer_id', $dealerId);
-            })
-            ->orWhere(function($query) use ($buyerId, $dealerId) {
-                $query->where('user_id', $dealerId)
-                      ->where('rent_dealer_id', $buyerId);
-            })
-            ->first();
+        $chat = $chatService->getUsersChat($buyerId,$dealerId);
 
-        // Если чата нет, создаем новый
         if (!$chat) {
             $chat = Chat::create([
                 'user_id' => $buyerId,
@@ -59,30 +53,14 @@ class HouseChatController extends Controller
             ]);
         }
 
-        // Загружаем связи чата
         $chat->load(['user', 'rentDealer']);
 
-        // Загружаем сообщения с информацией об авторах
-        $messages = Message::where('chat_id', $chat->chat_id)
-            ->with('user')
-            ->orderBy('created_at', 'asc')
-            ->get();
+        $messages = $messageService->getMessages($chat);
 
-        // Загружаем информацию о собеседнике
-        if ($chat->user_id == $currentUser->user_id) {
-            $interlocutor = $chat->rentDealer ?? $seller;
-        } else {
-            $interlocutor = $chat->user ?? $seller;
-        }
+        
+        $interlocutor = $chatService->getInterlocutor($chat);
 
-        // Обновляем время последнего просмотра чата для текущего пользователя
-        $now = now();
-        if ($chat->user_id == $currentUser->user_id) {
-            $chat->user_last_read_at = $now;
-        } else {
-            $chat->rent_dealer_last_read_at = $now;
-        }
-        $chat->save();
+        $chatService->update($chat);
 
         return view('houses.chat', [
             'house' => $house,
@@ -98,6 +76,10 @@ class HouseChatController extends Controller
      */
     public function sendMessage(Request $request, $houseId)
     {
+        $chatService = app(ChatService::class);
+        $messageService = app(MessageService::class);
+
+
         try {
             $validated = $request->validate([
                 'message' => 'required|string|max:1000',
@@ -125,22 +107,11 @@ class HouseChatController extends Controller
             return response()->json(['error' => 'Продавец не найден'], 404);
         }
 
-        // Определяем покупателя и продавца
         $buyerId = $currentUser->user_id;
         $dealerId = $seller->user_id;
 
-        // Ищем существующий чат
-        $chat = Chat::where(function($query) use ($buyerId, $dealerId) {
-                $query->where('user_id', $buyerId)
-                      ->where('rent_dealer_id', $dealerId);
-            })
-            ->orWhere(function($query) use ($buyerId, $dealerId) {
-                $query->where('user_id', $dealerId)
-                      ->where('rent_dealer_id', $buyerId);
-            })
-            ->first();
+        $chat = $chatService->getUsersChat($buyerId,$dealerId);
 
-        // Если чата нет, создаем новый
         if (!$chat) {
             $chat = Chat::create([
                 'user_id' => $buyerId,
@@ -149,7 +120,7 @@ class HouseChatController extends Controller
         }
 
         try {
-            // Создаем сообщение
+            // Создаем сообщение КАК БУДТО БЫ ПЕРЕПИСАТЬ
             $message = Message::create([
                 'chat_id' => $chat->chat_id,
                 'user_id' => $currentUser->user_id,
@@ -192,6 +163,11 @@ class HouseChatController extends Controller
      */
     public function getMessages(Request $request, $houseId)
     {
+
+        $chatService = app(ChatService::class);
+        $messageService = app(MessageService::class);
+
+
         $currentUser = auth()->user();
 
         if (!$currentUser) {
@@ -208,15 +184,7 @@ class HouseChatController extends Controller
         $buyerId = $currentUser->user_id;
         $dealerId = $seller->user_id;
 
-        $chat = Chat::where(function($query) use ($buyerId, $dealerId) {
-                $query->where('user_id', $buyerId)
-                      ->where('rent_dealer_id', $dealerId);
-            })
-            ->orWhere(function($query) use ($buyerId, $dealerId) {
-                $query->where('user_id', $dealerId)
-                      ->where('rent_dealer_id', $buyerId);
-            })
-            ->first();
+        $chat = $chatService->getUsersChat($buyerId,$dealerId);
 
         if (!$chat) {
             return response()->json(['messages' => []]);
