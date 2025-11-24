@@ -19,7 +19,7 @@ return new class extends Migration
             $table->text("price_id");
             $table->text("rent_type_id");
             $table->text("house_type_id");
-            $table->bigInteger("calendar_id")->nullable();
+            $table->foreignID("calendar_id")->nullable();
             $table->text("adress");
             $table->text("area");
             $table->text("is_deleted");
