@@ -61,29 +61,19 @@ class ChatController extends Controller
             return redirect()->route('chats.index')->with('error', 'У вас нет доступа к этому чату');
         }
         $chatService = app(ChatService::class);
+        $houseService = app(HouseService::class);
+        $messageService = app(MessageService::class);
+
         $interlocutor = $chatService->getInterlocutor($chat);
 
         if (!$interlocutor) {
             return redirect()->route('chats.index')->with('error', 'Собеседник не найден');
         }
 
-        // Загружаем сообщения ЭТО ВЫНЕСТИ В СЕРВИС СООБЩЕНИЙ
-        $messages = Message::where('chat_id', $chat->chat_id)
-            ->with('user')
-            ->orderBy('created_at', 'asc')
-            ->get();
+        $messages = $messageService->getMessages($chat);
 
-        // Получаем дома собеседника (если он продавец) ЭТО ВЫНЕСТИ В СЕРВИС ДОМОВ
-        $houses = House::where('user_id', $interlocutor->user_id)
-            ->where(function($q) {
-                $q->whereNull('is_deleted')
-                  ->orWhere('is_deleted', false);
-            })
-            ->with('photo')
-            ->orderBy('house_id', 'desc')
-            ->get();
+        $houses = $houseService->getHousesOfUser($interlocutor);
 
-        // Если есть только один дом, используем его, иначе null ВЫНЕСТИ В СЕРВИС ДОМА
         $house = $houses->count() == 1 ? $houses->first() : null;
 
         // Обновляем время последнего просмотра чата для текущего пользователя

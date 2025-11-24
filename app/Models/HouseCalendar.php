@@ -14,12 +14,10 @@ class HouseCalendar extends Model
     [
         "house_calendar_id",
         "house_id",
-        "first_date",
-        "second_date"
+        "dates",
         ];
     protected $casts = [
-        "first_date"=>"date",
-        "second_date"=>"date"
+        "dates"=>'array',
     ];
     public function house(){
         return $this->belongsTo(House::class,"house_id","house_id");
