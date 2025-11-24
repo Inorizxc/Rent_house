@@ -17,8 +17,8 @@ class HouseCalendarSeeder extends Seeder
         $orders = [
             ["house_calendar_id"=>"1",
             "house_id"=>"1",
-            "first_date"=>"01.01.2000",
-            "second_date"=>"02.01.2000",],
+            "first_date"=>"25.11.2025",
+            "second_date"=>"28.11.2025",],
         ];
         foreach ($orders as $order) {
             HouseCalendar::create($order);
