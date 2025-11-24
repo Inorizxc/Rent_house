@@ -9,12 +9,18 @@
         margin: 0;
         font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         background: #f6f6f7;
+        overflow: hidden;
+        height: 100vh;
     }
 
     .profile-wrapper {
-        padding: 45px 12px 12px; /* отступ от шапки */
+        padding: 20px 12px 12px; /* отступ от шапки */
         max-width: 1400px;
         margin: 0 auto;
+        height: calc(100vh - 45px - 42px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
 
     /* Шапка с аватаром и ФИО */
@@ -28,6 +34,7 @@
         gap: 16px;
         box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
         margin-bottom: 18px;
+        flex-shrink: 0;
     }
 
     .profile-avatar {
@@ -72,6 +79,9 @@
         display: grid;
         grid-template-columns: 220px 1fr;
         gap: 18px;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
     }
 
     /* Левая панель */
@@ -84,7 +94,8 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        min-height: 420px;
+        height: 100%;
+        overflow: hidden;
     }
 
     .profile-sidebar-top {
@@ -122,7 +133,9 @@
         padding: 12px 14px 14px;
         display: flex;
         flex-direction: column;
-        max-height: calc(100vh - 140px);
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
     }
 
     .profile-tabs {
@@ -130,6 +143,7 @@
         border-bottom: 1px solid #e5e7eb;
         margin-bottom: 10px;
         gap: 4px;
+        flex-shrink: 0;
     }
 
     .profile-tab-btn {
@@ -161,12 +175,15 @@
         flex: 1;
         overflow: auto;
         padding: 8px 2px 2px;
+        min-height: 0;
+        position: relative;
     }
 
     .profile-tab-panel {
         display: none;
         font-size: 14px;
         color: #111827;
+        height: 100%;
     }
 
     .profile-tab-panel.active {
@@ -185,7 +202,8 @@
     /* Стили для вкладки настроек */
     .settings-tab-content {
         padding: 0;
-        max-width: 800px;
+        width: 95%;
+        margin: 0 auto;
     }
 
     .settings-section {
@@ -483,7 +501,10 @@
     /* Стили для вкладки заказов */
     .orders-tab-content {
         padding: 0;
+        width: 95%;
+        margin: 0 auto;
     }
+
 
     .orders-header {
         display: flex;
@@ -493,9 +514,21 @@
 
     .orders-houses-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         gap: 20px;
         margin-top: 8px;
+    }
+
+    .orders-houses-grid .settings-section-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 16px;
+        overflow: hidden;
+    }
+
+    .orders-houses-grid .settings-section-card:hover {
+        transform: translateY(-2px);
     }
 
     .orders-house-card {
@@ -513,9 +546,10 @@
         box-shadow: 0 8px 25px rgba(15, 23, 42, 0.1);
     }
 
-    .orders-house-header {
-        padding: 16px;
+    .orders-houses-grid .orders-house-header {
+        padding: 0;
         padding-bottom: 8px;
+        margin-bottom: 12px;
     }
 
     .orders-house-title {
@@ -569,12 +603,13 @@
         color: #9ca3af;
     }
 
-    .orders-house-section {
-        padding: 12px 16px;
+    .orders-houses-grid .orders-house-section {
+        padding: 0;
         flex: 1;
+        margin-top: 12px;
     }
 
-    .orders-house-section .settings-section-title {
+    .orders-houses-grid .settings-section-title {
         margin-top: 0;
         margin-bottom: 8px;
         font-size: 14px;
@@ -609,12 +644,15 @@
         color: #111827;
     }
 
-    .orders-house-actions {
-        padding: 12px 16px;
-        display: flex;
-        gap: 8px;
+    .orders-houses-grid .orders-house-actions {
+        padding: 0;
+        margin-top: auto;
+        padding-top: 12px;
         border-top: 1px solid #e5e7eb;
         background: #f9fafb;
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
     }
 
     .orders-house-actions .btn-primary,
@@ -936,6 +974,7 @@ a {
                     loadTab(activeTab, btn.dataset.route);
                 }
             }
+
         });
     </script>
 @endsection

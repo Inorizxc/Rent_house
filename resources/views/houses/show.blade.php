@@ -10,7 +10,7 @@
     }
 
     .page-wrapper {
-        padding: 90px 24px 24px; /* отступ от шапки, если она фиксированная */
+        padding: 10px 24px 24px; /* небольшой отступ сверху, так как body уже имеет padding-top */
         display: flex;
         justify-content: center;
     }
@@ -142,7 +142,7 @@
     /* ОБОЛОЧКА правого блока — фиксируется при скролле */
     .right {
         position: sticky;
-        top: 90px; /* высота шапки + небольшой отступ */
+        top: 67px; /* высота шапки + небольшой отступ */
         align-self: flex-start;
         height: auto;
     }
@@ -383,7 +383,7 @@
                 <div class="actions">
                     @auth
                         <a href="{{ route('house.chat', $house->house_id) }}" class="btn-primary">
-                            Чат
+                            Оформление заказа
                         </a>
                     @else
                         <a href="{{ route('login') }}" class="btn-primary">

@@ -6,7 +6,7 @@
 
 @section('style')
     :root {
-        --header-height: 72px;
+        --header-height: 57px;
         --panel-radius: 10px;
         --panel-border: #e2e2e5;
         --panel-bg: #ffffff;

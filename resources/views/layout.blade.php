@@ -25,7 +25,7 @@
         body {
             margin: 0;
             font-family: 'Inter', sans-serif;
-            padding-top: 72px; /* чтобы контент не прятался под шапкой */
+            padding-top: 57px; /* чтобы контент не прятался под шапкой */
             background: #f6f6f7;
         }
 
@@ -200,7 +200,7 @@ header nav a[href*="dashboard"]:hover {
     left: 0;
     width: 100%;
 
-    height: 70px;
+    height: 55px;
     padding: 0 24px;
 
     background: #ffffff;
@@ -332,7 +332,7 @@ header nav a[href*="dashboard"]:hover {
                                 Чат
                             </a>
                             @if($unreadCount > 0)
-                                <span class="chat-badge" id="chatBadge"></span>
+                                <span class="chat-badge" id="chatBadge"> {{ $unreadCount }} </span>
                             @endif
                         </div>
                         <div class="user-menu-wrapper" style="position:relative;">

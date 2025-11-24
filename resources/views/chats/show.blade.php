@@ -10,7 +10,7 @@
     }
 
     .page-wrapper {
-        padding: 90px 24px 24px;
+        padding: 10px 12px 24px;
         max-width: 1400px;
         margin: 0 auto;
     }
