@@ -77,6 +77,7 @@ class ChatService{
             })
             ->first();;
     }
+    
     public function update(Chat $chat){
         $currentUser = auth()->user();
         $now = now();

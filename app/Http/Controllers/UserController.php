@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\House;
 use App\Models\Role;
-use App\Services\UserService as UserService;
+use App\Services\UserServices\UserService as UserService;
 
 class UserController extends Controller
 {
