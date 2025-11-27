@@ -14,6 +14,20 @@ use Illuminate\Support\Facades\Cache;
 
 class HouseService{
 
+    public function getHousesOfUser(User $user){
+
+
+        return House::where('user_id', $user->user_id)
+            ->where(function($q) {
+                $q->whereNull('is_deleted')
+                  ->orWhere('is_deleted', false);
+            })
+            ->with('photo')
+            ->orderBy('house_id', 'desc')
+            ->get();;
+    }
+
+
     public function convertRentNameTypeInId($data){
         if (isset($data['rent_type_name']) && !empty($data['rent_type_name'])) {
             $rentType = RentType::where('name', $data['rent_type_name'])->first();

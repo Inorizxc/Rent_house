@@ -8,6 +8,8 @@ use App\Models\House;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Services\ChatService\ChatService;
+use App\Services\HouseServices\HouseService;
+use App\Services\MessageService\MessageService;
 
 class ChatController extends Controller
 {
