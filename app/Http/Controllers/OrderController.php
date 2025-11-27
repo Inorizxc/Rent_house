@@ -429,11 +429,8 @@ class OrderController extends Controller
         $dayCount = (int)$checkin->diff($checkout)->days;
 
         // Получаем статус "Ожидается"
-        $defaultStatus = OrderStatus::where('type', 'Ожидается')->first();
-        if (!$defaultStatus) {
-            $defaultStatus = OrderStatus::first();
-        }
-
+        $defaultStatus = OrderStatus::PENDING;
+        
         if (!$defaultStatus) {
             $temporaryBlock->delete();
             return redirect()->back()->with('error', 'Не найден статус заказа');
@@ -454,7 +451,7 @@ class OrderController extends Controller
                 'date_of_order' => $request->checkin_date,
                 'day_count' => $dayCount,
                 'customer_id' => $user->user_id,
-                'order_status_id' => $defaultStatus->order_status_id,
+                'order_status' => $defaultStatus,
                 'original_data' => json_encode($originalData),
             ]);
         } catch (\Exception $e) {
