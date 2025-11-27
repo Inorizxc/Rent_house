@@ -429,7 +429,7 @@ class OrderController extends Controller
         $dayCount = (int)$checkin->diff($checkout)->days;
 
         // Получаем статус "Ожидается"
-        $defaultStatus = OrderStatus::PENDING;
+        $defaultStatus = OrderStatus::CONFIRM;
         
         if (!$defaultStatus) {
             $temporaryBlock->delete();
