@@ -30,6 +30,7 @@ class User extends Authenticatable
         'need_verification',
         'verification_denied_until',
         'banned_until', // Для временного бана - дата окончания
+        'ban_reason', // Причина бана
         'original_role_id', // Сохраняем оригинальную роль перед баном
     ];
 
@@ -282,6 +283,7 @@ class User extends Authenticatable
             $this->role_id = $originalRoleId;
             $this->original_role_id = null;
             $this->banned_until = null;
+            $this->ban_reason = null; // Очищаем причину бана при разбане
             $this->save();
         }
     }

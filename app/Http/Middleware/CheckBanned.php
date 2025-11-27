@@ -39,15 +39,16 @@ class CheckBanned
                 // Для POST/PUT/DELETE запросов блокируем доступ
                 if (in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'])) {
                     $banUntil = $user->getBanUntilDate();
+                    $banReason = $user->ban_reason ? "\n\nПричина: {$user->ban_reason}" : '';
                     $message = $user->isBannedPermanently() 
-                        ? 'Ваш аккаунт заблокирован навсегда. Вы не можете выполнять действия на сайте.'
-                        : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете выполнять действия на сайте до этой даты.";
+                        ? 'Ваш аккаунт заблокирован навсегда. Вы не можете выполнять действия на сайте.' . $banReason
+                        : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете выполнять действия на сайте до этой даты." . $banReason;
                     
                     if ($request->ajax() || $request->wantsJson()) {
                         return response()->json([
                             'success' => false,
                             'error' => $message
-                        ], 403);
+                    ], 403);
                     }
                     
                     return back()->with('error', $message)->withInput();

@@ -211,9 +211,10 @@ class OrderController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($user->isBanned()) {
             $banUntil = $user->getBanUntilDate();
+            $banReason = $user->ban_reason ? "\n\nПричина: {$user->ban_reason}" : '';
             $message = $user->isBannedPermanently() 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете создавать заказы.'
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете создавать заказы до этой даты.";
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете создавать заказы.' . $banReason
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете создавать заказы до этой даты." . $banReason;
             
             return response()->json([
                 'success' => false,
@@ -416,9 +417,10 @@ class OrderController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($user->isBanned()) {
             $banUntil = $user->getBanUntilDate();
+            $banReason = $user->ban_reason ? "\n\nПричина: {$user->ban_reason}" : '';
             $message = $user->isBannedPermanently() 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете подтверждать заказы.'
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете подтверждать заказы до этой даты.";
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете подтверждать заказы.' . $banReason
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете подтверждать заказы до этой даты." . $banReason;
             
             return redirect()->back()->with('error', $message);
         }
@@ -601,9 +603,10 @@ class OrderController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($user->isBanned()) {
             $banUntil = $user->getBanUntilDate();
+            $banReason = $user->ban_reason ? "\n\nПричина: {$user->ban_reason}" : '';
             $message = $user->isBannedPermanently() 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете отменять заказы.'
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете отменять заказы до этой даты.";
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете отменять заказы.' . $banReason
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете отменять заказы до этой даты." . $banReason;
             
             return response()->json([
                 'success' => false,

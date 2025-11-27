@@ -44,9 +44,10 @@ class HouseController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($currentUser && $currentUser->isBanned()) {
             $banUntil = $currentUser->getBanUntilDate();
+            $banReason = $currentUser->ban_reason ? "\n\nПричина: {$currentUser->ban_reason}" : '';
             $message = $currentUser->is_banned_permanently 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете создавать дома.'
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете создавать дома до этой даты.";
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете создавать дома.' . $banReason
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете создавать дома до этой даты." . $banReason;
             
             return redirect()->back()->with('error', $message);
         }
@@ -91,9 +92,10 @@ class HouseController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($currentUser && $currentUser->isBanned()) {
             $banUntil = $currentUser->getBanUntilDate();
+            $banReason = $currentUser->ban_reason ? "\n\nПричина: {$currentUser->ban_reason}" : '';
             $message = $currentUser->is_banned_permanently 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете создавать дома.'
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете создавать дома до этой даты.";
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете создавать дома.' . $banReason
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете создавать дома до этой даты." . $banReason;
             
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
@@ -203,9 +205,10 @@ class HouseController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($currentUser && $currentUser->isBanned()) {
             $banUntil = $currentUser->getBanUntilDate();
+            $banReason = $currentUser->ban_reason ? "\n\nПричина: {$currentUser->ban_reason}" : '';
             $message = $currentUser->is_banned_permanently 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете редактировать дома.'
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете редактировать дома до этой даты.";
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете редактировать дома.' . $banReason
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете редактировать дома до этой даты." . $banReason;
             
             return redirect()->back()->with('error', $message)->withInput();
         }
@@ -249,9 +252,10 @@ class HouseController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($currentUser && $currentUser->isBanned()) {
             $banUntil = $currentUser->getBanUntilDate();
+            $banReason = $currentUser->ban_reason ? "\n\nПричина: {$currentUser->ban_reason}" : '';
             $message = $currentUser->is_banned_permanently 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете удалять дома.'
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете удалять дома до этой даты.";
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете удалять дома.' . $banReason
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете удалять дома до этой даты." . $banReason;
             
             return redirect()->back()->with('error', $message);
         }

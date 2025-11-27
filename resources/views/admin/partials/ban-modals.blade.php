@@ -24,6 +24,10 @@
                     <label for="ban_until">Дата окончания бана:</label>
                     <input type="datetime-local" id="ban_until" name="ban_until" required>
                 </div>
+                <div class="form-group">
+                    <label for="ban_reason">Причина бана:</label>
+                    <textarea id="ban_reason" name="ban_reason" rows="3" placeholder="Укажите причину бана (будет видна пользователю)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; resize: vertical;"></textarea>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeBanModal()">Отмена</button>

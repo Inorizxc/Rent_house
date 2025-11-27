@@ -80,9 +80,10 @@ class HouseCalendarController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($user->isBanned()) {
             $banUntil = $user->getBanUntilDate();
+            $banReason = $user->ban_reason ? "\n\nПричина: {$user->ban_reason}" : '';
             $message = $user->is_banned_permanently 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете редактировать календарь.'
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете редактировать календарь до этой даты.";
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете редактировать календарь.' . $banReason
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете редактировать календарь до этой даты." . $banReason;
             
             return response()->json([
                 'success' => false,
@@ -151,9 +152,10 @@ class HouseCalendarController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($user->isBanned()) {
             $banUntil = $user->getBanUntilDate();
+            $banReason = $user->ban_reason ? "\n\nПричина: {$user->ban_reason}" : '';
             $message = $user->is_banned_permanently 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете редактировать календарь.'
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете редактировать календарь до этой даты.";
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете редактировать календарь.' . $banReason
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете редактировать календарь до этой даты." . $banReason;
             
             return response()->json([
                 'success' => false,

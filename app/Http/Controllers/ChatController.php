@@ -142,9 +142,10 @@ class ChatController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($currentUser->isBanned()) {
             $banUntil = $currentUser->getBanUntilDate();
+            $banReason = $currentUser->ban_reason ? "\n\nПричина: {$currentUser->ban_reason}" : '';
             $message = $currentUser->isBannedPermanently() 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете отправлять сообщения.'
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете отправлять сообщения до этой даты.";
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете отправлять сообщения.' . $banReason
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете отправлять сообщения до этой даты." . $banReason;
             
             return response()->json([
                 'success' => false,

@@ -131,6 +131,9 @@ class BanController extends Controller
             }
         }
 
+        // Сохраняем причину бана
+        $user->ban_reason = $request->input('ban_reason');
+
         $user->save();
         $user->refresh();
 
