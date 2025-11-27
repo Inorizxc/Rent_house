@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\House;
 use App\Models\HouseCalendar;
-use App\Models\OrderStatus;
+use App\enum\OrderStatus;
 use App\Models\TemporaryBlock;
 use App\Models\Chat;
 use App\Models\Message;
