@@ -7,13 +7,17 @@
 @section('style')
     :root {
         --header-height: 57px;
-        --panel-radius: 10px;
+        --panel-radius: 12px;
         --panel-border: #e2e2e5;
         --panel-bg: #ffffff;
-        --panel-bg-soft: #f7f7f9;
+        --panel-bg-soft: #f8f9fa;
         --text-main: #1f2933;
         --text-muted: #6b7280;
         --accent-border: #d0d0d5;
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        --panel-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+        --panel-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
     }
 
     * {
@@ -68,40 +72,63 @@
         border: 1px solid var(--panel-border);
         border-radius: var(--panel-radius);
 
-        padding: 10px 12px;  /* уменьшил внутренние отступы */
+        padding: 16px 16px;
         max-height: 100%;
 
-        width: 260px;
-        min-width: 240px;
+        width: 280px;
+        min-width: 260px;
 
         overflow-y: auto;
-        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+        overflow-x: hidden;
+        box-shadow: var(--panel-shadow);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
     }
 
+
     #left-panel {
-        background: var(--panel-bg-soft);
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-color: #e9ecef;
     }
 
     #middle-panel {
-        background: #ffffff;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-color: #e9ecef;
     }
 
     #right-panel {
-        background: var(--panel-bg-soft);
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-color: #e9ecef;
     }
 
     .panel-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 8px;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+        position: relative;
+    }
+
+    .panel-header::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 40px;
+        height: 2px;
+        background: var(--primary-gradient);
+        border-radius: 2px;
     }
 
     .panel-title {
-        font-size: 15px;
-        font-weight: 600;
+        font-size: 16px;
+        font-weight: 700;
         color: var(--text-main);
         white-space: nowrap;
+        letter-spacing: -0.02em;
     }
 
     .panel-body {
@@ -124,11 +151,11 @@
 
     /* Кнопка сворачивания — в стиле шапки */
     .toggle-btn {
-        width: 30px;
-        height: 30px;
-        border-radius: 999px;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
         border: 1px solid var(--accent-border);
-        background: #ffffff;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -138,17 +165,20 @@
         color: #4b5563;
 
         padding: 0;
-        transition: background 0.2s, border-color 0.2s, transform 0.1s;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
     .toggle-btn:hover {
-        background: #f2f2f2;
-        border-color: #c7c7cf;
-        transform: translateY(-1px);
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-color: #adb5bd;
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
     .toggle-btn:active {
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
 
     /* Поля фильтров */
@@ -168,21 +198,23 @@
     .field input,
     .field select {
         width: 100%;
-        padding: 7px 10px;
-        border-radius: 7px;
-        border: 1px solid #d4d4dd;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1.5px solid #d4d4dd;
         font-size: 13px;
         color: var(--text-main);
         background: #ffffff;
         outline: none;
-        transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .field input:focus,
     .field select:focus {
-        border-color: #9ca3ff;
-        box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.35);
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
         background: #ffffff;
+        transform: translateY(-1px);
     }
 
     .filters-row {
@@ -196,26 +228,29 @@
 
     /* Кнопка "Сбросить фильтры" — как кнопки в шапке */
     .btn-reset {
-        margin-top: 4px;
-        padding: 7px 14px;
+        margin-top: 8px;
+        padding: 10px 16px;
         font-size: 13px;
-        font-weight: 500;
+        font-weight: 600;
         border-radius: 8px;
-        border: 1px solid #e0e0e0;
-        background: #ffffff;
+        border: 1.5px solid #e0e0e0;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
         color: #374151;
         cursor: pointer;
-        transition: background 0.2s, border-color 0.2s, transform 0.1s;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
     .btn-reset:hover {
-        background: #f2f2f2;
-        border-color: #d0d0d0;
-        transform: translateY(-1px);
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-color: #adb5bd;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
     .btn-reset:active {
         transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
 
     /* Список домов */
@@ -227,36 +262,119 @@
     }
 
     .house-item {
-        padding: 8px 8px;
-        border-radius: 8px;
+        padding: 12px 12px;
+        border-radius: 10px;
         cursor: pointer;
-        border: 1px solid transparent;
-        transition: background 0.15s, border-color 0.15s;
+        border: 1.5px solid transparent;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         font-size: 13px;
         color: var(--text-main);
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .house-item:hover {
-        background: #f1f5ff;
+        background: linear-gradient(135deg, #f1f5ff 0%, #e8f0ff 100%);
         border-color: #c7d2fe;
+        transform: translateX(4px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.15);
     }
 
     .house-item.active {
-        background: #e0e7ff;
+        background: linear-gradient(135deg, #e0e7ff 0%, #d4dcf7 100%);
         border-color: #a5b4fc;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        transform: translateX(4px);
     }
 
     .info-label {
-        margin-top: 6px;
-        font-size: 12px;
-        font-weight: 600;
+        margin-top: 10px;
+        margin-bottom: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
         color: var(--text-muted);
+        opacity: 0.8;
+    }
+
+    .info-label:first-child {
+        margin-top: 0;
     }
 
     #house-info-card {
         font-size: 13px;
         line-height: 1.45;
         color: var(--text-main);
+    }
+
+    .info-item {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: 1.5px solid #e9ecef;
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .info-item-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        opacity: 0.8;
+    }
+
+    .info-item-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-main);
+        line-height: 1.4;
+    }
+
+    .info-item-value-address {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-main);
+        line-height: 1.5;
+    }
+
+    .info-item-value-price {
+        font-size: 18px;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1.3;
+    }
+
+    .info-item-value-type {
+        font-size: 15px;
+        font-weight: 600;
+        color: #667eea;
+        line-height: 1.4;
+    }
+
+    .info-items-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+        margin-bottom: 10px;
+    }
+
+    .info-items-row .info-item {
+        flex: 1;
+        margin-bottom: 0;
+    }
+
+    .info-item-value-area {
+        font-size: 15px;
+        font-weight: 600;
+        color: #11998e;
+        line-height: 1.4;
     }
 
     .house-actions {
@@ -267,41 +385,85 @@
     }
 
     .house-btn,
-    .house-btn-secondary {
+    .house-btn-secondary,
+    .house-btn-order {
         display: inline-flex;
         justify-content: center;
         align-items: center;
-        padding: 8px 12px;
-        border-radius: 8px;
-        font-size: 13px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
         text-decoration: none;
         cursor: pointer;
-        border: 1px solid transparent;
-        transition: background 0.2s, border-color 0.2s, transform 0.1s;
+        border: 1.5px solid transparent;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        gap: 8px;
     }
 
     .house-btn {
-        background: #4f46e5;
-        border-color: #4f46e5;
+        background: var(--primary-gradient);
+        border-color: transparent;
         color: #ffffff;
     }
 
     .house-btn:hover {
-        background: #4338ca;
-        border-color: #4338ca;
-        transform: translateY(-1px);
+        background: linear-gradient(135deg, #5a6fd8 0%, #6a3f91 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .house-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     }
 
     .house-btn-secondary {
-        background: #ffffff;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
         border-color: #e5e7eb;
         color: #111827;
     }
 
     .house-btn-secondary:hover {
-        background: #f3f4f6;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         border-color: #d1d5db;
-        transform: translateY(-1px);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .house-btn-order {
+        background: var(--success-gradient);
+        border-color: transparent;
+        color: #ffffff;
+        margin-bottom: 8px;
+        font-size: 13px;
+        padding: 10px 14px;
+    }
+
+    .house-btn-order:hover {
+        background: linear-gradient(135deg, #0d7c75 0%, #2dd970 100%);
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 8px 20px rgba(17, 153, 142, 0.4);
+    }
+
+    .house-btn-order:active {
+        transform: translateY(0) scale(1);
+        box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
+    }
+
+    .house-btn-order::before {
+        content: '💬';
+        font-size: 16px;
+    }
+
+    #house-info-empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-muted);
+        font-size: 14px;
+        line-height: 1.6;
+        opacity: 0.7;
     }
 
     /* Убрать промо-надпись */
@@ -569,8 +731,18 @@
                     `;
             const hasCoords = house.lat && house.lng;
 
+            const isAuthenticated = @json(auth()->check());
             const actionsHtml = `
                 <div class="house-actions">
+                    ${isAuthenticated ? `
+                        <a href="/house/${house.house_id}/chat" class="house-btn-order">
+                            Перейти к оформлению заказа
+                        </a>
+                    ` : `
+                        <a href="/login" class="house-btn-order">
+                            Войти для оформления заказа
+                        </a>
+                    `}
                     ${hasCoords ? `
                         <a href="/house/${house.house_id}" class="house-btn-secondary">
                             Подробнее
@@ -589,15 +761,32 @@
 
 
                 const houseTypeName = house.house_type?.name ?? '—';
+                const price = house.price_id ? (house.price_id.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₽') : '—';
                 
                 houseInfoDiv.innerHTML = `
                 <div id="house-info-card">
-                    <div class="info-label">Адрес:</div> ${house.adress ?? '—'}
+                    <div class="info-item">
+                        <div class="info-item-label">📍 Адрес</div>
+                        <div class="info-item-value-address">${house.adress ?? '—'}</div>
+                    </div>
                     
                     ${photosHtml}
                     
-                    <div class="info-label">Тип дома:</div> ${houseTypeName}
-                    <div class="info-label">Цена:</div> ${house.price_id ?? '—'}
+                    <div class="info-items-row">
+                        <div class="info-item">
+                            <div class="info-item-label">🏠 Тип дома</div>
+                            <div class="info-item-value-type">${houseTypeName}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">📐 Площадь</div>
+                            <div class="info-item-value-area">${house.area ? house.area + ' м²' : '—'}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-item-label">💰 Цена</div>
+                        <div class="info-item-value-price">${price}</div>
+                    </div>
 
                     ${actionsHtml}
                 </div>

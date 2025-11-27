@@ -418,7 +418,7 @@
     .orders-filter-buttons {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 4px;
     }
     
     .orders-filter-checkbox {
@@ -437,18 +437,23 @@
     }
     
     .orders-filter-checkbox-label {
-        padding: 6px 12px;
+        padding: 5px 10px;
         border-radius: 6px;
-        border: 1px solid #d1d5db;
+        border: 2px solid #d1d5db;
         background: #ffffff;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 500;
         color: #4b5563;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: background-color 0.1s, border-color 0.1s, color 0.1s, box-shadow 0.1s;
         font-family: inherit;
         display: inline-block;
         white-space: nowrap;
+        position: relative;
+        box-sizing: border-box;
+        min-width: 0;
+        flex-shrink: 0;
+        letter-spacing: 0.01em;
     }
     
     .orders-filter-checkbox:hover .orders-filter-checkbox-label {
@@ -457,22 +462,43 @@
     }
     
     .orders-filter-checkbox input[type="checkbox"]:checked + .orders-filter-checkbox-label {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        border-color: #4f46e5;
-        color: #ffffff;
-        box-shadow: 0 1px 4px rgba(79, 70, 229, 0.3);
+        background: #ffffff;
+        border: 2px solid transparent;
+        color: #3b82f6;
+        box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+    
+    .orders-filter-checkbox input[type="checkbox"]:checked + .orders-filter-checkbox-label::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 6px;
+        padding: 2px;
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        z-index: -1;
     }
     
     .orders-filter-checkbox input[type="checkbox"]:checked + .orders-filter-checkbox-label:hover {
-        background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
-        border-color: #4338ca;
+        background: #f8fafc;
+        color: #2563eb;
+        box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+    }
+    
+    .orders-filter-checkbox input[type="checkbox"]:checked + .orders-filter-checkbox-label:hover::before {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
     }
     
     /* Старые стили для обратной совместимости */
     .orders-filter-btn {
         padding: 6px 12px;
         border-radius: 6px;
-        border: 1px solid #d1d5db;
+        border: 2px solid #d1d5db;
         background: #ffffff;
         font-size: 13px;
         font-weight: 500;
@@ -480,6 +506,8 @@
         cursor: pointer;
         transition: all 0.2s;
         font-family: inherit;
+        position: relative;
+        box-sizing: border-box;
     }
     
     .orders-filter-btn:hover {
@@ -488,15 +516,34 @@
     }
     
     .orders-filter-btn.active {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        border-color: #4f46e5;
-        color: #ffffff;
-        box-shadow: 0 1px 4px rgba(79, 70, 229, 0.3);
+        background: #ffffff;
+        border: 2px solid transparent;
+        color: #3b82f6;
+        box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
+        font-weight: 600;
+    }
+    
+    .orders-filter-btn.active::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 6px;
+        padding: 2px;
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
     }
     
     .orders-filter-btn.active:hover {
-        background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
-        border-color: #4338ca;
+        background: #f8fafc;
+        color: #2563eb;
+        box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+    }
+    
+    .orders-filter-btn.active:hover::before {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
     }
     
     .orders-filter-input-wrapper {
@@ -520,8 +567,8 @@
     
     .orders-filter-input:focus {
         outline: none;
-        border-color: #4f46e5;
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
     
     .orders-autocomplete-dropdown {
@@ -736,24 +783,24 @@
         filtersContainer.addEventListener('change', function(e) {
             const checkbox = e.target;
             if (checkbox.type === 'checkbox' && (checkbox.dataset.filterRole || checkbox.dataset.filterStatus)) {
-                console.log('Filter changed:', checkbox.dataset.filterRole || checkbox.dataset.filterStatus, checkbox.checked);
+                // Немедленная реакция без задержки
                 filterOrders();
             }
-        });
+        }, { passive: true });
         
         // Также добавляем обработчики напрямую для совместимости
         roleCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
-                console.log('Role filter changed:', this.dataset.filterRole, this.checked);
+                // Немедленная реакция без задержки
                 filterOrders();
-            });
+            }, { passive: true });
         });
         
         statusCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
-                console.log('Status filter changed:', this.dataset.filterStatus, this.checked);
+                // Немедленная реакция без задержки
                 filterOrders();
-            });
+            }, { passive: true });
         });
         
         // Инициализируем автодополнение для полей ввода, передавая функцию фильтрации

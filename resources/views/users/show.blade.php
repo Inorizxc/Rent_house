@@ -861,6 +861,23 @@ a {
                             };
                             setTimeout(tryInit, 100);
                         }
+                        
+                        // Инициализируем фильтры домов после загрузки контента
+                        if (window.initHousesFilters && tab === 'houses') {
+                            // Пробуем несколько раз с задержкой
+                            let attempts = 0;
+                            const tryInit = () => {
+                                attempts++;
+                                const grid = panel.querySelector('#orders-houses-grid');
+                                const checkboxes = panel.querySelectorAll('input[type="checkbox"][data-filter-rent-type], input[type="checkbox"][data-filter-house-type]');
+                                if (grid && checkboxes.length > 0) {
+                                    window.initHousesFilters(panel);
+                                } else if (attempts < 5) {
+                                    setTimeout(tryInit, 100);
+                                }
+                            };
+                            setTimeout(tryInit, 100);
+                        }
                     }, 100);
 
                 } catch (error) {
@@ -937,9 +954,13 @@ a {
                     if (window.initHouseCalendars) {
                         window.initHouseCalendars();
                     }
-                    // И инициализируем фильтры заказов
-                    if (window.initOrdersFilters) {
+                    // Инициализируем фильтры заказов
+                    if (window.initOrdersFilters && tab === 'orders') {
                         window.initOrdersFilters(panel);
+                    }
+                    // Инициализируем фильтры домов
+                    if (window.initHousesFilters && tab === 'houses') {
+                        window.initHousesFilters(panel);
                     }
                 }
             }
@@ -1027,8 +1048,12 @@ a {
                         window.initHouseCalendars();
                     }
                     // Инициализируем фильтры заказов
-                    if (window.initOrdersFilters) {
+                    if (window.initOrdersFilters && activeTab === 'orders') {
                         window.initOrdersFilters(activePanel);
+                    }
+                    // Инициализируем фильтры домов
+                    if (window.initHousesFilters && activeTab === 'houses') {
+                        window.initHousesFilters(activePanel);
                     }
                 } else if (btn && btn.dataset.route) {
                     // Если контента нет, загружаем через AJAX

@@ -112,84 +112,187 @@ header nav a[href*="dashboard"]:hover {
 
 /* Кнопка-аватарка */
 .user-avatar-btn {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    border: 1px solid #d0d0d0;
-    background: #fff;
+    border: 2px solid #e5e7eb;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     font-size: 20px;
     cursor: pointer;
+    outline: none;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    transition: background 0.2s, border-color 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .user-avatar-btn:hover {
-    background: #f5f5f5;
-    border-color: #bfbfbf;
+    transform: scale(1.05);
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.user-avatar-btn:active {
+    transform: scale(0.98);
+}
+
+.user-avatar-btn.active {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
 /* Выпадающее меню */
 .user-dropdown {
     position: absolute;
-    top: calc(100% + 6px);
+    top: calc(100% + 10px);
     right: 0;
 
-    background: #fff;
-    border: 1px solid #dcdcdc;
-    border-radius: 10px;
-    width: 160px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    min-width: 200px;
+    max-width: 250px;
 
-    box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
 
-    padding: 6px 0;    /* ← нет торчащего фона сверху/снизу */
+    padding: 8px 0;
     display: none;
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+    transition: opacity 0.2s ease, transform 0.2s ease;
 
-    z-index: 999;
+    z-index: 1001;
+    overflow: hidden;
 }
 
-/* Показ меню */
+/* Показ меню с анимацией */
 .user-dropdown.show {
     display: block;
+    opacity: 1;
+    transform: translateY(0) scale(1);
 }
 
 /* Пункты меню */
 .user-dropdown-item {
-    padding: 10px 14px;
+    padding: 0;
+    margin: 0;
     font-size: 14px;
-    color: #333;
-
-    cursor: pointer;
+    color: #374151;
     user-select: none;
-
-    transition: background 0.15s;
+    position: relative;
 }
 
 /* Имя пользователя в меню */
 .user-dropdown-item.user-name {
+    padding: 12px 16px;
     font-weight: 600;
-    color: #1f2933;
-    border-bottom: 1px solid #eeeeee;
+    color: #111827;
+    border-bottom: 1px solid #f3f4f6;
     margin-bottom: 4px;
-    padding-bottom: 12px;
     cursor: default;
+    background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
 }
 
 .user-dropdown-item.user-name:hover {
-    background: transparent;
+    background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
 }
 
-/* 1px-отступ между кнопками */
-.user-dropdown-item + .user-dropdown-item {
-    border-top: 1px solid #eeeeee;
+/* Ссылки и кнопки внутри пунктов меню */
+.user-dropdown-item a,
+.user-dropdown-item button {
+    all: unset;
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    cursor: pointer;
+    color: #374151;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    position: relative;
+    box-sizing: border-box;
 }
 
-/* Ховер */
-.user-dropdown-item:hover {
-    background: #f5f5f7;
+.user-dropdown-item a:hover,
+.user-dropdown-item button:hover {
+    background: linear-gradient(90deg, #f3f4f6 0%, #f9fafb 100%);
+    color: #111827;
+    padding-left: 20px;
+}
+
+.user-dropdown-item a:active,
+.user-dropdown-item button:active {
+    background: #e5e7eb;
+    transform: scale(0.98);
+}
+
+/* Разделитель между пунктами */
+.user-dropdown-item:not(.user-name) + .user-dropdown-item:not(.user-name) {
+    border-top: 1px solid #f3f4f6;
+}
+
+/* Стили для ссылок в меню */
+.dropdown-link {
+    all: unset;
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    cursor: pointer;
+    color: #374151;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.dropdown-link:hover {
+    background: linear-gradient(90deg, #f3f4f6 0%, #f9fafb 100%);
+    color: #111827;
+    padding-left: 20px;
+}
+
+.dropdown-link:active {
+    background: #e5e7eb;
+    transform: scale(0.98);
+}
+
+/* Специальный стиль для кнопки выхода */
+.user-dropdown-item form,
+.dropdown-form {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.user-dropdown-item form button,
+.dropdown-button {
+    all: unset;
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    cursor: pointer;
+    color: #dc2626;
+    font-weight: 500;
+    text-align: left;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.user-dropdown-item form button:hover,
+.dropdown-button:hover {
+    background: linear-gradient(90deg, #fee2e2 0%, #fef2f2 100%);
+    color: #b91c1c;
+    padding-left: 20px;
+}
+
+.user-dropdown-item form button:active,
+.dropdown-button:active {
+    background: #fecaca;
+    transform: scale(0.98);
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
@@ -374,29 +477,23 @@ header nav a[href*="dashboard"]:hover {
                                         $userName = trim(($currentUser->name ?? '') . ' ' . ($currentUser->sename ?? ''));
                                         $userName = $userName ?: 'Пользователь';
                                     @endphp
-                                    <div class="user-dropdown-item user-name" role="menuitem">
+                                    <div class="user-dropdown-item user-name">
                                         {{ $userName }}
                                     </div>
-                                    <div class="user-dropdown-item" role="menuitem">
-                                        <a href="{{ route('profile.show', auth()->id()) }}" style="all: unset; cursor: pointer; display: block; width: 100%; text-decoration: none; color: inherit;">
+                                    <div class="user-dropdown-item">
+                                        <a href="{{ route('profile.show', auth()->id()) }}" class="dropdown-link">
                                             Профиль
                                         </a>
                                     </div>
 
-                                    <form
-                                        method="POST"
-                                        action="{{ route('logout') }}"
-                                        class="user-dropdown-item"
-                                        role="menuitem"
-                                    >
-                                        @csrf
-                                        <button
-                                            type="submit"
-                                            style="all: unset; cursor: pointer; display: block; width: 100%;"
-                                        >
-                                            Выход
-                                        </button>
-                                    </form>
+                                    <div class="user-dropdown-item">
+                                        <form method="POST" action="{{ route('logout') }}" class="dropdown-form">
+                                            @csrf
+                                            <button type="submit" class="dropdown-button">
+                                                Выход
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -429,30 +526,63 @@ header nav a[href*="dashboard"]:hover {
                     return;
                 }
 
-                const closeDropdown = () => dropdown.classList.remove('show');
+                let isOpen = false;
 
-                toggle.addEventListener('click', () => {
-                    dropdown.classList.toggle('show');
-                    toggle.setAttribute(
-                        'aria-expanded',
-                        dropdown.classList.contains('show')
-                    );
-                });
+                const openDropdown = () => {
+                    dropdown.classList.add('show');
+                    toggle.classList.add('active');
+                    toggle.setAttribute('aria-expanded', 'true');
+                    isOpen = true;
+                };
 
-                document.addEventListener('click', (event) => {
-                    if (
-                        !toggle.contains(event.target) &&
-                        !dropdown.contains(event.target)
-                    ) {
+                const closeDropdown = () => {
+                    dropdown.classList.remove('show');
+                    toggle.classList.remove('active');
+                    toggle.setAttribute('aria-expanded', 'false');
+                    isOpen = false;
+                };
+
+                // Обработка клика по кнопке переключения
+                toggle.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    if (isOpen) {
                         closeDropdown();
-                        toggle.setAttribute('aria-expanded', 'false');
+                    } else {
+                        openDropdown();
                     }
                 });
 
-                document.addEventListener('keydown', (event) => {
-                    if (event.key === 'Escape') {
+                // Обработка кликов внутри меню - не мешаем работе ссылок и кнопок
+                dropdown.addEventListener('click', (event) => {
+                    const link = event.target.closest('a');
+                    const button = event.target.closest('button[type="submit"]');
+                    
+                    // Для ссылок - закрываем меню после небольшой задержки
+                    if (link) {
+                        event.stopPropagation(); // Предотвращаем закрытие через document click
+                        setTimeout(() => {
+                            closeDropdown();
+                        }, 200);
+                    }
+                    
+                    // Для кнопок формы - не закрываем сразу, форма отправится
+                    // Меню закроется при переходе на другую страницу
+                    if (button) {
+                        event.stopPropagation();
+                    }
+                });
+
+                // Закрытие при клике вне меню
+                document.addEventListener('click', (event) => {
+                    if (isOpen && !toggle.contains(event.target) && !dropdown.contains(event.target)) {
                         closeDropdown();
-                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+
+                // Закрытие по Escape
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && isOpen) {
+                        closeDropdown();
                     }
                 });
 
