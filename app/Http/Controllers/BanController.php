@@ -47,7 +47,7 @@ class BanController extends Controller
                 if ($user->isBanned() && $user->banned_until) {
                     if ($user->banned_until instanceof \Carbon\Carbon && $user->banned_until->isPast()) {
                         $user->unban();
-                    } elseif (is_string($user->banned_until) && \Carbon\Carbon::parse($user->banned_until)->isPast()) {
+                    } elseif (is_string($user->banned_until) && \Carbon\Carbon::parse($user->banned_until, 'Europe/Moscow')->isPast()) {
                         $user->unban();
                     }
                 }
@@ -124,10 +124,10 @@ class BanController extends Controller
             $user->banned_until = null; // Постоянный бан
         } else {
             if ($request->has('ban_until') && $request->input('ban_until')) {
-                $user->banned_until = Carbon::parse($request->input('ban_until'));
+                $user->banned_until = Carbon::parse($request->input('ban_until'), 'Europe/Moscow');
             } else {
                 // Если временный бан, но дата не указана, устанавливаем по умолчанию 7 дней
-                $user->banned_until = Carbon::now()->addDays(7);
+                    $user->banned_until = Carbon::now('Europe/Moscow')->addDays(7);
             }
         }
 
@@ -172,10 +172,10 @@ class BanController extends Controller
         } else {
             $house->is_banned_permanently = false;
             if ($request->has('ban_until') && $request->input('ban_until')) {
-                $house->banned_until = Carbon::parse($request->input('ban_until'));
+                $house->banned_until = Carbon::parse($request->input('ban_until'), 'Europe/Moscow');
             } else {
                 // Если временный бан, но дата не указана, устанавливаем по умолчанию 7 дней
-                $house->banned_until = Carbon::now()->addDays(7);
+                    $house->banned_until = Carbon::now('Europe/Moscow')->addDays(7);
             }
         }
 

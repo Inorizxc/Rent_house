@@ -247,7 +247,7 @@ class User extends Authenticatable
                     }
                     return true;
                 }
-                $banDate = \Carbon\Carbon::parse($this->banned_until);
+                $banDate = \Carbon\Carbon::parse($this->banned_until, 'Europe/Moscow');
                 if ($banDate->isPast()) {
                     $this->unban();
                     return false;
@@ -299,9 +299,9 @@ class User extends Authenticatable
         
         if ($this->banned_until) {
             if ($this->banned_until instanceof \Carbon\Carbon) {
-                return $this->banned_until;
+                return $this->banned_until->setTimezone('Europe/Moscow');
             }
-            return \Carbon\Carbon::parse($this->banned_until);
+            return \Carbon\Carbon::parse($this->banned_until, 'Europe/Moscow');
         }
         
         return null; // Постоянный бан

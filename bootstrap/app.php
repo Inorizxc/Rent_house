@@ -23,6 +23,13 @@ return Application::configure(basePath: dirname(__DIR__))
         
         ]);
     })
+    ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
+        // Автоматическое снятие истекших банов каждые 5 минут
+        $schedule->command('bans:unban-expired')
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
+    })
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

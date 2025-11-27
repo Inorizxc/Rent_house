@@ -19,22 +19,39 @@ class CheckBanned
         
         // Не блокируем доступ к страницам, но пользователь увидит баннер
         // Блокируем только действия (POST, PUT, DELETE запросы)
-        if ($user && $user->isBanned()) {
-            // Для POST/PUT/DELETE запросов блокируем доступ
-            if (in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'])) {
-                $banUntil = $user->getBanUntilDate();
-                $message = $user->is_banned_permanently 
-                    ? 'Ваш аккаунт заблокирован навсегда. Вы не можете выполнять действия на сайте.'
-                    : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете выполнять действия на сайте до этой даты.";
+        if ($user) {
+            // Проверяем и автоматически разбаниваем, если срок истек
+            // Метод isBanned() уже делает это автоматически, но проверяем явно для надежности
+            if ($user->banned_until) {
+                $banDate = $user->banned_until instanceof \Carbon\Carbon 
+                    ? $user->banned_until->setTimezone('Europe/Moscow')
+                    : \Carbon\Carbon::parse($user->banned_until, 'Europe/Moscow');
                 
-                if ($request->ajax() || $request->wantsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'error' => $message
-                    ], 403);
+                if ($banDate->isPast()) {
+                    $user->unban();
+                    // После разбана продолжаем выполнение запроса
+                    return $next($request);
                 }
-                
-                return back()->with('error', $message)->withInput();
+            }
+            
+            // Проверяем, забанен ли пользователь (после проверки истекших банов)
+            if ($user->isBanned()) {
+                // Для POST/PUT/DELETE запросов блокируем доступ
+                if (in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'])) {
+                    $banUntil = $user->getBanUntilDate();
+                    $message = $user->isBannedPermanently() 
+                        ? 'Ваш аккаунт заблокирован навсегда. Вы не можете выполнять действия на сайте.'
+                        : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете выполнять действия на сайте до этой даты.";
+                    
+                    if ($request->ajax() || $request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'error' => $message
+                        ], 403);
+                    }
+                    
+                    return back()->with('error', $message)->withInput();
+                }
             }
         }
         
