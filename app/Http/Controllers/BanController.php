@@ -41,7 +41,18 @@ class BanController extends Controller
         
         $users = $query->offset(($page - 1) * $limit)
             ->limit($limit)
-            ->get();
+            ->get()
+            ->map(function($user) {
+                // Проверяем истекшие временные баны и автоматически разбаниваем
+                if ($user->isBanned() && $user->banned_until) {
+                    if ($user->banned_until instanceof \Carbon\Carbon && $user->banned_until->isPast()) {
+                        $user->unban();
+                    } elseif (is_string($user->banned_until) && \Carbon\Carbon::parse($user->banned_until)->isPast()) {
+                        $user->unban();
+                    }
+                }
+                return $user;
+            });
         
         return view('admin.bans', [
             'type' => 'users',
@@ -91,23 +102,41 @@ class BanController extends Controller
     {
         $request->validate([
             'ban_type' => 'required|in:temporary,permanent',
-            'ban_until' => 'required_if:ban_type,temporary|date|after:now',
+            'ban_until' => 'required_if:ban_type,temporary|nullable|date|after:now',
         ]);
 
-        $user = User::findOrFail($userId);
+        $user = User::with('roles')->findOrFail($userId);
+        $bannedRole = \App\Models\Role::where('uniq_name', 'Banned')->first();
+        
+        if (!$bannedRole) {
+            return back()->with('error', 'Роль "Забанен" не найдена. Запустите seeder ролей.');
+        }
+
+        // Сохраняем оригинальную роль, если пользователь еще не забанен
+        if (!$user->isBanned()) {
+            $user->original_role_id = $user->role_id;
+        }
+
+        // Устанавливаем роль "Забанен"
+        $user->role_id = $bannedRole->role_id;
 
         if ($request->input('ban_type') === 'permanent') {
-            $user->is_banned_permanently = true;
-            $user->banned_until = null;
+            $user->banned_until = null; // Постоянный бан
         } else {
-            $user->is_banned_permanently = false;
-            $user->banned_until = Carbon::parse($request->input('ban_until'));
+            if ($request->has('ban_until') && $request->input('ban_until')) {
+                $user->banned_until = Carbon::parse($request->input('ban_until'));
+            } else {
+                // Если временный бан, но дата не указана, устанавливаем по умолчанию 7 дней
+                $user->banned_until = Carbon::now()->addDays(7);
+            }
         }
 
         $user->save();
+        $user->refresh();
 
-        return back()->with('status', "Пользователь #{$user->user_id} забанен.");
+        return redirect()->route('admin.bans', ['type' => 'users', 'page' => $request->get('page', 1)])->with('status', "Пользователь #{$user->user_id} забанен.");
     }
+    
 
     /**
      * Разбанивает пользователя
@@ -116,11 +145,10 @@ class BanController extends Controller
     {
         $user = User::findOrFail($userId);
         
-        $user->is_banned_permanently = false;
-        $user->banned_until = null;
-        $user->save();
+        // Используем метод unban() из модели
+        $user->unban();
 
-        return back()->with('status', "Пользователь #{$user->user_id} разбанен.");
+        return redirect()->route('admin.bans', ['type' => 'users'])->with('status', "Пользователь #{$user->user_id} разбанен.");
     }
 
     /**
@@ -128,9 +156,12 @@ class BanController extends Controller
      */
     public function banHouse(Request $request, $houseId)
     {
+        // Проверяем существование колонок и создаем их, если нужно
+        $this->ensureBanColumnsExist();
+        
         $request->validate([
             'ban_type' => 'required|in:temporary,permanent',
-            'ban_until' => 'required_if:ban_type,temporary|date|after:now',
+            'ban_until' => 'required_if:ban_type,temporary|nullable|date|after:now',
         ]);
 
         $house = House::findOrFail($houseId);
@@ -140,12 +171,18 @@ class BanController extends Controller
             $house->banned_until = null;
         } else {
             $house->is_banned_permanently = false;
-            $house->banned_until = Carbon::parse($request->input('ban_until'));
+            if ($request->has('ban_until') && $request->input('ban_until')) {
+                $house->banned_until = Carbon::parse($request->input('ban_until'));
+            } else {
+                // Если временный бан, но дата не указана, устанавливаем по умолчанию 7 дней
+                $house->banned_until = Carbon::now()->addDays(7);
+            }
         }
 
         $house->save();
+        $house->refresh(); // Обновляем данные модели
 
-        return back()->with('status', "Дом #{$house->house_id} забанен.");
+        return redirect()->route('admin.bans', ['type' => 'houses', 'page' => $request->get('page', 1)])->with('status', "Дом #{$house->house_id} забанен.");
     }
 
     /**
@@ -159,7 +196,7 @@ class BanController extends Controller
         $house->banned_until = null;
         $house->save();
 
-        return back()->with('status', "Дом #{$house->house_id} разбанен.");
+        return redirect()->route('admin.bans', ['type' => 'houses'])->with('status', "Дом #{$house->house_id} разбанен.");
     }
 
     /**

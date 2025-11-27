@@ -116,11 +116,18 @@ class House extends Model
      */
     public function isBanned(): bool
     {
-        if ($this->is_banned_permanently) {
+        // Проверяем постоянный бан
+        if ($this->is_banned_permanently === true) {
             return true;
         }
         
+        // Проверяем временный бан
         if ($this->banned_until) {
+            // Если banned_until уже является Carbon объектом (из casts), используем его напрямую
+            if ($this->banned_until instanceof \Carbon\Carbon) {
+                return $this->banned_until->isFuture();
+            }
+            // Иначе парсим строку
             return \Carbon\Carbon::parse($this->banned_until)->isFuture();
         }
         

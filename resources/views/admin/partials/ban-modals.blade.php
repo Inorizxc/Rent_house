@@ -38,6 +38,7 @@ function openBanModal(type, id, name) {
     const modal = document.getElementById('banModal');
     const form = document.getElementById('banForm');
     const title = document.getElementById('banModalTitle');
+    const dateInput = document.getElementById('ban_until');
     
     if (type === 'user') {
         form.action = '{{ route("admin.bans.user.ban", ":id") }}'.replace(':id', id);
@@ -46,6 +47,13 @@ function openBanModal(type, id, name) {
         form.action = '{{ route("admin.bans.house.ban", ":id") }}'.replace(':id', id);
         title.textContent = 'Забанить дом: ' + name;
     }
+    
+    // Устанавливаем минимальную дату (сегодня) и значение по умолчанию (через 7 дней)
+    const now = new Date();
+    now.setDate(now.getDate() + 7);
+    const defaultDate = now.toISOString().slice(0, 16);
+    dateInput.min = new Date().toISOString().slice(0, 16);
+    dateInput.value = defaultDate;
     
     modal.classList.add('show');
     toggleBanDate();

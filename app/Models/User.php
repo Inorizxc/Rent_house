@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use App\Models\Role;
 
 class User extends Authenticatable
 {
@@ -28,8 +29,8 @@ class User extends Authenticatable
         'card',
         'need_verification',
         'verification_denied_until',
-        'banned_until',
-        'is_banned_permanently',
+        'banned_until', // Для временного бана - дата окончания
+        'original_role_id', // Сохраняем оригинальную роль перед баном
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -38,7 +39,7 @@ class User extends Authenticatable
         'need_verification' => 'boolean',
         'verification_denied_until' => 'datetime',
         'banned_until' => 'datetime',
-        'is_banned_permanently' => 'boolean',
+        'original_role_id' => 'integer',
     ];
 
     public static function boot(){
@@ -224,15 +225,65 @@ class User extends Authenticatable
      */
     public function isBanned(): bool
     {
-        if ($this->is_banned_permanently) {
+        // Проверяем, есть ли у пользователя роль "Забанен"
+        if (!$this->roles) {
+            $this->load('roles');
+        }
+        
+        $bannedRole = Role::where('uniq_name', 'Banned')->first();
+        if (!$bannedRole) {
+            return false;
+        }
+        
+        // Если роль "Забанен"
+        if ($this->role_id == $bannedRole->role_id) {
+            // Для временного бана проверяем дату окончания
+            if ($this->banned_until) {
+                if ($this->banned_until instanceof \Carbon\Carbon) {
+                    // Если дата прошла, автоматически разбаниваем
+                    if ($this->banned_until->isPast()) {
+                        $this->unban();
+                        return false;
+                    }
+                    return true;
+                }
+                $banDate = \Carbon\Carbon::parse($this->banned_until);
+                if ($banDate->isPast()) {
+                    $this->unban();
+                    return false;
+                }
+                return true;
+            }
+            // Постоянный бан (нет даты окончания)
             return true;
         }
         
-        if ($this->banned_until) {
-            return \Carbon\Carbon::parse($this->banned_until)->isFuture();
+        return false;
+    }
+    
+    /**
+     * Разбанивает пользователя, восстанавливая оригинальную роль
+     */
+    public function unban()
+    {
+        $bannedRole = Role::where('uniq_name', 'Banned')->first();
+        if (!$bannedRole || $this->role_id != $bannedRole->role_id) {
+            return; // Пользователь не забанен
         }
         
-        return false;
+        // Восстанавливаем оригинальную роль или устанавливаем роль "User" по умолчанию
+        $originalRoleId = $this->original_role_id;
+        if (!$originalRoleId) {
+            $userRole = Role::where('uniq_name', 'User')->first();
+            $originalRoleId = $userRole ? $userRole->role_id : null;
+        }
+        
+        if ($originalRoleId) {
+            $this->role_id = $originalRoleId;
+            $this->original_role_id = null;
+            $this->banned_until = null;
+            $this->save();
+        }
     }
 
     /**
@@ -242,16 +293,30 @@ class User extends Authenticatable
      */
     public function getBanUntilDate(): ?\Carbon\Carbon
     {
-        if ($this->is_banned_permanently) {
-            return null; // Постоянный бан
+        if (!$this->isBanned()) {
+            return null;
         }
         
         if ($this->banned_until) {
-            $date = \Carbon\Carbon::parse($this->banned_until);
-            return $date->isFuture() ? $date : null;
+            if ($this->banned_until instanceof \Carbon\Carbon) {
+                return $this->banned_until;
+            }
+            return \Carbon\Carbon::parse($this->banned_until);
         }
         
-        return null;
+        return null; // Постоянный бан
+    }
+    
+    /**
+     * Проверяет, является ли бан постоянным
+     */
+    public function isBannedPermanently(): bool
+    {
+        if (!$this->isBanned()) {
+            return false;
+        }
+        
+        return $this->banned_until === null;
     }
 
 }

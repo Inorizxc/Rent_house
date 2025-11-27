@@ -117,7 +117,7 @@ class HouseChatController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($currentUser->isBanned()) {
             $banUntil = $currentUser->getBanUntilDate();
-            $message = $currentUser->is_banned_permanently 
+            $message = $currentUser->isBannedPermanently() 
                 ? 'Ваш аккаунт заблокирован навсегда. Вы не можете отправлять сообщения.'
                 : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете отправлять сообщения до этой даты.";
             

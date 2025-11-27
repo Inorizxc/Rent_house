@@ -38,7 +38,7 @@ class HouseController extends Controller
     {
         // Проверяем, может ли пользователь создавать дома
         $this->authorize('create', House::class);
-        
+
         $currentUser = auth()->user();
         
         // Проверяем, не забанен ли пользователь

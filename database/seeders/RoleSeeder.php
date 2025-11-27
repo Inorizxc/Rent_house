@@ -17,7 +17,7 @@ class RoleSeeder extends Seeder
 
         $table = DB::table("SELECT count() FROM roles");
         $count1 = Role::count();
-        if($count1<4){
+        if($count1<5){
             $this->command->info("Создание ролей");
         $this->command->info("____________");
             $roles = [
@@ -25,6 +25,7 @@ class RoleSeeder extends Seeder
                 ["uniq_name"=> "RentDealer","name"=> "Арендодатель","description"=> "Сдает дома"],
                 ["uniq_name"=> "User","name"=> "Пользователь","description"=> "Пользуется"],
                 ["uniq_name"=> "Guest","name"=> "Гость","description"=> "Гостит"],
+                ["uniq_name"=> "Banned","name"=> "Забанен","description"=> "Заблокированный пользователь"],
             ];
             foreach ($roles as $role) {
                 $role1 = Role::firstOrCreate($role);

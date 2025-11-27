@@ -12,9 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('houses', function (Blueprint $table) {
-            $table->dateTime('banned_until')->nullable();
-            $table->boolean('is_banned_permanently')->default(false);
-            // is_deleted уже может существовать, проверим это в миграции
+            if (!Schema::hasColumn('houses', 'banned_until')) {
+                $table->dateTime('banned_until')->nullable();
+            }
+            if (!Schema::hasColumn('houses', 'is_banned_permanently')) {
+                $table->boolean('is_banned_permanently')->default(false);
+            }
         });
     }
 

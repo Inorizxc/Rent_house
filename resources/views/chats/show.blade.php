@@ -400,6 +400,73 @@
     const currentUserId = {{ $currentUser->user_id }};
     let lastMessageId = {{ $messages->count() > 0 ? $messages->last()->message_id : 0 }};
 
+    // Функция для показа уведомления о бане
+    function showBanNotification(message) {
+        // Создаем элемент уведомления
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: #ffffff;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(220, 38, 38, 0.4);
+            z-index: 10000;
+            max-width: 400px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.5;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        notification.innerHTML = `
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <svg style="width: 24px; height: 24px; flex-shrink: 0; margin-top: 2px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/>
+                </svg>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; margin-bottom: 4px; font-size: 15px;">Ваш аккаунт заблокирован</div>
+                    <div style="opacity: 0.95; font-size: 13px;">${message}</div>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: #ffffff; cursor: pointer; font-size: 20px; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">×</button>
+            </div>
+        `;
+        
+        // Добавляем стили для анимации
+        if (!document.getElementById('ban-notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'ban-notification-styles';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(notification);
+        
+        // Автоматически удаляем через 8 секунд
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }
+        }, 8000);
+    }
+
     // Автоизменение размера textarea
     function autoResize(textarea) {
         textarea.style.height = 'auto';
@@ -448,7 +515,12 @@
             if (!response.ok) {
                 // Если ответ не успешный, пытаемся получить JSON с ошибкой
                 return response.json().then(err => {
-                    throw new Error(err.error || err.message || 'Ошибка при отправке сообщения');
+                    const errorMessage = err.error || err.message || 'Ошибка при отправке сообщения';
+                    // Если это ошибка бана (403), показываем специальное уведомление
+                    if (response.status === 403 || errorMessage.includes('заблокирован')) {
+                        showBanNotification(errorMessage);
+                    }
+                    throw new Error(errorMessage);
                 }).catch(() => {
                     throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
                 });
@@ -471,12 +543,21 @@
                 scrollToBottom();
             } else {
                 // Если нет success или message, это ошибка
-                throw new Error(data.error || 'Неизвестная ошибка при отправке сообщения');
+                const errorMessage = data.error || 'Неизвестная ошибка при отправке сообщения';
+                if (errorMessage.includes('заблокирован')) {
+                    showBanNotification(errorMessage);
+                }
+                throw new Error(errorMessage);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert(error.message || 'Ошибка при отправке сообщения');
+            const errorMessage = error.message || 'Ошибка при отправке сообщения';
+            if (errorMessage.includes('заблокирован')) {
+                showBanNotification(errorMessage);
+            } else {
+                alert(errorMessage);
+            }
         })
         .finally(() => {
             sendButton.disabled = false;

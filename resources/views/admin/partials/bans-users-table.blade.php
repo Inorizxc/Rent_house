@@ -54,7 +54,7 @@
                         <td style="padding: 12px;">
                             @if($isBanned)
                                 <span class="ban-status banned">
-                                    @if($user->is_banned_permanently)
+                                    @if($user->isBannedPermanently())
                                         Забанен навсегда
                                     @elseif($user->banned_until)
                                         Забанен до {{ \Carbon\Carbon::parse($user->banned_until)->format('d.m.Y') }}

@@ -66,7 +66,7 @@ Route::prefix('profile/{id}')
 
 Route::middleware(['auth', 'banned'])->group(function () {
     Route::post('/verification/request', [UserController::class, 'requestVerification'])->name('verification.request');
-});
+    });
 
 
 Route::get('/tables', function () {

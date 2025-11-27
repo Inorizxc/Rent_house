@@ -211,7 +211,7 @@ class OrderController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($user->isBanned()) {
             $banUntil = $user->getBanUntilDate();
-            $message = $user->is_banned_permanently 
+            $message = $user->isBannedPermanently() 
                 ? 'Ваш аккаунт заблокирован навсегда. Вы не можете создавать заказы.'
                 : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете создавать заказы до этой даты.";
             
@@ -416,7 +416,7 @@ class OrderController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($user->isBanned()) {
             $banUntil = $user->getBanUntilDate();
-            $message = $user->is_banned_permanently 
+            $message = $user->isBannedPermanently() 
                 ? 'Ваш аккаунт заблокирован навсегда. Вы не можете подтверждать заказы.'
                 : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете подтверждать заказы до этой даты.";
             
@@ -601,7 +601,7 @@ class OrderController extends Controller
         // Проверяем, не забанен ли пользователь
         if ($user->isBanned()) {
             $banUntil = $user->getBanUntilDate();
-            $message = $user->is_banned_permanently 
+            $message = $user->isBannedPermanently() 
                 ? 'Ваш аккаунт заблокирован навсегда. Вы не можете отменять заказы.'
                 : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете отменять заказы до этой даты.";
             
