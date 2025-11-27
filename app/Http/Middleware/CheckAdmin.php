@@ -15,9 +15,14 @@ class CheckAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if($request->user()->role_id!='1'){
+        if(!$request->user()){
             abort(403,"Ошибка доступа");
-        };
+        }
+        
+        if($request->user()->role_id != '1'){
+            abort(403,"Ошибка доступа");
+        }
+        
         return $next($request);
     }
 }

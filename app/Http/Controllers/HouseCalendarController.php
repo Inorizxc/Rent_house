@@ -68,6 +68,28 @@ class HouseCalendarController extends Controller
      */
     public function updateDates(Request $request, $houseId)
     {
+        $user = Auth::user();
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Необходима авторизация'
+            ], 401);
+        }
+        
+        // Проверяем, не забанен ли пользователь
+        if ($user->isBanned()) {
+            $banUntil = $user->getBanUntilDate();
+            $message = $user->is_banned_permanently 
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете редактировать календарь.'
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете редактировать календарь до этой даты.";
+            
+            return response()->json([
+                'success' => false,
+                'error' => $message
+            ], 403);
+        }
+        
         $request->validate([
             'date' => 'required|date',
             'action' => 'required|in:add,remove'
@@ -117,6 +139,28 @@ class HouseCalendarController extends Controller
      */
     public function updateDatesRange(Request $request, $houseId)
     {
+        $user = Auth::user();
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Необходима авторизация'
+            ], 401);
+        }
+        
+        // Проверяем, не забанен ли пользователь
+        if ($user->isBanned()) {
+            $banUntil = $user->getBanUntilDate();
+            $message = $user->is_banned_permanently 
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете редактировать календарь.'
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете редактировать календарь до этой даты.";
+            
+            return response()->json([
+                'success' => false,
+                'error' => $message
+            ], 403);
+        }
+        
         $request->validate([
             'dates' => 'required|array',
             'dates.*' => 'required|date',

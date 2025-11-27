@@ -130,6 +130,28 @@ class ChatController extends Controller
      */
     public function sendMessage(Request $request, $chatId)
     {
+        $currentUser = auth()->user();
+
+        if (!$currentUser) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Необходима авторизация'
+            ], 401);
+        }
+        
+        // Проверяем, не забанен ли пользователь
+        if ($currentUser->isBanned()) {
+            $banUntil = $currentUser->getBanUntilDate();
+            $message = $currentUser->is_banned_permanently 
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете отправлять сообщения.'
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете отправлять сообщения до этой даты.";
+            
+            return response()->json([
+                'success' => false,
+                'error' => $message
+            ], 403);
+        }
+        
         try {
             $validated = $request->validate([
                 'message' => 'required|string|max:1000',
@@ -139,15 +161,6 @@ class ChatController extends Controller
                 'success' => false,
                 'error' => 'Ошибка валидации: ' . implode(', ', $e->errors()['message'] ?? ['Неверные данные'])
             ], 422);
-        }
-
-        $currentUser = auth()->user();
-
-        if (!$currentUser) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Необходима авторизация'
-            ], 401);
         }
 
         $chat = Chat::findOrFail($chatId);

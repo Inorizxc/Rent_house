@@ -9,7 +9,7 @@ class RouterController extends Controller
 {
     public function map()
     {
-        $houses = House::with(['photo', 'house_type'])->get();
+        $houses = House::active()->with(['photo', 'house_type'])->get();
         return view('map', ['houses' => $houses]);
     }
 }

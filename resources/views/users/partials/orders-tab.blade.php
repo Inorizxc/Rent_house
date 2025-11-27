@@ -60,6 +60,34 @@
                     </div>
                     <div class="orders-filter-group-row">
                         <div class="orders-filter-group">
+                            <label class="orders-filter-label">Заказчик:</label>
+                            <select id="filter-customer-select" class="orders-filter-select">
+                                <option value="">Все заказчики</option>
+                                @if(isset($customers) && $customers)
+                                    @foreach ($customers as $customer)
+                                        <option value="{{ $customer->user_id }}">
+                                            {{ trim(($customer->name ?? '') . ' ' . ($customer->sename ?? '')) ?: 'Пользователь #' . $customer->user_id }}
+                                        </option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+                        <div class="orders-filter-group">
+                            <label class="orders-filter-label">Владелец дома:</label>
+                            <select id="filter-owner-select" class="orders-filter-select">
+                                <option value="">Все владельцы</option>
+                                @if(isset($owners) && $owners)
+                                    @foreach ($owners as $owner)
+                                        <option value="{{ $owner->user_id }}">
+                                            {{ trim(($owner->name ?? '') . ' ' . ($owner->sename ?? '')) ?: 'Пользователь #' . $owner->user_id }}
+                                        </option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+                    </div>
+                    <div class="orders-filter-group-row">
+                        <div class="orders-filter-group">
                             <label class="orders-filter-label">Имя:</label>
                             <div class="orders-filter-input-wrapper">
                                 <input type="text" 
@@ -143,7 +171,11 @@
                     >
                         <div class="orders-compact-content">
                             <div class="orders-compact-header">
-                                <div class="orders-compact-title">Заказ #{{ $order->order_id }}</div>
+                                <div class="orders-compact-title">
+                                    <a href="{{ route('orders.show', $order->order_id) }}" class="orders-compact-title-link">
+                                        Заказ #{{ $order->order_id }}
+                                    </a>
+                                </div>
                                 @if($order->order_status)
                                     @php
                                         $statusClass = match($order->order_status) {
@@ -253,6 +285,17 @@
         font-size: 16px;
         font-weight: 600;
         color: #111827;
+    }
+    
+    .orders-compact-title-link {
+        color: #111827;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    
+    .orders-compact-title-link:hover {
+        color: #4f46e5;
+        text-decoration: underline;
     }
     
     .orders-compact-info {
@@ -655,6 +698,30 @@
             width: 100%;
         }
     }
+    
+    .orders-filter-select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        background: #ffffff;
+        color: #1f2937;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+        box-sizing: border-box;
+    }
+    
+    .orders-filter-select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .orders-filter-select:hover {
+        border-color: #9ca3af;
+    }
 </style>
 
 <script>
@@ -723,12 +790,17 @@
             // Получаем значения из полей ввода
             const nameInput = container.querySelector('#filter-name-input');
             const addressInput = container.querySelector('#filter-address-input');
+            const customerSelect = container.querySelector('#filter-customer-select');
+            const ownerSelect = container.querySelector('#filter-owner-select');
+            
             const nameFilter = (nameInput ? nameInput.value.trim().toLowerCase() : '');
             const addressFilter = (addressInput ? addressInput.value.trim().toLowerCase() : '');
+            const customerFilter = (customerSelect ? customerSelect.value : '');
+            const ownerFilter = (ownerSelect ? ownerSelect.value : '');
             
             let visibleCount = 0;
             
-            console.log('Filtering with:', filters, 'name:', nameFilter, 'address:', addressFilter);
+            console.log('Filtering with:', filters, 'name:', nameFilter, 'address:', addressFilter, 'customer:', customerFilter, 'owner:', ownerFilter);
             
             cards.forEach(card => {
                 const cardRole = (card.dataset.orderRole || '').toLowerCase();
@@ -736,12 +808,20 @@
                 const customerName = (card.dataset.customerName || '').toLowerCase();
                 const ownerName = (card.dataset.ownerName || '').toLowerCase();
                 const houseAddress = (card.dataset.houseAddress || '').toLowerCase();
+                const cardCustomerId = card.dataset.customerId || '';
+                const cardOwnerId = card.dataset.ownerId || '';
                 
                 // Проверяем фильтр по роли
                 const roleMatch = filters.roles.includes(cardRole);
                 
                 // Проверяем фильтр по статусу
                 const statusMatch = filters.statuses.includes(cardStatus);
+                
+                // Проверяем фильтр по заказчику
+                const customerMatch = !customerFilter || cardCustomerId === customerFilter;
+                
+                // Проверяем фильтр по владельцу дома
+                const ownerMatch = !ownerFilter || cardOwnerId === ownerFilter;
                 
                 // Проверяем фильтр по имени (ищем в имени заказчика или владельца)
                 const nameMatch = !nameFilter || 
@@ -753,7 +833,7 @@
                     houseAddress.includes(addressFilter);
                 
                 // Показываем карточку только если все фильтры совпадают
-                if (roleMatch && statusMatch && nameMatch && addressMatch) {
+                if (roleMatch && statusMatch && customerMatch && ownerMatch && nameMatch && addressMatch) {
                     card.style.display = '';
                     visibleCount++;
                 } else {
@@ -802,6 +882,22 @@
                 filterOrders();
             }, { passive: true });
         });
+        
+        // Добавляем обработчики для select фильтров
+        const customerSelect = container.querySelector('#filter-customer-select');
+        const ownerSelect = container.querySelector('#filter-owner-select');
+        
+        if (customerSelect) {
+            customerSelect.addEventListener('change', function() {
+                filterOrders();
+            }, { passive: true });
+        }
+        
+        if (ownerSelect) {
+            ownerSelect.addEventListener('change', function() {
+                filterOrders();
+            }, { passive: true });
+        }
         
         // Инициализируем автодополнение для полей ввода, передавая функцию фильтрации
         initAutocomplete(container, filterOrders);

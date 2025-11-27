@@ -258,33 +258,163 @@
         margin-top: 4px;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
     }
 
     .house-item {
-        padding: 12px 12px;
+        padding: 10px 12px;
         border-radius: 10px;
         cursor: pointer;
-        border: 1.5px solid transparent;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        font-size: 13px;
+        border: 1.5px solid #e5e7eb;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 12px;
         color: var(--text-main);
-        background: #ffffff;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .house-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 3px;
+        height: 100%;
+        background: var(--primary-gradient);
+        opacity: 0;
+        transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .house-item:hover {
         background: linear-gradient(135deg, #f1f5ff 0%, #e8f0ff 100%);
         border-color: #c7d2fe;
         transform: translateX(4px);
-        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.15);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.2);
+    }
+
+    .house-item:hover::before {
+        opacity: 1;
     }
 
     .house-item.active {
         background: linear-gradient(135deg, #e0e7ff 0%, #d4dcf7 100%);
         border-color: #a5b4fc;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.25);
         transform: translateX(4px);
+    }
+
+    .house-item.active::before {
+        opacity: 1;
+    }
+
+    .house-item-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+        gap: 6px;
+    }
+
+    .house-item-id {
+        font-size: 11px;
+        font-weight: 700;
+        color: #667eea;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        padding: 3px 8px;
+        border-radius: 5px;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+
+    .house-item-address {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-main);
+        line-height: 1.3;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: flex-start;
+        gap: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .house-item-address::before {
+        content: '📍';
+        font-size: 12px;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    .house-item-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 0;
+    }
+
+    .house-item-detail {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+        background: rgba(255, 255, 255, 0.6);
+        padding: 4px 8px;
+        border-radius: 6px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        flex: 1;
+        min-width: calc(50% - 3px);
+    }
+
+    .house-item-detail-icon {
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+
+    .house-item-detail-label {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        opacity: 0.7;
+        margin-right: 2px;
+        white-space: nowrap;
+    }
+
+    .house-item-detail-value {
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .house-item-detail-value.type {
+        color: #667eea;
+    }
+
+    .house-item-detail-value.area {
+        color: #11998e;
+    }
+
+    .house-item-detail-value.price {
+        color: #764ba2;
+        font-weight: 700;
+        font-size: 12px;
+    }
+
+    .house-item-empty {
+        text-align: center;
+        padding: 30px 20px;
+        color: var(--text-muted);
+        font-size: 14px;
+        opacity: 0.7;
     }
 
     .info-label {
@@ -841,18 +971,36 @@
                 houseListDiv.innerHTML = '';
 
                 if (filtered.length === 0) {
-                    houseListDiv.innerHTML = '<div>Ничего не найдено</div>';
+                    houseListDiv.innerHTML = '<div class="house-item-empty">Ничего не найдено</div>';
                 } else {
                     filtered.forEach(h => {
                         const div = document.createElement('div');
                         div.className = 'house-item' + (Number(h.house_id) === Number(activeHouseId) ? ' active' : '');
                         div.dataset.id = h.house_id;
+                        
                         const houseTypeName = h.house_type?.name ?? '—';
+                        const price = h.price_id ? (h.price_id.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₽') : '—';
+                        const area = h.area ? (h.area + ' м²') : '—';
+                        const address = h.adress ?? 'Адрес не указан';
+                        
                         div.innerHTML = `
-                            <div><strong>#${h.house_id}</strong> — ${h.adress ?? 'Адрес не указан'}</div>
-                            <div>
-                                Тип дома: ${houseTypeName} |
-                                Цена: ${h.price_id ?? '—'}
+                            <div class="house-item-header">
+                                <div class="house-item-id">#${h.house_id}</div>
+                            </div>
+                            <div class="house-item-address">${address}</div>
+                            <div class="house-item-details">
+                                <div class="house-item-detail">
+                                    <span class="house-item-detail-icon">🏠</span>
+                                    <span class="house-item-detail-value type">${houseTypeName}</span>
+                                </div>
+                                <div class="house-item-detail">
+                                    <span class="house-item-detail-icon">📐</span>
+                                    <span class="house-item-detail-value area">${area}</span>
+                                </div>
+                                <div class="house-item-detail" style="flex-basis: 100%;">
+                                    <span class="house-item-detail-icon">💰</span>
+                                    <span class="house-item-detail-value price">${price}</span>
+                                </div>
                             </div>
                         `;
                         div.onclick = () => selectHouse(h.house_id, true);

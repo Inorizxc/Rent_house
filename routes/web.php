@@ -1,6 +1,7 @@
 <?php
 
 
+use App\Http\Controllers\AdminPanelController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\HouseController;
 use App\Http\Controllers\HouseChatController;
@@ -25,7 +26,7 @@ Route::controller(HouseController::class)->group(function () {
     Route::post('/houses/get-address-suggestions', 'getAddressSuggestions')->name('houses.get-address-suggestions')->middleware('auth');
 });
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'banned'])->group(function () {
     Route::controller(HouseChatController::class)->group(function () {
         Route::get('/house/{houseId}/chat', 'show')->name('house.chat');
         Route::post('/house/{houseId}/chat/message', 'sendMessage')->name('house.chat.send');
@@ -38,6 +39,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::controller(OrderController::class)->group(function () {
+        Route::get('/orders/{id}', 'show')->name('orders.show');
         Route::post('/house/{houseId}/order', 'createFromChat')->name('house.order.create');
         Route::get('/house/{houseId}/order/confirm', 'showConfirm')->name('house.order.confirm.show');
         Route::post('/house/{houseId}/order/confirm', 'confirm')->name('house.order.confirm');
@@ -61,6 +63,10 @@ Route::prefix('profile/{id}')
         Route::get('/tab/orders', 'tabOrders')->name('profile.tab.orders');
         Route::get('/tab/settings', 'tabSettings')->name('profile.tab.settings');
     });
+
+Route::middleware(['auth', 'banned'])->group(function () {
+    Route::post('/verification/request', [UserController::class, 'requestVerification'])->name('verification.request');
+});
 
 
 Route::get('/tables', function () {
@@ -175,6 +181,35 @@ Route::middleware(['auth'])->group(function () {
             ),
         )
         ->name('two-factor.show');
+});
+
+// Админ-панель
+Route::middleware(['auth', 'admin'])->prefix('adminpanel')->name('admin.')->group(function () {
+    Route::get('/', [AdminPanelController::class, 'index'])->name('panel');
+    Route::post('/', [AdminPanelController::class, 'index'])->name('panel.store');
+    Route::delete('/{table}/{id}', [AdminPanelController::class, 'delete'])->name('panel.delete');
+    
+    // Чаты
+    Route::get('/chats', [AdminPanelController::class, 'chats'])->name('chats');
+    Route::get('/chats/{chatId}', [AdminPanelController::class, 'chatShow'])->name('chat.show');
+    
+    // Заказы
+    Route::get('/orders', [AdminPanelController::class, 'orders'])->name('orders');
+    Route::get('/orders/{orderId}', [AdminPanelController::class, 'orderShow'])->name('order.show');
+    
+    // Верификация
+    Route::get('/verification', [\App\Http\Controllers\VerificationController::class, 'index'])->name('verification');
+    Route::post('/verification/{userId}/approve', [\App\Http\Controllers\VerificationController::class, 'approve'])->name('verification.approve');
+    Route::post('/verification/{userId}/reject', [\App\Http\Controllers\VerificationController::class, 'reject'])->name('verification.reject');
+    
+    // Баны
+    Route::get('/bans', [\App\Http\Controllers\BanController::class, 'index'])->name('bans');
+    Route::post('/bans/users/{userId}/ban', [\App\Http\Controllers\BanController::class, 'banUser'])->name('bans.user.ban');
+    Route::post('/bans/users/{userId}/unban', [\App\Http\Controllers\BanController::class, 'unbanUser'])->name('bans.user.unban');
+    Route::post('/bans/houses/{houseId}/ban', [\App\Http\Controllers\BanController::class, 'banHouse'])->name('bans.house.ban');
+    Route::post('/bans/houses/{houseId}/unban', [\App\Http\Controllers\BanController::class, 'unbanHouse'])->name('bans.house.unban');
+    Route::post('/bans/houses/{houseId}/delete', [\App\Http\Controllers\BanController::class, 'deleteHouse'])->name('bans.house.delete');
+    Route::post('/bans/houses/{houseId}/restore', [\App\Http\Controllers\BanController::class, 'restoreHouse'])->name('bans.house.restore');
 });
 
 require __DIR__.'/auth.php';

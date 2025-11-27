@@ -58,7 +58,7 @@ class OrderController extends Controller
      */
     public function create()
     {
-        $houses = House::where('is_deleted', false)->get();
+        $houses = House::active()->get();
         $orderStatuses = OrderStatus::all();
         
         return view('orders.create', [
@@ -106,10 +106,27 @@ class OrderController extends Controller
      */
     public function show($id)
     {
-        $order = Order::with(['house', 'user', 'order_status'])->findOrFail($id);
+        $order = Order::with(['house.user', 'house.photo', 'customer'])->findOrFail($id);
+        
+        $currentUser = Auth::user();
+        
+        if (!$currentUser) {
+            return redirect()->route('login')->with('error', 'Необходима авторизация');
+        }
+        
+        // Проверяем доступ: пользователь может видеть заказ, если он заказчик или владелец дома
+        $isCustomer = $order->customer_id == $currentUser->user_id;
+        $isOwner = $order->house && $order->house->user_id == $currentUser->user_id;
+        
+        if (!$isCustomer && !$isOwner) {
+            abort(403, 'У вас нет доступа к этому заказу');
+        }
         
         return view('orders.show', [
-            'order' => $order
+            'order' => $order,
+            'currentUser' => $currentUser,
+            'isCustomer' => $isCustomer,
+            'isOwner' => $isOwner,
         ]);
     }
 
@@ -119,7 +136,7 @@ class OrderController extends Controller
     public function edit($id)
     {
         $order = Order::findOrFail($id);
-        $houses = House::where('is_deleted', false)->get();
+        $houses = House::active()->get();
         $orderStatuses = OrderStatus::all();
         
         return view('orders.edit', [
@@ -182,12 +199,6 @@ class OrderController extends Controller
      */
     public function createFromChat(Request $request, $houseId)
     {
-        $validated = $request->validate([
-            'checkin_date' => 'required|date|after_or_equal:today',
-            'checkout_date' => 'required|date|after:checkin_date',
-        ]);
-
-        $house = House::findOrFail($houseId);
         $user = Auth::user();
 
         if (!$user) {
@@ -195,6 +206,31 @@ class OrderController extends Controller
                 'success' => false,
                 'error' => 'Необходима авторизация'
             ], 401);
+        }
+        
+        // Проверяем, не забанен ли пользователь
+        if ($user->isBanned()) {
+            $banUntil = $user->getBanUntilDate();
+            $message = $user->is_banned_permanently 
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете создавать заказы.'
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете создавать заказы до этой даты.";
+            
+            return response()->json([
+                'success' => false,
+                'error' => $message
+            ], 403);
+        }
+        
+        $validated = $request->validate([
+            'checkin_date' => 'required|date|after_or_equal:today',
+            'checkout_date' => 'required|date|after:checkin_date',
+        ]);
+
+        $house = House::findOrFail($houseId);
+        
+        // Проверяем, не забанен ли дом и не удален ли он
+        if ($house->is_deleted || $house->isBanned()) {
+            abort(404, 'Дом не найден или недоступен');
         }
 
         $checkin = new \DateTime($validated['checkin_date']);
@@ -371,6 +407,22 @@ class OrderController extends Controller
      */
     public function confirm(Request $request, $houseId)
     {
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Необходима авторизация');
+        }
+        
+        // Проверяем, не забанен ли пользователь
+        if ($user->isBanned()) {
+            $banUntil = $user->getBanUntilDate();
+            $message = $user->is_banned_permanently 
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете подтверждать заказы.'
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете подтверждать заказы до этой даты.";
+            
+            return redirect()->back()->with('error', $message);
+        }
+        
         $request->validate([
             'checkin_date' => 'required|date|after_or_equal:today',
             'checkout_date' => 'required|date|after:checkin_date',
@@ -378,11 +430,6 @@ class OrderController extends Controller
         ]);
 
         $house = House::with('user')->findOrFail($houseId);
-        $user = Auth::user();
-
-        if (!$user) {
-            return redirect()->route('login')->with('error', 'Необходима авторизация');
-        }
 
         // Проверяем, что временная блокировка принадлежит текущему пользователю
         $temporaryBlock = TemporaryBlock::where('temporary_block_id', $request->temporary_block_id)
@@ -542,10 +589,6 @@ class OrderController extends Controller
      */
     public function cancel(Request $request, $houseId)
     {
-        $request->validate([
-            'temporary_block_id' => 'required|exists:temporary_blocks,temporary_block_id',
-        ]);
-
         $user = Auth::user();
 
         if (!$user) {
@@ -554,6 +597,23 @@ class OrderController extends Controller
                 'error' => 'Необходима авторизация'
             ], 401);
         }
+        
+        // Проверяем, не забанен ли пользователь
+        if ($user->isBanned()) {
+            $banUntil = $user->getBanUntilDate();
+            $message = $user->is_banned_permanently 
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете отменять заказы.'
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете отменять заказы до этой даты.";
+            
+            return response()->json([
+                'success' => false,
+                'error' => $message
+            ], 403);
+        }
+        
+        $request->validate([
+            'temporary_block_id' => 'required|exists:temporary_blocks,temporary_block_id',
+        ]);
 
         // Удаляем временную блокировку, если она принадлежит пользователю
         $temporaryBlock = TemporaryBlock::where('temporary_block_id', $request->temporary_block_id)

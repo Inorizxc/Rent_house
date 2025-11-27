@@ -27,11 +27,19 @@ class User extends Authenticatable
         'phone',
         'card',
         'need_verification',
+        'verification_denied_until',
+        'banned_until',
+        'is_banned_permanently',
     ];
 
     protected $hidden = ['password', 'remember_token'];
-    protected $casts  = ['birth_date' => 'date',
-                        "need_verification"=> 'boolean'];
+    protected $casts  = [
+        'birth_date' => 'date',
+        'need_verification' => 'boolean',
+        'verification_denied_until' => 'datetime',
+        'banned_until' => 'datetime',
+        'is_banned_permanently' => 'boolean',
+    ];
 
     public static function boot(){
         parent::boot();
@@ -207,6 +215,43 @@ class User extends Authenticatable
         }
 
         return false;
+    }
+
+    /**
+     * Проверяет, забанен ли пользователь
+     * 
+     * @return bool
+     */
+    public function isBanned(): bool
+    {
+        if ($this->is_banned_permanently) {
+            return true;
+        }
+        
+        if ($this->banned_until) {
+            return \Carbon\Carbon::parse($this->banned_until)->isFuture();
+        }
+        
+        return false;
+    }
+
+    /**
+     * Получает дату окончания бана (если есть)
+     * 
+     * @return \Carbon\Carbon|null
+     */
+    public function getBanUntilDate(): ?\Carbon\Carbon
+    {
+        if ($this->is_banned_permanently) {
+            return null; // Постоянный бан
+        }
+        
+        if ($this->banned_until) {
+            $date = \Carbon\Carbon::parse($this->banned_until);
+            return $date->isFuture() ? $date : null;
+        }
+        
+        return null;
     }
 
 }

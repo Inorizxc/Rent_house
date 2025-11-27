@@ -19,12 +19,18 @@ class HouseController extends Controller
 {
     //
     public function index(){
-        $houses = House::orderBy("timestamp", "desc")->get();
+        $houses = House::active()->orderBy("timestamp", "desc")->get();
         return view("houses.index", ["houses"=>$houses]);
     }
     public function show(string $id)
     {
         $house = House::with(['user'])->findOrFail($id);
+        
+        // Проверяем, не забанен ли дом и не удален ли он
+        if ($house->is_deleted || $house->isBanned()) {
+            abort(404, 'Дом не найден или недоступен');
+        }
+        
         return view('houses.show', compact('house'));
     }
 
@@ -32,9 +38,20 @@ class HouseController extends Controller
     {
         // Проверяем, может ли пользователь создавать дома
         $this->authorize('create', House::class);
+        
+        $currentUser = auth()->user();
+        
+        // Проверяем, не забанен ли пользователь
+        if ($currentUser && $currentUser->isBanned()) {
+            $banUntil = $currentUser->getBanUntilDate();
+            $message = $currentUser->is_banned_permanently 
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете создавать дома.'
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете создавать дома до этой даты.";
+            
+            return redirect()->back()->with('error', $message);
+        }
 
         $house = new House();
-        $currentUser = auth()->user();
         
         // Для администраторов показываем всех пользователей, для арендодателей - только их
         if ($currentUser && $currentUser->isAdmin()) {
@@ -68,6 +85,25 @@ class HouseController extends Controller
         $houseService = app(HouseService::class);
         // Проверяем, может ли пользователь создавать дома
         $this->authorize('create', House::class);
+        
+        $currentUser = auth()->user();
+        
+        // Проверяем, не забанен ли пользователь
+        if ($currentUser && $currentUser->isBanned()) {
+            $banUntil = $currentUser->getBanUntilDate();
+            $message = $currentUser->is_banned_permanently 
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете создавать дома.'
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете создавать дома до этой даты.";
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => $message
+                ], 403);
+            }
+            
+            return redirect()->back()->with('error', $message)->withInput();
+        }
 
         $data = $request->validated();
         unset($data['image']); // поле не хранится в таблице
@@ -161,6 +197,18 @@ class HouseController extends Controller
         $houseService = app(HouseService::class);
         // Проверяем, может ли пользователь редактировать этот дом
         $this->authorize('update', $house);
+        
+        $currentUser = auth()->user();
+        
+        // Проверяем, не забанен ли пользователь
+        if ($currentUser && $currentUser->isBanned()) {
+            $banUntil = $currentUser->getBanUntilDate();
+            $message = $currentUser->is_banned_permanently 
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете редактировать дома.'
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете редактировать дома до этой даты.";
+            
+            return redirect()->back()->with('error', $message)->withInput();
+        }
 
         $data = $request->validated();
 
@@ -195,6 +243,18 @@ class HouseController extends Controller
     {
         // Проверяем, может ли пользователь удалять этот дом
         $this->authorize('delete', $house);
+        
+        $currentUser = auth()->user();
+        
+        // Проверяем, не забанен ли пользователь
+        if ($currentUser && $currentUser->isBanned()) {
+            $banUntil = $currentUser->getBanUntilDate();
+            $message = $currentUser->is_banned_permanently 
+                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете удалять дома.'
+                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете удалять дома до этой даты.";
+            
+            return redirect()->back()->with('error', $message);
+        }
 
         // удалим возможную картинку
         foreach (['jpg','jpeg','png','webp','gif'] as $ext) {

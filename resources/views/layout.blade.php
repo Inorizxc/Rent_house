@@ -486,6 +486,14 @@ header nav a[href*="dashboard"]:hover {
                                         </a>
                                     </div>
 
+                                    @if(auth()->check() && auth()->user()->role_id == '1')
+                                    <div class="user-dropdown-item">
+                                        <a href="{{ route('admin.panel') }}" class="dropdown-link">
+                                            Админ-панель
+                                        </a>
+                                    </div>
+                                    @endif
+
                                     <div class="user-dropdown-item">
                                         <form method="POST" action="{{ route('logout') }}" class="dropdown-form">
                                             @csrf

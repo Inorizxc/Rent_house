@@ -8,6 +8,8 @@ use App\Models\House;
 use App\Models\Role;
 use App\Models\Order;
 use App\Services\UserServices\UserService as UserService;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -114,6 +116,15 @@ class UserController extends Controller
         // Объединяем заказы и убираем дубликаты
         $allOrders = $ordersAsCustomer->merge($ordersAsOwner)->unique('order_id')->sortByDesc('created_at');
 
+        // Получаем списки заказчиков и владельцев для фильтров
+        $customers = User::whereIn('user_id', $allOrders->pluck('customer_id')->unique()->filter())
+            ->orderBy('name')
+            ->get();
+        
+        $owners = User::whereIn('user_id', $allOrders->pluck('house.user_id')->unique()->filter())
+            ->orderBy('name')
+            ->get();
+
         if ($request->ajax() || $request->wantsJson()) {
             return view("users.partials.orders-tab", [
                 "user" => $user,
@@ -121,6 +132,8 @@ class UserController extends Controller
                 "ordersAsCustomer" => $ordersAsCustomer,
                 "ordersAsOwner" => $ordersAsOwner,
                 "isOwner" => $isOwner,
+                "customers" => $customers,
+                "owners" => $owners,
             ])->render();
         }
 
@@ -192,5 +205,96 @@ class UserController extends Controller
 
         return redirect()->route('users.index')
             ->with('success', 'User deleted successfully.');
+    }
+
+    /**
+     * Обрабатывает запрос на верификацию
+     */
+    public function requestVerification(Request $request)
+    {
+        $user = auth()->user();
+        
+        if (!$user) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Требуется авторизация'
+                ], 403);
+            }
+            return back()->with('error', 'Требуется авторизация');
+        }
+
+        // Проверяем, не является ли пользователь уже арендодателем или администратором
+        if ($user->isRentDealer() || $user->isAdmin()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ваш аккаунт уже верифицирован'
+                ], 400);
+            }
+            return back()->with('error', 'Ваш аккаунт уже верифицирован');
+        }
+
+        // Проверяем, не подал ли пользователь уже заявку
+        if ($user->need_verification) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ваша заявка уже находится на рассмотрении'
+                ], 400);
+            }
+            return back()->with('error', 'Ваша заявка уже находится на рассмотрении');
+        }
+
+        // Проверяем, не заблокирован ли пользователь
+        if ($user->verification_denied_until) {
+            $deniedUntil = Carbon::parse($user->verification_denied_until);
+            if ($deniedUntil->isFuture()) {
+                $message = "Вы сможете подать заявку на верификацию после {$deniedUntil->format('d.m.Y')}";
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message
+                    ], 400);
+                }
+                return back()->with('error', $message);
+            }
+        }
+
+        // Устанавливаем флаг верификации
+        $user->need_verification = true;
+        
+        // Проверяем, существует ли колонка, и добавляем её, если нужно
+        try {
+            $columns = DB::select("PRAGMA table_info(users)");
+            $columnExists = false;
+            foreach ($columns as $column) {
+                if ($column->name === 'verification_denied_until') {
+                    $columnExists = true;
+                    break;
+                }
+            }
+            
+            if (!$columnExists) {
+                // Добавляем колонку, если её нет
+                DB::statement('ALTER TABLE users ADD COLUMN verification_denied_until DATETIME NULL');
+            }
+            
+            $user->verification_denied_until = null;
+        } catch (\Exception $e) {
+            // Если не удалось добавить колонку, просто не устанавливаем значение
+            // Это позволит сохранить need_verification даже если колонка не существует
+        }
+        
+        $user->save();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Заявка на верификацию успешно подана. Мы рассмотрим её в ближайшее время.'
+            ]);
+        }
+
+        return back()->with('success', 'Заявка на верификацию успешно подана. Мы рассмотрим её в ближайшее время.');
     }
 }
