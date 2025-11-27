@@ -754,7 +754,9 @@ a {
             <section class="profile-main">
                 <div class="profile-tabs">
                     <button class="profile-tab-btn active" data-tab="houses" data-route="{{ route('profile.tab.houses', $user->user_id) }}">Дома</button>
-                    <button class="profile-tab-btn" data-tab="orders" data-route="{{ route('profile.tab.orders', $user->user_id) }}">Заказы</button>
+                    @if($isOwner)
+                        <button class="profile-tab-btn" data-tab="orders" data-route="{{ route('profile.tab.orders', $user->user_id) }}">Заказы</button>
+                    @endif
                     @if($isOwner)
                         <button class="profile-tab-btn" data-tab="settings" data-route="{{ route('profile.tab.settings', $user->user_id) }}">Настройки</button>
                     @endif
@@ -765,9 +767,11 @@ a {
                     <div class="profile-tab-panel active" id="tab-houses">
                         @include('users.partials.houses-tab', ['houses' => $houses, 'isOwner' => $isOwner])
                     </div>
-                    <div class="profile-tab-panel" id="tab-orders">
-                        {{-- Контент загружается через AJAX --}}
-                    </div>
+                    @if($isOwner)
+                        <div class="profile-tab-panel" id="tab-orders">
+                            {{-- Контент загружается через AJAX --}}
+                        </div>
+                    @endif
                     @if($isOwner)
                         <div class="profile-tab-panel" id="tab-settings">
                             @include('users.partials.settings-tab')
@@ -879,7 +883,6 @@ a {
                             setTimeout(tryInit, 100);
                         }
                     }, 100);
-
                 } catch (error) {
                     console.error('Ошибка загрузки вкладки:', error);
                     panel.innerHTML = '<div class="profile-empty">Ошибка загрузки. Попробуйте обновить страницу.</div>';
@@ -957,10 +960,6 @@ a {
                     // Инициализируем фильтры заказов
                     if (window.initOrdersFilters && tab === 'orders') {
                         window.initOrdersFilters(panel);
-                    }
-                    // Инициализируем фильтры домов
-                    if (window.initHousesFilters && tab === 'houses') {
-                        window.initHousesFilters(panel);
                     }
                 }
             }
@@ -1051,13 +1050,11 @@ a {
                     if (window.initOrdersFilters && activeTab === 'orders') {
                         window.initOrdersFilters(activePanel);
                     }
-                    // Инициализируем фильтры домов
-                    if (window.initHousesFilters && activeTab === 'houses') {
-                        window.initHousesFilters(activePanel);
+                } else {
+                    // Если контента нет, загружаем его
+                    if (btn && btn.dataset.route) {
+                        loadTab(activeTab, btn.dataset.route);
                     }
-                } else if (btn && btn.dataset.route) {
-                    // Если контента нет, загружаем через AJAX
-                    loadTab(activeTab, btn.dataset.route);
                 }
             }
         }
