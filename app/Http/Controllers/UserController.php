@@ -87,15 +87,30 @@ class UserController extends Controller
         $userService = app(UserService::class);
         $user = $userService->getUserWithRoleHouse($id);
 
-        // Используем Policy для проверки доступа (разрешает гостям просматривать)
+        // Проверяем доступ к заказам (только администратор или владелец профиля)
         $currentUser = auth()->user();
-        // Для гостей доступ разрешен, проверку делаем только для авторизованных
-        if ($currentUser) {
-            $this->authorize('view', $user);
+        if (!$currentUser) {
+            abort(403, 'Требуется авторизация для просмотра заказов');
+        }
+
+        // Перезагружаем роли пользователя для корректной проверки бана
+        $currentUser->load('roles');
+        
+        // Забаненные пользователи не могут просматривать заказы (проверка ДО Policy)
+        if ($currentUser->isBanned()) {
+            abort(403, 'Заблокированные пользователи не могут просматривать заказы');
+        }
+
+        // Используем Policy для проверки доступа к заказам (внутри Policy также есть проверка бана)
+        $this->authorize('viewOrders', $user);
+
+        // Дополнительная проверка бана после authorize (на случай, если что-то прошло)
+        if ($currentUser->isBanned()) {
+            abort(403, 'Заблокированные пользователи не могут просматривать заказы');
         }
 
         // Проверяем, является ли текущий пользователь владельцем
-        $isOwner = $currentUser && $currentUser->canEditProfile($user);
+        $isOwner = $currentUser->canEditProfile($user);
 
         // Получаем заказы, где пользователь является заказчиком
         $ordersAsCustomer = Order::where('customer_id', $user->user_id)

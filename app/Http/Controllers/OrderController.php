@@ -114,11 +114,17 @@ class OrderController extends Controller
             return redirect()->route('login')->with('error', 'Необходима авторизация');
         }
         
-        // Проверяем доступ: пользователь может видеть заказ, если он заказчик или владелец дома
+        // Забаненные пользователи не могут просматривать заказы
+        if ($currentUser->isBanned()) {
+            abort(403, 'Заблокированные пользователи не могут просматривать заказы');
+        }
+        
+        // Проверяем доступ: пользователь может видеть заказ, если он заказчик, владелец дома или администратор
         $isCustomer = $order->customer_id == $currentUser->user_id;
         $isOwner = $order->house && $order->house->user_id == $currentUser->user_id;
+        $isAdmin = $currentUser->isAdmin();
         
-        if (!$isCustomer && !$isOwner) {
+        if (!$isCustomer && !$isOwner && !$isAdmin) {
             abort(403, 'У вас нет доступа к этому заказу');
         }
         

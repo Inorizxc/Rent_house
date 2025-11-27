@@ -2,6 +2,11 @@
     $orders = $orders ?? collect();
     $currentUser = auth()->user();
     $user = $user ?? null;
+    
+    // Забаненные пользователи не могут просматривать заказы
+    if ($currentUser && $currentUser->isBanned()) {
+        abort(403, 'Заблокированные пользователи не могут просматривать заказы');
+    }
 @endphp
 
 <div class="settings-tab-content">
