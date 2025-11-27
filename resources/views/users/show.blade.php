@@ -228,12 +228,88 @@
     }
 
     .settings-section-title {
-        margin: 0 0 20px 0;
+        margin: 0;
         font-size: 18px;
         font-weight: 600;
         color: #111827;
-        padding-bottom: 12px;
+    }
+
+    .settings-section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
         border-bottom: 2px solid #e5e7eb;
+    }
+
+    .settings-icon-wrapper {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: transform 0.2s;
+    }
+
+    .settings-icon-wrapper:hover {
+        transform: scale(1.05);
+    }
+
+    .settings-icon-profile {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+    }
+
+    .settings-icon-security {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: #ffffff;
+    }
+
+    .settings-icon-verification {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: #ffffff;
+    }
+
+    .settings-icon {
+        width: 20px;
+        height: 20px;
+        stroke-width: 2.5;
+    }
+
+    .settings-card-enhanced {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .settings-card-enhanced::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .settings-card-enhanced:hover::before {
+        opacity: 1;
+    }
+
+    .settings-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .settings-form-grid {
+            grid-template-columns: 1fr;
+        }
     }
 
     .settings-form {
@@ -245,6 +321,24 @@
     @media (max-width: 768px) {
         .settings-form > div[style*="grid"] {
             grid-template-columns: 1fr !important;
+        }
+
+        .settings-section-header {
+            flex-wrap: wrap;
+        }
+
+        .settings-icon-wrapper {
+            width: 36px;
+            height: 36px;
+        }
+
+        .settings-icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        .settings-verification-benefits {
+            padding: 12px;
         }
     }
 
@@ -263,32 +357,56 @@
         border-radius: 8px;
         font-size: 14px;
         font-weight: 500;
-        background: #4f46e5;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
         border: 1px solid #4f46e5;
         color: #ffffff;
         cursor: pointer;
-        transition: background 0.2s, border-color 0.2s, transform 0.1s;
+        transition: all 0.2s ease;
         font-family: inherit;
         text-decoration: none;
         display: inline-flex;
         justify-content: center;
         align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
     }
 
     .settings-save-button:hover {
-        background: #4338ca;
+        background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
         border-color: #4338ca;
-        transform: translateY(-1px);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
     }
 
     .settings-save-button:active {
         transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
     }
 
     .settings-save-button:disabled {
         opacity: 0.6;
         cursor: not-allowed;
         transform: none;
+        background: #9ca3af;
+        border-color: #9ca3af;
+    }
+
+    .settings-button-icon {
+        width: 16px;
+        height: 16px;
+        stroke-width: 2.5;
+    }
+
+    .settings-button-verification {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        border-color: #4facfe;
+        box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+    }
+
+    .settings-button-verification:hover {
+        background: linear-gradient(135deg, #3d8bfe 0%, #00d9fe 100%);
+        border-color: #3d8bfe;
+        box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
     }
 
     .settings-action-message {
@@ -321,8 +439,43 @@
     .settings-section-text {
         font-size: 14px;
         color: #6b7280;
-        margin: 0 0 20px 0;
-        line-height: 1.6;
+        margin: 0 0 24px 0;
+        line-height: 1.7;
+    }
+
+    .settings-verification-content {
+        margin-bottom: 8px;
+    }
+
+    .settings-verification-benefits {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+        padding: 16px;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .settings-benefit-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        color: #475569;
+    }
+
+    .settings-benefit-icon {
+        width: 18px;
+        height: 18px;
+        color: #4facfe;
+        flex-shrink: 0;
+        stroke-width: 2.5;
+    }
+
+    .settings-card-verification {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     }
 
     .verification-button {
@@ -498,171 +651,6 @@
     margin-bottom: 12px;       /* отступ от кнопки до домов */
 }
 
-    /* Стили для вкладки заказов */
-    .orders-tab-content {
-        padding: 0;
-        width: 95%;
-        margin: 0 auto;
-    }
-
-
-    .orders-header {
-        display: flex;
-        justify-content: flex-end;
-        margin-bottom: 12px;
-    }
-
-    .orders-houses-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 20px;
-        margin-top: 8px;
-    }
-
-    .orders-houses-grid .settings-section-card {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        padding: 16px;
-        overflow: hidden;
-    }
-
-    .orders-houses-grid .settings-section-card:hover {
-        transform: translateY(-2px);
-    }
-
-    .orders-house-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        overflow: hidden;
-        transition: transform 0.2s, box-shadow 0.2s;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .orders-house-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(15, 23, 42, 0.1);
-    }
-
-    .orders-houses-grid .orders-house-header {
-        padding: 0;
-        padding-bottom: 8px;
-        margin-bottom: 12px;
-    }
-
-    .orders-house-title {
-        font-size: 16px;
-        font-weight: 600;
-        color: #111827;
-        margin: 0 0 4px 0;
-    }
-
-    .orders-house-subtitle {
-        font-size: 13px;
-        color: #6b7280;
-    }
-
-    .orders-house-photos {
-        width: 100%;
-        overflow: hidden;
-    }
-
-    .orders-house-image {
-        width: 100%;
-        height: 180px;
-        background: #f3f4f6;
-        overflow: hidden;
-        position: relative;
-    }
-
-    .orders-house-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .orders-house-image .photo-carousel {
-        margin-top: 0;
-    }
-
-    .orders-house-image .photos-viewport {
-        height: 180px;
-        border-radius: 0;
-    }
-
-    .orders-house-image-placeholder {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 48px;
-        background: #f3f4f6;
-        color: #9ca3af;
-    }
-
-    .orders-houses-grid .orders-house-section {
-        padding: 0;
-        flex: 1;
-        margin-top: 12px;
-    }
-
-    .orders-houses-grid .settings-section-title {
-        margin-top: 0;
-        margin-bottom: 8px;
-        font-size: 14px;
-        padding-bottom: 4px;
-    }
-
-    .orders-house-description {
-        font-size: 13px;
-    }
-
-    .description-row {
-        display: grid;
-        grid-template-columns: 1fr 1.5fr;
-        gap: 4px;
-        padding: 3px 0;
-        border-bottom: 1px dashed #e5e7eb;
-    }
-
-    .description-row:last-child {
-        border-bottom: none;
-    }
-
-    .description-label {
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: #6b7280;
-    }
-
-    .description-value {
-        font-size: 13px;
-        color: #111827;
-    }
-
-    .orders-houses-grid .orders-house-actions {
-        padding: 0;
-        margin-top: 16px;
-        padding-top: 12px;
-        border-top: 1px solid #e5e7eb;
-        background: transparent;
-        display: flex;
-        gap: 8px;
-        border-top: 1px solid #e5e7eb;
-        background: #f9fafb;
-    }
-
-    .orders-house-actions .btn-primary,
-    .orders-house-actions .btn-secondary {
-        flex: 1;
-        padding: 6px 12px;
-        font-size: 13px;
-        text-align: center;
-    }
 
     .btn-primary,
     .btn-secondary {
@@ -766,8 +754,8 @@ a {
             <section class="profile-main">
                 <div class="profile-tabs">
                     <button class="profile-tab-btn active" data-tab="houses" data-route="{{ route('profile.tab.houses', $user->user_id) }}">Дома</button>
+                    <button class="profile-tab-btn" data-tab="orders" data-route="{{ route('profile.tab.orders', $user->user_id) }}">Заказы</button>
                     @if($isOwner)
-                        <button class="profile-tab-btn" data-tab="orders" data-route="{{ route('profile.tab.orders', $user->user_id) }}">Заказы</button>
                         <button class="profile-tab-btn" data-tab="settings" data-route="{{ route('profile.tab.settings', $user->user_id) }}">Настройки</button>
                     @endif
                     <div class="profile-tabs-spacer"></div>
@@ -777,10 +765,10 @@ a {
                     <div class="profile-tab-panel active" id="tab-houses">
                         @include('users.partials.houses-tab', ['houses' => $houses, 'isOwner' => $isOwner])
                     </div>
+                    <div class="profile-tab-panel" id="tab-orders">
+                        {{-- Контент загружается через AJAX --}}
+                    </div>
                     @if($isOwner)
-                        <div class="profile-tab-panel" id="tab-orders">
-                            @include('users.partials.orders-tab')
-                        </div>
                         <div class="profile-tab-panel" id="tab-settings">
                             @include('users.partials.settings-tab')
                         </div>
@@ -791,17 +779,22 @@ a {
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        // Инициализация при загрузке страницы
+        function initProfileTabs() {
             const buttons = document.querySelectorAll('.profile-tab-btn');
             const panels = document.querySelectorAll('.profile-tab-panel');
             const tabPanels = document.querySelector('.profile-tab-panels');
             const userId = tabPanels?.dataset.userId;
+            
+            if (!buttons.length || !panels.length) {
+                return;
+            }
 
             // Функция для определения активной вкладки из URL
             function getActiveTabFromURL() {
                 const path = window.location.pathname;
-                if (path.match(/\/tab\/orders/)) return 'orders';
                 if (path.match(/\/tab\/settings/)) return 'settings';
+                if (path.match(/\/tab\/orders/)) return 'orders';
                 if (path.match(/\/tab\/houses/)) return 'houses';
                 return 'houses'; // По умолчанию (если URL /profile/{id} без /tab)
             }
@@ -828,14 +821,47 @@ a {
 
                     const html = await response.text();
                     panel.innerHTML = html;
-
-                    // Инициализируем фото-карусели после загрузки контента
-                    initPhotoCarousels(panel);
                     
-                    // Инициализируем календари после загрузки контента
-                    if (window.initHouseCalendars) {
-                        window.initHouseCalendars();
-                    }
+                    // Выполняем скрипты из загруженного HTML
+                    const scripts = panel.querySelectorAll('script');
+                    scripts.forEach(oldScript => {
+                        const newScript = document.createElement('script');
+                        if (oldScript.src) {
+                            newScript.src = oldScript.src;
+                        } else {
+                            newScript.textContent = oldScript.textContent;
+                        }
+                        document.body.appendChild(newScript);
+                        oldScript.remove();
+                    });
+
+                    // Небольшая задержка для обновления DOM
+                    setTimeout(() => {
+                        // Инициализируем фото-карусели после загрузки контента
+                        initPhotoCarousels(panel);
+                        
+                        // Инициализируем календари после загрузки контента
+                        if (window.initHouseCalendars) {
+                            window.initHouseCalendars();
+                        }
+                        
+                        // Инициализируем фильтры заказов после загрузки контента
+                        if (window.initOrdersFilters && tab === 'orders') {
+                            // Пробуем несколько раз с задержкой
+                            let attempts = 0;
+                            const tryInit = () => {
+                                attempts++;
+                                const grid = panel.querySelector('#orders-houses-grid');
+                                const buttons = panel.querySelectorAll('.orders-filter-btn');
+                                if (grid && buttons.length > 0) {
+                                    window.initOrdersFilters(panel);
+                                } else if (attempts < 5) {
+                                    setTimeout(tryInit, 100);
+                                }
+                            };
+                            setTimeout(tryInit, 100);
+                        }
+                    }, 100);
 
                 } catch (error) {
                     console.error('Ошибка загрузки вкладки:', error);
@@ -878,9 +904,12 @@ a {
                     panel.querySelector('.houses-grid') !== null ||
                     panel.querySelector('.orders-houses-grid') !== null ||
                     panel.querySelector('.orders-house-card') !== null ||
+                    panel.querySelector('.orders-compact-card') !== null ||
+                    panel.querySelector('.settings-tab-content') !== null ||
                     (panel.querySelector('.profile-empty') !== null && 
                      !panel.innerHTML.includes('Загрузка...') && 
-                     panel.textContent.trim() !== 'Загрузка...')
+                     panel.textContent.trim() !== 'Загрузка...' &&
+                     panel.textContent.trim() !== '')
                 );
 
                 // Обновляем активные кнопки и панели
@@ -892,9 +921,10 @@ a {
                     panel.classList.add('active');
                 }
 
-                // Обновляем URL
+                // Обновляем URL используя replaceState вместо pushState, чтобы не создавать лишние записи в истории
+                // Это предотвращает проблемы при возврате назад
                 if (route) {
-                    window.history.pushState({ tab, route }, '', route);
+                    window.history.replaceState({ tab, route }, '', route);
                 }
 
                 // Загружаем контент через AJAX только если его нет и не пропущена загрузка
@@ -906,6 +936,10 @@ a {
                     // И инициализируем календари
                     if (window.initHouseCalendars) {
                         window.initHouseCalendars();
+                    }
+                    // И инициализируем фильтры заказов
+                    if (window.initOrdersFilters) {
+                        window.initOrdersFilters(panel);
                     }
                 }
             }
@@ -922,37 +956,43 @@ a {
 
             // Обработчик события popstate (навигация назад/вперед)
             window.addEventListener('popstate', (e) => {
-                if (e.state && e.state.tab) {
-                    const btn = Array.from(buttons).find(b => b.dataset.tab === e.state.tab);
-                    if (btn) {
-                        buttons.forEach(b => b.classList.remove('active'));
-                        panels.forEach(panel => panel.classList.remove('active'));
-                        btn.classList.add('active');
-                        const panel = document.getElementById('tab-' + e.state.tab);
-                        if (panel) {
-                            panel.classList.add('active');
-                            // Если контент еще не загружен, загружаем его
-                            if (panel.innerHTML.trim() === '' || panel.innerHTML.includes('Загрузка...')) {
-                                loadTab(e.state.tab, e.state.route || btn.dataset.route);
-                            }
-                        }
-                    }
-                } else {
-                    // Если нет state, определяем вкладку из URL
-                    const activeTab = getActiveTabFromURL();
-                    const btn = Array.from(buttons).find(b => b.dataset.tab === activeTab);
-                    if (btn) {
-                        buttons.forEach(b => b.classList.remove('active'));
-                        panels.forEach(panel => panel.classList.remove('active'));
-                        btn.classList.add('active');
-                        const panel = document.getElementById('tab-' + activeTab);
-                        if (panel) {
-                            panel.classList.add('active');
-                        }
-                    }
+                // При возврате назад всегда перезагружаем страницу полностью, 
+                // чтобы гарантировать загрузку полной структуры (как на странице редактирования дома)
+                // Это предотвращает проблемы, когда отображается только контент вкладки
+                const currentPath = window.location.pathname;
+                
+                // Проверяем наличие основных элементов страницы
+                const profileWrapper = document.querySelector('.profile-wrapper');
+                const profileHeader = document.querySelector('.profile-header');
+                
+                // Если нет основных элементов - значит страница не загружена полностью, перезагружаем
+                if (!profileWrapper || !profileHeader) {
+                    window.location.href = currentPath;
+                    return;
                 }
+                
+                // Если URL содержит /tab/, значит мы возвращаемся на вкладку
+                // В этом случае перезагружаем страницу, чтобы загрузить её полностью
+                if (currentPath && currentPath.includes('/tab/')) {
+                    window.location.href = currentPath;
+                    return;
+                }
+                
+                // Для всех остальных случаев тоже перезагружаем
+                window.location.reload();
             });
 
+            // Проверяем наличие основных элементов профиля при первой загрузке
+            const profileWrapper = document.querySelector('.profile-wrapper');
+            const profileHeader = document.querySelector('.profile-header');
+            
+            // Если нет основных элементов профиля, страница не загружена полностью
+            if (!profileWrapper || !profileHeader) {
+                // Перезагружаем страницу, чтобы загрузить полную структуру
+                window.location.reload();
+                return;
+            }
+            
             // Определяем активную вкладку при первой загрузке
             const activeTab = getActiveTabFromURL();
             const activePanel = document.getElementById('tab-' + activeTab);
@@ -962,8 +1002,12 @@ a {
                 activePanel.querySelector('.houses-grid') !== null ||
                 activePanel.querySelector('.orders-houses-grid') !== null ||
                 activePanel.querySelector('.orders-house-card') !== null ||
+                activePanel.querySelector('.orders-compact-card') !== null ||
+                activePanel.querySelector('.settings-tab-content') !== null ||
                 (activePanel.querySelector('.profile-empty') !== null && 
-                 !activePanel.innerHTML.includes('Загрузка...'))
+                 !activePanel.innerHTML.includes('Загрузка...') &&
+                 activePanel.textContent.trim() !== 'Загрузка...' &&
+                 activePanel.textContent.trim() !== '')
             );
             
             if (activePanel) {
@@ -982,12 +1026,28 @@ a {
                     if (window.initHouseCalendars) {
                         window.initHouseCalendars();
                     }
+                    // Инициализируем фильтры заказов
+                    if (window.initOrdersFilters) {
+                        window.initOrdersFilters(activePanel);
+                    }
                 } else if (btn && btn.dataset.route) {
                     // Если контента нет, загружаем через AJAX
                     loadTab(activeTab, btn.dataset.route);
                 }
             }
-
+        }
+        
+        // Инициализируем при загрузке DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initProfileTabs);
+        } else {
+            initProfileTabs();
+        }
+        
+        // Также инициализируем при полной загрузке страницы (для случаев возврата назад)
+        window.addEventListener('load', () => {
+            // Небольшая задержка, чтобы убедиться, что все элементы загружены
+            setTimeout(initProfileTabs, 100);
         });
     </script>
 @endsection

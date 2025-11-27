@@ -266,15 +266,35 @@ header nav a[href*="dashboard"]:hover {
 
     .chat-badge {
         position: absolute;
-        top: -6px;
-        right: -6px;
-        width: 12px;
-        height: 12px;
-        background: #3b82f6;
-        border-radius: 50%;
+        top: -8px;
+        left: -8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border-radius: 10px;
         border: 2px solid #ffffff;
         z-index: 10;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4), 0 1px 3px rgba(0, 0, 0, 0.2);
+        font-size: 11px;
+        font-weight: 700;
+        color: #ffffff;
+        line-height: 1;
+        letter-spacing: -0.3px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
     }
 
     </style>
@@ -333,7 +353,7 @@ header nav a[href*="dashboard"]:hover {
                                 Чат
                             </a>
                             @if($unreadCount > 0)
-                                <span class="chat-badge" id="chatBadge"> {{ $unreadCount }} </span>
+                                <span class="chat-badge" id="chatBadge">{{ $unreadCount > 99 ? '99+' : $unreadCount }}</span>
                             @endif
                         </div>
                         <div class="user-menu-wrapper" style="position:relative;">
@@ -466,6 +486,11 @@ header nav a[href*="dashboard"]:hover {
                                     badge.className = 'chat-badge';
                                     badge.id = 'chatBadge';
                                     chatLinkWrapper.appendChild(badge);
+                                }
+                                // Обновляем число в значке
+                                const badge = document.getElementById('chatBadge');
+                                if (badge) {
+                                    badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
                                 }
                             } else {
                                 // Скрываем индикатор, если он есть

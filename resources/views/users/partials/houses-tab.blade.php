@@ -55,14 +55,9 @@
                         $searchText = trim($searchText);
                     @endphp
                     <div 
-                        class="settings-section-card orders-house-card" 
+                        class="orders-house-card" 
                         data-search-text="{{ e($searchText) }}"
                     >
-                        <div class="orders-house-header">
-                            <div class="orders-house-title">{{ $house->adress ?? 'Дом #' . $house->house_id }}</div>
-                            <div class="orders-house-subtitle">Дом #{{ $house->house_id }}</div>
-                        </div>
-
                         @php
                             $photoPayload = $house->photo
                                 ->filter(fn($photo) => !empty($photo->path))
@@ -73,7 +68,7 @@
                                 ->values();
                         @endphp
 
-                        <div class="orders-house-photos">
+                        <div class="orders-house-image-wrapper">
                             <div
                                 class="orders-house-image"
                                 data-house-photos='@json($photoPayload)'
@@ -88,57 +83,41 @@
                                     <div class="orders-house-image-placeholder">🏠</div>
                                 @endif
                             </div>
+                            @if($house->price_id)
+                            <div class="orders-house-price-badge">
+                                {{ number_format($house->price_id, 0, ',', ' ') }} ₽
+                            </div>
+                            @endif
                         </div>
 
-                        <div class="settings-section-title">О доме</div>
-                        <div class="orders-house-description">
-                            <div class="description-row">
-                                <div class="description-label">Адрес</div>
-                                <div class="description-value">{{ $house->adress ?? '—' }}</div>
+                        <div class="orders-house-content">
+                            <div class="orders-house-title">{{ $house->adress ?? 'Дом #' . $house->house_id }}</div>
+                            
+                            <div class="orders-house-badges">
+                                @if($house->area)
+                                    <span class="house-badge">{{ number_format($house->area, 0, ',', ' ') }} м²</span>
+                                @endif
+                                @if($house->rent_type)
+                                    <span class="house-badge">{{ $house->rent_type->name }}</span>
+                                @endif
+                                @if($house->house_type)
+                                    <span class="house-badge">{{ $house->house_type->name }}</span>
+                                @endif
                             </div>
-                            <div class="description-row">
-                                <div class="description-label">Площадь</div>
-                                <div class="description-value">
-                                    {{ $house->area ? number_format($house->area, 0, ',', ' ') . ' м²' : '—' }}
-                                </div>
-                            </div>
-                            <div class="description-row">
-                                <div class="description-label">Тип аренды</div>
-                                <div class="description-value">
-                                    {{ optional($house->rent_type)->name ?? '—' }}
-                                </div>
-                            </div>
-                            <div class="description-row">
-                                <div class="description-label">Тип дома</div>
-                                <div class="description-value">
-                                    {{ optional($house->house_type)->name ?? '—' }}
-                                </div>
-                            </div>
-                            <div class="description-row">
-                                <div class="description-label">Координаты</div>
-                                <div class="description-value">
-                                    {{ $house->lat && $house->lng ? $house->lat . ', ' . $house->lng : '—' }}
-                                </div>
-                            </div>
-                            <div class="description-row">
-                                <div class="description-label">Стоимость</div>
-                                <div class="description-value">
-                                    @if($house->price_id)
-                                        {{ number_format($house->price_id, 0, ',', ' ') }} ₽
-                                    @else
-                                        Не указана
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="orders-house-actions">
-                            <a href="{{ route('houses.show', $house->house_id) }}" class="btn-primary">
-                                Просмотр
-                            </a>
-                            <a href="{{ route('houses.edit', $house->house_id) }}" class="btn-secondary">
-                                Редактировать
-                            </a>
+                            <div class="orders-house-actions">
+                                <a href="{{ route('houses.show', $house->house_id) }}" class="btn-primary">
+                                    Просмотр
+                                </a>
+                                @php
+                                    $canEditHouse = ($isOwner ?? false) || ($currentUser && $currentUser->isAdmin());
+                                @endphp
+                                @if($canEditHouse)
+                                    <a href="{{ route('houses.edit', $house->house_id) }}" class="btn-secondary">
+                                        Редактировать
+                                    </a>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -275,6 +254,150 @@
         padding: 12px 16px;
         height: auto;
         box-sizing: border-box;
+    }
+    
+    /* Сетка домов - 3 колонки */
+    .orders-houses-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+    
+    @media (max-width: 1200px) {
+        .orders-houses-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .orders-houses-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Компактные карточки домов */
+    .orders-house-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.2s ease;
+    }
+    
+    .orders-house-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.15);
+        border-color: #d1d5db;
+    }
+    
+    .orders-house-image-wrapper {
+        position: relative;
+        width: 100%;
+        height: 180px;
+        overflow: hidden;
+        background: #f3f4f6;
+    }
+    
+    .orders-house-image {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+    
+    .orders-house-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .orders-house-card:hover .orders-house-image img {
+        transform: scale(1.08);
+    }
+    
+    .orders-house-image-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        background: #f3f4f6;
+        color: #9ca3af;
+    }
+    
+    .orders-house-image .photo-carousel {
+        margin-top: 0;
+    }
+    
+    .orders-house-image .photos-viewport {
+        height: 180px;
+        border-radius: 0;
+    }
+    
+    .orders-house-price-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: rgba(79, 70, 229, 0.95);
+        color: #ffffff;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .orders-house-content {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        flex: 1;
+    }
+    
+    .orders-house-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #111827;
+        line-height: 1.4;
+        margin: 0;
+    }
+    
+    .orders-house-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .house-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: #f3f4f6;
+        color: #374151;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .orders-house-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+    }
+    
+    .orders-house-actions .btn-primary,
+    .orders-house-actions .btn-secondary {
+        flex: 1;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 500;
+        text-align: center;
+        border-radius: 8px;
     }
 </style>
 

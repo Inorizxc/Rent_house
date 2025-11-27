@@ -1,909 +1,939 @@
-<div class="orders-tab-content">
-    @if($houses && $houses->count() > 0)
-        <div class="orders-houses-grid">
-            @foreach($houses as $house)
-                <div class="orders-house-card">
-                    <div class="orders-house-header">
-                        <h3 class="orders-house-title">{{ $house->adress ?? 'Дом #' . $house->house_id }}</h3>
-                        <p class="orders-house-subtitle">Площадь: {{ $house->area ?? 'не указана' }} м²</p>
-                    </div>
+@php
+    $orders = $orders ?? collect();
+    $currentUser = auth()->user();
+    $user = $user ?? null;
+@endphp
 
-                    @if($house->photo && $house->photo->count() > 0)
-                        <div class="orders-house-photos">
-                            <div class="orders-house-image" data-house-photos='@json($house->photo->map(function($p) { return ['path' => $p->path, 'name' => $p->name ?? 'Фото']; }))' data-empty-text="Нет фотографий">
-                                <!-- Фото будут загружены через JavaScript -->
+<div class="settings-tab-content">
+    @if($orders->isEmpty())
+        <div class="settings-section">
+            <div class="settings-section-card">
+                <div class="profile-empty">
+                    У вас пока нет заказов.
+                </div>
+            </div>
+        </div>
+    @else
+        {{-- Панель фильтров --}}
+        <div class="orders-filters-section">
+            <div class="orders-filters-card">
+                <div class="orders-filters-content">
+                    <div class="orders-filter-group-row">
+                        <div class="orders-filter-group">
+                            <label class="orders-filter-label">Тип заказа:</label>
+                            <div class="orders-filter-buttons">
+                                <label class="orders-filter-checkbox">
+                                    <input type="checkbox" data-filter-role="customer" checked>
+                                    <span class="orders-filter-checkbox-label">Мои заказы</span>
+                                </label>
+                                <label class="orders-filter-checkbox">
+                                    <input type="checkbox" data-filter-role="owner" checked>
+                                    <span class="orders-filter-checkbox-label">Заказы Покупателей</span>
+                                </label>
                             </div>
                         </div>
-                    @else
-                        <div class="orders-house-image-placeholder">📷</div>
-                    @endif
-
-                    <div class="orders-house-section">
-                        <h4 class="settings-section-title">Календарь занятости</h4>
-                        <div class="house-calendar-container" data-house-id="{{ $house->house_id }}" data-dates='@json($house->house_calendar->dates ?? [])'>
-                            <div class="calendar-wrapper">
-                                <div class="calendar-header">
-                                    <button class="calendar-nav-btn" data-action="prev">‹</button>
-                                    <div class="calendar-month-year"></div>
-                                    <button class="calendar-nav-btn" data-action="next">›</button>
-                                </div>
-                                <div class="calendar-grid">
-                                    <div class="calendar-weekdays">
-                                        <div>Пн</div>
-                                        <div>Вт</div>
-                                        <div>Ср</div>
-                                        <div>Чт</div>
-                                        <div>Пт</div>
-                                        <div>Сб</div>
-                                        <div>Вс</div>
-                                    </div>
-                                    <div class="calendar-days"></div>
-                                </div>
+                        <div class="orders-filter-group">
+                            <label class="orders-filter-label">Статус:</label>
+                            <div class="orders-filter-buttons">
+                                <label class="orders-filter-checkbox">
+                                    <input type="checkbox" data-filter-status="рассмотрение" checked>
+                                    <span class="orders-filter-checkbox-label">Рассмотрение</span>
+                                </label>
+                                <label class="orders-filter-checkbox">
+                                    <input type="checkbox" data-filter-status="обработка" checked>
+                                    <span class="orders-filter-checkbox-label">Обработка</span>
+                                </label>
+                                <label class="orders-filter-checkbox">
+                                    <input type="checkbox" data-filter-status="завершено" checked>
+                                    <span class="orders-filter-checkbox-label">Завершено</span>
+                                </label>
+                                <label class="orders-filter-checkbox">
+                                    <input type="checkbox" data-filter-status="отменено" checked>
+                                    <span class="orders-filter-checkbox-label">Отменено</span>
+                                </label>
+                                <label class="orders-filter-checkbox">
+                                    <input type="checkbox" data-filter-status="возврат" checked>
+                                    <span class="orders-filter-checkbox-label">Возврат</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="orders-filter-group-row">
+                        <div class="orders-filter-group">
+                            <label class="orders-filter-label">Имя:</label>
+                            <div class="orders-filter-input-wrapper">
+                                <input type="text" 
+                                       id="filter-name-input" 
+                                       class="orders-filter-input" 
+                                       placeholder="Введите имя..."
+                                       autocomplete="off">
+                                <div class="orders-autocomplete-dropdown" id="name-autocomplete"></div>
+                            </div>
+                        </div>
+                        <div class="orders-filter-group">
+                            <label class="orders-filter-label">Адрес:</label>
+                            <div class="orders-filter-input-wrapper">
+                                <input type="text" 
+                                       id="filter-address-input" 
+                                       class="orders-filter-input" 
+                                       placeholder="Введите адрес..."
+                                       autocomplete="off">
+                                <div class="orders-autocomplete-dropdown" id="address-autocomplete"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-            @endforeach
+            </div>
         </div>
-    @else
-        <div class="profile-empty">У вас пока нет домов</div>
+        
+        <div class="settings-section">
+            <div class="orders-houses-grid" id="orders-houses-grid">
+                @foreach($orders as $order)
+                    @php
+                        $house = $order->house;
+                        // Определяем роль пользователя профиля относительно заказа
+                        // Если пользователь профиля - владелец дома, то это заказ покупателя (owner)
+                        // Если пользователь профиля - заказчик, то это его заказ (customer)
+                        $isOwnerOfHouse = $user && $house && $user->user_id == $house->user_id;
+                        $isCustomer = $user && $order->customer_id == $user->user_id;
+                        
+                        // Определяем роль пользователя профиля относительно заказа
+                        $orderRole = $isOwnerOfHouse ? 'owner' : 'customer';
+                        
+                        $searchParts = array_filter([
+                            $house ? ($house->adress ?? '') : '',
+                            (string)($order->order_id ?? ''),
+                            $order->order_status ? $order->order_status->value : '',
+                            $order->date_of_order ?? '',
+                            $house && $house->area ? (string)$house->area : '',
+                        ], function($value) {
+                            return $value !== '' && $value !== null;
+                        });
+                        $searchText = mb_strtolower(implode(' ', $searchParts), 'UTF-8');
+                        $searchText = preg_replace('/\s+/u', ' ', $searchText);
+                        $searchText = trim($searchText);
+                        
+                        // Получаем фото дома
+                        $photoPayload = $house && $house->photo
+                            ? $house->photo
+                                ->filter(fn($photo) => !empty($photo->path))
+                                ->map(fn($photo) => [
+                                    'path' => $photo->path,
+                                    'name' => $photo->name,
+                                ])
+                                ->values()
+                            : collect();
+                    @endphp
+                    @php
+                        $orderStatusValue = $order->order_status ? mb_strtolower($order->order_status->value, 'UTF-8') : '';
+                        $customerName = $order->customer ? trim(($order->customer->name ?? '') . ' ' . ($order->customer->sename ?? '')) : '';
+                        $ownerName = $house && $house->user ? trim(($house->user->name ?? '') . ' ' . ($house->user->sename ?? '')) : '';
+                        $houseAddress = $house ? ($house->adress ?? '') : '';
+                    @endphp
+                    <div 
+                        class="settings-section-card orders-house-card orders-compact-card order-role-{{ $orderRole }}" 
+                        data-order-role="{{ $orderRole }}"
+                        data-order-status="{{ $orderStatusValue }}"
+                        data-customer-name="{{ mb_strtolower($customerName, 'UTF-8') }}"
+                        data-customer-name-original="{{ htmlspecialchars($customerName, ENT_QUOTES, 'UTF-8') }}"
+                        data-owner-name="{{ mb_strtolower($ownerName, 'UTF-8') }}"
+                        data-owner-name-original="{{ htmlspecialchars($ownerName, ENT_QUOTES, 'UTF-8') }}"
+                        data-house-address="{{ mb_strtolower($houseAddress, 'UTF-8') }}"
+                        data-house-address-original="{{ htmlspecialchars($houseAddress, ENT_QUOTES, 'UTF-8') }}"
+                    >
+                        <div class="orders-compact-content">
+                            <div class="orders-compact-header">
+                                <div class="orders-compact-title">Заказ #{{ $order->order_id }}</div>
+                                @if($order->order_status)
+                                    @php
+                                        $statusClass = match($order->order_status) {
+                                            \App\enum\OrderStatus::PENDING => 'pending',
+                                            \App\enum\OrderStatus::PROCESSING => 'processing',
+                                            \App\enum\OrderStatus::COMPLETED => 'completed',
+                                            \App\enum\OrderStatus::CANCELLED => 'cancelled',
+                                            \App\enum\OrderStatus::REFUND => 'refund',
+                                            default => 'pending'
+                                        };
+                                        $statusValue = mb_strtolower($order->order_status->value, 'UTF-8');
+                                    @endphp
+                                    <span class="order-status-badge order-status-{{ $statusClass }} order-status-{{ $statusValue }}">
+                                        {{ $order->order_status->value }}
+                                    </span>
+                                @else
+                                    <span class="order-status-badge order-status-pending">
+                                        Неизвестно
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div class="orders-compact-info">
+                                @if($house)
+                                    <div class="orders-compact-row">
+                                        <span class="orders-compact-label">Адрес:</span>
+                                        <a href="{{ route('houses.show', $house->house_id) }}" class="orders-compact-link">
+                                            {{ $house->adress ?? 'Не указан' }}
+                                        </a>
+                                    </div>
+                                @endif
+                                
+                                @if($orderRole === 'customer' && $house && $house->user)
+                                    <div class="orders-compact-row">
+                                        <span class="orders-compact-label">Владелец:</span>
+                                        <a href="{{ route('profile.show', $house->user_id) }}" class="orders-compact-link">
+                                            {{ trim(($house->user->name ?? '') . ' ' . ($house->user->sename ?? '')) ?: 'Пользователь #' . $house->user_id }}
+                                        </a>
+                                    </div>
+                                @elseif($orderRole === 'owner' && $order->customer)
+                                    <div class="orders-compact-row">
+                                        <span class="orders-compact-label">Заказчик:</span>
+                                        <a href="{{ route('profile.show', $order->customer_id) }}" class="orders-compact-link">
+                                            {{ trim(($order->customer->name ?? '') . ' ' . ($order->customer->sename ?? '')) ?: 'Пользователь #' . $order->customer_id }}
+                                        </a>
+                                    </div>
+                                @endif
+
+                                <div class="orders-compact-row">
+                                    <span class="orders-compact-label">Дата:</span>
+                                    <span class="orders-compact-text">{{ $order->date_of_order ?? '—' }}</span>
+                                </div>
+                                
+                                <div class="orders-compact-row">
+                                    <span class="orders-compact-label">Дней:</span>
+                                    <span class="orders-compact-text">{{ $order->day_count ?? '—' }} дн.</span>
+                                </div>
+                            </div>
+
+                            @if($orderRole === 'customer' && $house)
+                            <div class="orders-compact-actions">
+                                <a href="{{ route('house.chat', $house->house_id) }}" class="btn-secondary btn-sm">
+                                    Написать
+                                </a>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
     @endif
 </div>
 
 <style>
-    .house-calendar-container {
-        margin-top: 12px;
+    .orders-compact-card {
+        padding: 16px 18px;
+        position: relative;
+        border-left: 5px solid transparent;
     }
-
-    .calendar-wrapper {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 12px;
+    
+    /* Синяя полоска - мы покупали (customer) */
+    .order-role-customer {
+        border-left-color: #3b82f6;
     }
-
-    .calendar-header {
+    
+    /* Зеленая полоска - у нас покупали (owner) */
+    .order-role-owner {
+        border-left-color: #10b981;
+    }
+    
+    .orders-compact-content {
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .orders-compact-header {
+        display: flex;
         justify-content: space-between;
-        margin-bottom: 12px;
-        padding-bottom: 8px;
+        align-items: center;
+        padding-bottom: 12px;
         border-bottom: 1px solid #e5e7eb;
     }
-
-    .calendar-month-year {
-        font-size: 15px;
+    
+    .orders-compact-title {
+        font-size: 16px;
         font-weight: 600;
         color: #111827;
-        flex: 1;
-        text-align: center;
     }
-
-    .calendar-nav-btn {
-        background: #f3f4f6;
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        width: 32px;
-        height: 32px;
+    
+    .orders-compact-info {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .orders-compact-row {
         display: flex;
         align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 20px;
-        color: #374151;
-        transition: all 0.2s;
+        gap: 8px;
+        font-size: 14px;
     }
-
-    .calendar-nav-btn:hover {
-        background: #e5e7eb;
-        border-color: #d1d5db;
+    
+    .orders-compact-label {
+        color: #6b7280;
+        font-weight: 500;
+        min-width: 80px;
     }
-
-    .calendar-weekdays {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 4px;
-        margin-bottom: 8px;
+    
+    .orders-compact-text {
+        color: #111827;
     }
-
-    .calendar-weekdays > div {
-        text-align: center;
+    
+    .orders-compact-link {
+        color: #4f46e5;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    
+    .orders-compact-link:hover {
+        color: #4338ca;
+        text-decoration: underline;
+    }
+    
+    .orders-compact-actions {
+        display: flex;
+        gap: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #f3f4f6;
+    }
+    
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+    
+    .order-status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 8px;
         font-size: 12px;
         font-weight: 600;
-        color: #6b7280;
-        padding: 4px;
+        text-transform: capitalize;
+        white-space: nowrap;
+        letter-spacing: 0.3px;
     }
-
-    .calendar-days {
+    
+    /* Рассмотрение - желтый */
+    .order-status-рассмотрение,
+    .order-status-pending {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+        border: 1px solid #fbbf24;
+        box-shadow: 0 2px 4px rgba(146, 64, 14, 0.1);
+    }
+    
+    /* Обработка - синий */
+    .order-status-обработка,
+    .order-status-processing {
+        background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%);
+        color: #1e40af;
+        border: 1px solid #3b82f6;
+        box-shadow: 0 2px 4px rgba(30, 64, 175, 0.1);
+    }
+    
+    /* Завершено - зеленый */
+    .order-status-завершено,
+    .order-status-completed {
+        background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 100%);
+        color: #065f46;
+        border: 1px solid #10b981;
+        box-shadow: 0 2px 4px rgba(6, 95, 70, 0.1);
+    }
+    
+    /* Отменено - красный */
+    .order-status-отменено,
+    .order-status-cancelled {
+        background: linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%);
+        color: #991b1b;
+        border: 1px solid #ef4444;
+        box-shadow: 0 2px 4px rgba(153, 27, 27, 0.1);
+    }
+    
+    /* Возврат - розовый */
+    .order-status-возврат,
+    .order-status-refund {
+        background: linear-gradient(135deg, #fce7f3 0%, #f9a8d4 100%);
+        color: #9f1239;
+        border: 1px solid #ec4899;
+        box-shadow: 0 2px 4px rgba(159, 18, 57, 0.1);
+    }
+    
+    .orders-houses-grid {
         display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 4px;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
     }
-
-    .calendar-day {
-        aspect-ratio: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 13px;
-        color: #111827;
+    
+    @media (max-width: 768px) {
+        .orders-houses-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Стили для фильтров */
+    .orders-filters-section {
+        margin-bottom: 12px;
+    }
+    
+    .orders-filters-card {
         background: #ffffff;
+        border-radius: 8px;
         border: 1px solid #e5e7eb;
-        border-radius: 6px;
+        padding: 12px 16px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }
+    
+    .orders-filters-content {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .orders-filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .orders-filter-group-row {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .orders-filter-group-row .orders-filter-group {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .orders-filter-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 2px;
+    }
+    
+    .orders-filter-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .orders-filter-checkbox {
+        display: inline-flex;
+        align-items: center;
         cursor: pointer;
-        transition: all 0.2s;
+        user-select: none;
     }
-
-    .calendar-day:not(.past-date):not(.other-month):hover {
-        background: #f3f4f6;
-        border-color: #d1d5db;
-    }
-
-    .calendar-day.past-date {
-        cursor: not-allowed;
-    }
-
-    .calendar-day.other-month {
-        cursor: default;
-    }
-
-    .calendar-day.loading {
-        opacity: 0.6;
+    
+    .orders-filter-checkbox input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
         pointer-events: none;
     }
-
-    .calendar-day.other-month {
-        color: #d1d5db;
+    
+    .orders-filter-checkbox-label {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        font-size: 13px;
+        font-weight: 500;
+        color: #4b5563;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+        display: inline-block;
+        white-space: nowrap;
+    }
+    
+    .orders-filter-checkbox:hover .orders-filter-checkbox-label {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+    }
+    
+    .orders-filter-checkbox input[type="checkbox"]:checked + .orders-filter-checkbox-label {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        border-color: #4f46e5;
+        color: #ffffff;
+        box-shadow: 0 1px 4px rgba(79, 70, 229, 0.3);
+    }
+    
+    .orders-filter-checkbox input[type="checkbox"]:checked + .orders-filter-checkbox-label:hover {
+        background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+        border-color: #4338ca;
+    }
+    
+    /* Старые стили для обратной совместимости */
+    .orders-filter-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        font-size: 13px;
+        font-weight: 500;
+        color: #4b5563;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+    }
+    
+    .orders-filter-btn:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+    }
+    
+    .orders-filter-btn.active {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        border-color: #4f46e5;
+        color: #ffffff;
+        box-shadow: 0 1px 4px rgba(79, 70, 229, 0.3);
+    }
+    
+    .orders-filter-btn.active:hover {
+        background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+        border-color: #4338ca;
+    }
+    
+    .orders-filter-input-wrapper {
+        position: relative;
+        width: 100%;
+    }
+    
+    .orders-filter-input {
+        width: 100%;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        font-size: 13px;
+        font-weight: 500;
+        color: #4b5563;
+        transition: all 0.2s;
+        font-family: inherit;
+        box-sizing: border-box;
+    }
+    
+    .orders-filter-input:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+    
+    .orders-autocomplete-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin-top: 4px;
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .orders-autocomplete-dropdown.show {
+        display: block;
+    }
+    
+    .orders-autocomplete-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 13px;
+        color: #4b5563;
+        transition: background 0.15s;
+    }
+    
+    .orders-autocomplete-item:hover,
+    .orders-autocomplete-item.highlighted {
+        background: #f3f4f6;
+    }
+    
+    .orders-autocomplete-item:first-child {
+        border-radius: 6px 6px 0 0;
+    }
+    
+    .orders-autocomplete-item:last-child {
+        border-radius: 0 0 6px 6px;
+    }
+    
+    .orders-empty-message {
+        grid-column: 1 / -1;
+        padding: 24px;
+        text-align: center;
+        color: #6b7280;
+        font-size: 14px;
         background: #f9fafb;
+        border-radius: 8px;
+        border: 1px dashed #e5e7eb;
     }
-
-    .calendar-day.today {
-        background: #eff6ff;
-        border-color: #3b82f6;
-        font-weight: 600;
-        color: #1e40af;
-    }
-
-    .calendar-day.booked {
-        background: #fee2e2;
-        border-color: #fca5a5;
-        color: #991b1b;
-        font-weight: 600;
-    }
-
-    .calendar-day.booked:hover {
-        background: #fecaca;
-    }
-
-
-    .calendar-day.past-date.booked {
-        background: #fee2e2;
-        border-color: #fca5a5;
-        color: #991b1b;
-        opacity: 0.7;
-    }
-
-    .calendar-day.range-start {
-        background: #dbeafe;
-        border-color: #60a5fa;
-        border-left-width: 2px;
-    }
-
-    .calendar-day.range-end {
-        background: #dbeafe;
-        border-color: #60a5fa;
-        border-right-width: 2px;
-    }
-
-    .calendar-day.range-middle {
-        background: #dbeafe;
-        border-color: #93c5fd;
-    }
-
-    .calendar-day.range-selected {
-        background: #bfdbfe;
-        border-color: #3b82f6;
-    }
-
-    .calendar-day.range-removing {
-        background: #fca5a5;
-        border-color: #ef4444;
-        color: #991b1b;
-        font-weight: 600;
-    }
-
-    .calendar-day:not(.past-date):not(.other-month):not(.booked) {
-        user-select: none;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
+    
+    @media (max-width: 768px) {
+        .orders-filters-card {
+            padding: 10px 12px;
+        }
+        
+        .orders-filters-content {
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .orders-filter-buttons {
+            flex-direction: column;
+        }
+        
+        .orders-filter-btn,
+        .orders-filter-checkbox {
+            width: 100%;
+        }
+        
+        .orders-filter-checkbox-label {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .orders-filter-group {
+            width: 100%;
+        }
+        
+        .orders-filter-input-wrapper {
+            width: 100%;
+        }
     }
 </style>
 
 <script>
-(function() {
-    // Функция инициализации календарей
-    function initCalendars() {
-        const calendarContainers = document.querySelectorAll('.house-calendar-container:not([data-initialized])');
+    // Глобальная функция для инициализации фильтров заказов
+    window.initOrdersFilters = function(container) {
+        // Если контейнер не указан, используем document
+        container = container || document;
         
-        calendarContainers.forEach(container => {
-            // Помечаем контейнер как инициализированный
-            container.setAttribute('data-initialized', 'true');
-            
-            const houseId = container.dataset.houseId;
-            const datesData = container.dataset.dates;
-            let bookedDates = [];
-            
-            try {
-                bookedDates = datesData ? JSON.parse(datesData) : [];
-                // Преобразуем даты в формат YYYY-MM-DD для сравнения
-                bookedDates = bookedDates.map(date => {
-                    if (typeof date === 'string') {
-                        return date.split('T')[0]; // Убираем время, если есть
-                    }
-                    return date;
-                });
-            } catch (e) {
-                console.warn('Ошибка парсинга дат календаря:', e);
-            }
-
-            let currentDate = new Date();
-            let currentMonth = currentDate.getMonth();
-            let currentYear = currentDate.getFullYear();
-
-            // Состояние выбора периода
-            let rangeStart = null;
-            let rangeEnd = null;
-            let isRangeSelecting = false;
-            
-            // Переменные для drag-and-drop выбора
-            let isDragging = false;
-            let dragStartDate = null;
-            let draggedDates = new Set(); // Множество дат, через которые прошли при перетаскивании
-            let isDragRemoving = false; // Режим удаления при перетаскивании
-            let wasDragging = false;
-
-            // Функция для получения всех дат в периоде
-            function getDatesInRange(startDate, endDate) {
-                const dates = [];
-                const start = new Date(startDate);
-                const end = new Date(endDate);
-                
-                // Убеждаемся, что start <= end
-                if (start > end) {
-                    [start, end] = [end, start];
-                }
-                
-                const current = new Date(start);
-                while (current <= end) {
-                    dates.push(current.toISOString().split('T')[0]);
-                    current.setDate(current.getDate() + 1);
-                }
-                
-                return dates;
-            }
-
-            // Функция для обновления визуализации выбранного периода
-            function updateRangeVisualization() {
-                const allDays = container.querySelectorAll('.calendar-day:not(.other-month)');
-                allDays.forEach(dayEl => {
-                    dayEl.classList.remove('range-start', 'range-end', 'range-middle', 'range-selected');
-                });
-
-                if (rangeStart) {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    
-                    if (rangeEnd) {
-                        // Есть и начало, и конец - определяем реальное начало и конец периода
-                        const startDate = new Date(rangeStart);
-                        const endDate = new Date(rangeEnd);
-                        
-                        // Определяем реальное начало (минимальная дата) и конец (максимальная дата)
-                        const actualStart = startDate <= endDate ? rangeStart : rangeEnd;
-                        const actualEnd = startDate <= endDate ? rangeEnd : rangeStart;
-                        
-                        const rangeDates = getDatesInRange(actualStart, actualEnd);
-                        
-                        allDays.forEach(dayEl => {
-                            const dateStr = dayEl.dataset.date;
-                            if (!dateStr) return;
-                            
-                            const dayDate = new Date(dateStr);
-                            dayDate.setHours(0, 0, 0, 0);
-                            
-                            if (rangeDates.includes(dateStr) && dayDate >= today) {
-                                if (dateStr === actualStart) {
-                                    dayEl.classList.add('range-start');
-                                } else if (dateStr === actualEnd) {
-                                    dayEl.classList.add('range-end');
-                                } else {
-                                    dayEl.classList.add('range-middle');
-                                }
-                            }
-                        });
-                    } else {
-                        // Только начало - показываем только начальную дату
-                        allDays.forEach(dayEl => {
-                            const dateStr = dayEl.dataset.date;
-                            if (dateStr === rangeStart) {
-                                const dayDate = new Date(dateStr);
-                                dayDate.setHours(0, 0, 0, 0);
-                                if (dayDate >= today) {
-                                    dayEl.classList.add('range-start');
-                                }
-                            }
-                        });
-                    }
-                }
-            }
-
-            // Функция для блокировки периода
-            async function toggleDateRange(startDate, endDate, action, specificDates = null) {
-                // Если переданы конкретные даты - используем их, иначе генерируем промежуток
-                let rangeDates;
-                if (specificDates && Array.isArray(specificDates)) {
-                    rangeDates = specificDates;
-                } else {
-                    rangeDates = getDatesInRange(startDate, endDate);
-                }
-                
-                // Фильтруем только будущие даты
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const validDates = rangeDates.filter(dateStr => {
-                    const date = new Date(dateStr);
-                    date.setHours(0, 0, 0, 0);
-                    return date >= today;
-                });
-
-                if (validDates.length === 0) {
-                    alert('Выбранный период содержит только прошедшие даты');
-                    return;
-                }
-
-                try {
-                    // Получаем CSRF токен
-                    let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                    if (!csrfToken) {
-                        const tokenInput = document.querySelector('input[name="_token"]');
-                        csrfToken = tokenInput ? tokenInput.value : '{{ csrf_token() }}';
-                    }
-
-                    const response = await fetch(`/house/${houseId}/calendar/dates/range`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken,
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: JSON.stringify({
-                            dates: validDates,
-                            action: action
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok && data.success) {
-                        // Обновляем локальный список дат
-                        bookedDates = data.dates.map(date => {
-                            if (typeof date === 'string') {
-                                return date.split('T')[0];
-                            }
-                            return date;
-                        });
-                        
-                        // Обновляем data-атрибут контейнера
-                        container.dataset.dates = JSON.stringify(bookedDates);
-                        
-                        // Сбрасываем выбор периода
-                        rangeStart = null;
-                        rangeEnd = null;
-                        isRangeSelecting = false;
-                        
-                        // Перерисовываем календарь
-                        renderCalendar();
-                    } else {
-                        throw new Error(data.error || 'Ошибка обновления периода');
-                    }
-                } catch (error) {
-                    console.error('Ошибка при обновлении периода:', error);
-                    alert('Не удалось обновить период: ' + error.message);
-                }
-            }
-
-            // Функция для обновления даты на сервере
-            async function toggleDate(dateStr, dayEl) {
-                const isBooked = bookedDates.includes(dateStr);
-                const action = isBooked ? 'remove' : 'add';
-                
-                // Визуальная обратная связь
-                dayEl.classList.add('loading');
-                
-                try {
-                    // Получаем CSRF токен
-                    let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                    if (!csrfToken) {
-                        const tokenInput = document.querySelector('input[name="_token"]');
-                        csrfToken = tokenInput ? tokenInput.value : '{{ csrf_token() }}';
-                    }
-
-                    const response = await fetch(`/house/${houseId}/calendar/dates`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken,
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: JSON.stringify({
-                            date: dateStr,
-                            action: action
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok && data.success) {
-                        // Обновляем локальный список дат
-                        bookedDates = data.dates.map(date => {
-                            if (typeof date === 'string') {
-                                return date.split('T')[0];
-                            }
-                            return date;
-                        });
-                        
-                        // Обновляем визуальное состояние
-                        if (action === 'add') {
-                            dayEl.classList.add('booked');
-                            dayEl.title = 'Занято (нажмите, чтобы разблокировать)';
-                        } else {
-                            dayEl.classList.remove('booked');
-                            dayEl.title = '';
-                        }
-                        
-                        // Обновляем data-атрибут контейнера
-                        container.dataset.dates = JSON.stringify(bookedDates);
-                    } else {
-                        throw new Error(data.error || 'Ошибка обновления даты');
-                    }
-                } catch (error) {
-                    console.error('Ошибка при обновлении даты:', error);
-                    alert('Не удалось обновить дату: ' + error.message);
-                } finally {
-                    dayEl.classList.remove('loading');
-                }
-            }
-
-        function renderCalendar() {
-            const monthYearEl = container.querySelector('.calendar-month-year');
-            const daysEl = container.querySelector('.calendar-days');
-            
-            const monthNames = [
-                'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-                'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-            ];
-
-            monthYearEl.textContent = `${monthNames[currentMonth]} ${currentYear}`;
-
-            const firstDay = new Date(currentYear, currentMonth, 1);
-            const lastDay = new Date(currentYear, currentMonth + 1, 0);
-            const daysInMonth = lastDay.getDate();
-            const startingDayOfWeek = (firstDay.getDay() + 6) % 7; // Понедельник = 0
-
-            daysEl.innerHTML = '';
-
-            // Дни предыдущего месяца
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Обнуляем время для корректного сравнения
-            const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
-            for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-                const day = prevMonthLastDay - i;
-                const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day other-month';
-                
-                // Проверяем, является ли день прошедшим
-                const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-                const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-                const prevDate = new Date(prevYear, prevMonth, day);
-                prevDate.setHours(0, 0, 0, 0);
-                
-                if (prevDate < today) {
-                    dayEl.classList.add('past-date');
-                }
-                
-                dayEl.textContent = day;
-                daysEl.appendChild(dayEl);
-            }
-
-            // Дни текущего месяца
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dayEl = document.createElement('div');
-                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const currentDayDate = new Date(currentYear, currentMonth, day);
-                currentDayDate.setHours(0, 0, 0, 0);
-                
-                dayEl.className = 'calendar-day';
-                dayEl.textContent = day;
-
-                // Проверяем, является ли день прошедшим (до сегодняшней даты)
-                if (currentDayDate < today) {
-                    dayEl.classList.add('past-date');
-                }
-
-                // Проверяем, является ли день сегодняшним
-                if (currentYear === today.getFullYear() && 
-                    currentMonth === today.getMonth() && 
-                    day === today.getDate()) {
-                    dayEl.classList.add('today');
-                }
-
-                // Сохраняем дату в элементе для удобства
-                dayEl.dataset.date = dateStr;
-
-                // Проверяем, занят ли день (но не добавляем класс booked если идет перетаскивание)
-                if (bookedDates.includes(dateStr)) {
-                    if (!(isDragging && draggedDates && draggedDates.has(dateStr))) {
-                        dayEl.classList.add('booked');
-                    }
-                    dayEl.title = 'Занято (нажмите, чтобы разблокировать; Ctrl+клик для выбора периода; зажмите ЛКМ для удаления)';
-                } else if (currentDayDate >= today) {
-                    dayEl.title = 'Нажмите, чтобы заблокировать; Ctrl+клик для выбора периода; зажмите ЛКМ для выбора';
-                }
-                
-                // Визуализация перетаскивания (после добавления всех классов, но с приоритетом)
-                if (isDragging && draggedDates && draggedDates.has(dateStr)) {
-                    // Убираем класс booked для показа предпросмотра
-                    dayEl.classList.remove('booked');
-                    
-                    if (isDragRemoving) {
-                        // Режим удаления - красная подсветка
-                        dayEl.classList.add('range-removing');
-                    } else {
-                        // Режим добавления - синяя подсветка
-                        const datesArray = Array.from(draggedDates).sort();
-                        if (datesArray.length > 0) {
-                            if (dateStr === datesArray[0]) {
-                                dayEl.classList.add('range-start');
-                            } else if (dateStr === datesArray[datesArray.length - 1]) {
-                                dayEl.classList.add('range-end');
-                            } else {
-                                dayEl.classList.add('range-middle');
-                            }
-                        }
-                    }
-                }
-
-                // Добавляем обработчик клика только для будущих дат
-                if (currentDayDate >= today && !dayEl.classList.contains('other-month')) {
-                    // Обработчик mousedown - начало перетаскивания
-                    dayEl.addEventListener('mousedown', function(e) {
-                        if (e.button === 0) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            
-                            isDragging = true;
-                            dragStartDate = dateStr;
-                            
-                            // Определяем режим: если начинаем с заблокированной даты - режим удаления
-                            isDragRemoving = bookedDates.includes(dateStr);
-                            
-                            // Инициализируем множество пройденных дат
-                            draggedDates = new Set();
-                            draggedDates.add(dateStr);
-                            
-                            // Меняем курсор
-                            document.body.style.cursor = isDragRemoving ? 'not-allowed' : 'grabbing';
-                            
-                            // Добавляем обработчики для всего документа
-                            document.addEventListener('mousemove', handleMouseMove);
-                            document.addEventListener('mouseup', handleMouseUp);
-                        }
-                    });
-                    
-                    // Обработчик mouseenter для отслеживания пройденных дат
-                    dayEl.addEventListener('mouseenter', function() {
-                        if (isDragging && currentDayDate >= today) {
-                            const wasAdded = draggedDates.has(dateStr);
-                            if (!wasAdded) {
-                                draggedDates.add(dateStr);
-                                // Обновляем визуализацию без полной перерисовки
-                                updateDragVisualization();
-                            }
-                        }
-                    });
-                    
-                    dayEl.addEventListener('click', function(e) {
-                        // Если было перетаскивание, не обрабатываем клик
-                        if (wasDragging) {
-                            wasDragging = false;
-                            return;
-                        }
-                        
-                        const isCtrlPressed = e.ctrlKey || e.metaKey; // Поддержка Cmd на Mac
-                        
-                        if (isCtrlPressed) {
-                            // Режим выбора периода
-                            if (!rangeStart) {
-                                // Первый клик - устанавливаем начальную дату
-                                rangeStart = dateStr;
-                                rangeEnd = null;
-                                isRangeSelecting = true;
-                                updateRangeVisualization();
-                            } else if (rangeStart === dateStr) {
-                                // Клик по той же дате - сброс выбора
-                                rangeStart = null;
-                                rangeEnd = null;
-                                isRangeSelecting = false;
-                                updateRangeVisualization();
-                            } else {
-                                // Второй клик - устанавливаем конечную дату и блокируем период
-                                rangeEnd = dateStr;
-                                isRangeSelecting = false;
-                                
-                                // Определяем реальное начало и конец периода (независимо от порядка кликов)
-                                const startDate = new Date(rangeStart);
-                                const endDate = new Date(rangeEnd);
-                                const actualStart = startDate <= endDate ? rangeStart : rangeEnd;
-                                const actualEnd = startDate <= endDate ? rangeEnd : rangeStart;
-                                
-                                // Определяем действие: если все даты в периоде заблокированы - разблокируем, иначе блокируем
-                                const rangeDates = getDatesInRange(actualStart, actualEnd);
-                                const today = new Date();
-                                today.setHours(0, 0, 0, 0);
-                                const validDates = rangeDates.filter(d => {
-                                    const date = new Date(d);
-                                    date.setHours(0, 0, 0, 0);
-                                    return date >= today;
-                                });
-                                
-                                const allBooked = validDates.every(d => bookedDates.includes(d));
-                                const action = allBooked ? 'remove' : 'add';
-                                
-                                // Передаем даты в правильном порядке (от меньшей к большей)
-                                toggleDateRange(actualStart, actualEnd, action);
-                            }
-                        } else {
-                            // Обычный клик - блокировка/разблокировка одной даты
-                            if (isRangeSelecting) {
-                                // Сбрасываем выбор периода при обычном клике
-                                rangeStart = null;
-                                rangeEnd = null;
-                                isRangeSelecting = false;
-                                updateRangeVisualization();
-                            }
-                            toggleDate(dateStr, dayEl);
-                        }
-                    });
-                }
-
-                daysEl.appendChild(dayEl);
-            }
-
-            // Дни следующего месяца
-            const totalCells = startingDayOfWeek + daysInMonth;
-            const remainingCells = 42 - totalCells; // 6 недель * 7 дней
-            for (let day = 1; day <= remainingCells && day <= 14; day++) {
-                const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day other-month';
-                
-                // Проверяем, является ли день прошедшим (маловероятно, но на всякий случай)
-                const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
-                const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-                const nextDate = new Date(nextYear, nextMonth, day);
-                nextDate.setHours(0, 0, 0, 0);
-                
-                if (nextDate < today) {
-                    dayEl.classList.add('past-date');
-                }
-                
-                dayEl.textContent = day;
-                daysEl.appendChild(dayEl);
-            }
-            
-            // Обновляем визуализацию выбранного периода
-            updateRangeVisualization();
-            
-            // Обновляем визуализацию перетаскивания после рендеринга
-            if (isDragging && draggedDates && draggedDates.size > 0) {
-                updateDragVisualization();
-            }
+        const ordersGrid = container.getElementById('orders-houses-grid');
+        if (!ordersGrid) {
+            console.log('Orders grid not found');
+            return;
         }
         
-        // Функция для обновления визуализации перетаскивания
-        function updateDragVisualization() {
-            const allDays = container.querySelectorAll('.calendar-day[data-date]');
-            allDays.forEach(dayEl => {
-                const dateStr = dayEl.dataset.date;
-                if (!dateStr) return;
-                
-                // Убираем предыдущие классы перетаскивания
-                dayEl.classList.remove('range-start', 'range-end', 'range-middle', 'range-removing');
-                
-                if (draggedDates.has(dateStr)) {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const date = new Date(dateStr);
-                    date.setHours(0, 0, 0, 0);
-                    
-                    if (date >= today) {
-                        // Убираем класс booked для показа предпросмотра
-                        dayEl.classList.remove('booked');
-                        
-                        if (isDragRemoving) {
-                            // Режим удаления - красная подсветка
-                            dayEl.classList.add('range-removing');
-                        } else {
-                            // Режим добавления - синяя подсветка
-                            const datesArray = Array.from(draggedDates).sort();
-                            if (datesArray.length > 0) {
-                                if (dateStr === datesArray[0]) {
-                                    dayEl.classList.add('range-start');
-                                } else if (dateStr === datesArray[datesArray.length - 1]) {
-                                    dayEl.classList.add('range-end');
-                                } else {
-                                    dayEl.classList.add('range-middle');
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // Восстанавливаем класс booked если нужно
-                    if (bookedDates.includes(dateStr)) {
-                        dayEl.classList.add('booked');
-                    }
+        const roleCheckboxes = container.querySelectorAll('input[type="checkbox"][data-filter-role]');
+        const statusCheckboxes = container.querySelectorAll('input[type="checkbox"][data-filter-status]');
+        const orderCards = container.querySelectorAll('.orders-compact-card');
+        
+        if (!roleCheckboxes.length || !statusCheckboxes.length) {
+            console.log('Filter checkboxes not found');
+            return;
+        }
+        
+        if (!orderCards.length) {
+            console.log('Order cards not found');
+            return;
+        }
+        
+        console.log('Initializing filters:', roleCheckboxes.length, 'role checkboxes,', statusCheckboxes.length, 'status checkboxes,', orderCards.length, 'cards');
+        
+        // Функция для получения выбранных фильтров
+        function getSelectedFilters() {
+            const selectedRoles = [];
+            const selectedStatuses = [];
+            
+            // Получаем актуальные чекбоксы каждый раз
+            const currentRoleCheckboxes = container.querySelectorAll('input[type="checkbox"][data-filter-role]');
+            const currentStatusCheckboxes = container.querySelectorAll('input[type="checkbox"][data-filter-status]');
+            
+            currentRoleCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selectedRoles.push(checkbox.dataset.filterRole);
                 }
             });
+            
+            currentStatusCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selectedStatuses.push(checkbox.dataset.filterStatus);
+                }
+            });
+            
+            return {
+                roles: selectedRoles.length > 0 ? selectedRoles : ['customer', 'owner'], // Если ничего не выбрано, показываем все
+                statuses: selectedStatuses.length > 0 ? selectedStatuses : ['рассмотрение', 'обработка', 'завершено', 'отменено', 'возврат'] // Если ничего не выбрано, показываем все
+            };
         }
-
-        // Обработчик движения мыши при перетаскивании
-        function handleMouseMove(e) {
-            if (!isDragging) return;
+        
+        // Функция для фильтрации заказов
+        function filterOrders() {
+            const cards = container.querySelectorAll('.orders-compact-card');
+            const grid = container.getElementById('orders-houses-grid');
+            if (!grid) return;
             
-            // Находим элемент под курсором
-            const elementUnderMouse = document.elementFromPoint(e.clientX, e.clientY);
-            if (!elementUnderMouse) return;
+            const filters = getSelectedFilters();
             
-            // Ищем родительский элемент с data-date
-            let dayElement = elementUnderMouse;
-            while (dayElement && !dayElement.dataset.date) {
-                dayElement = dayElement.parentElement;
-            }
+            // Получаем значения из полей ввода
+            const nameInput = container.querySelector('#filter-name-input');
+            const addressInput = container.querySelector('#filter-address-input');
+            const nameFilter = (nameInput ? nameInput.value.trim().toLowerCase() : '');
+            const addressFilter = (addressInput ? addressInput.value.trim().toLowerCase() : '');
             
-            if (dayElement && dayElement.dataset.date) {
-                const newDate = dayElement.dataset.date;
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const date = new Date(newDate);
-                date.setHours(0, 0, 0, 0);
+            let visibleCount = 0;
+            
+            console.log('Filtering with:', filters, 'name:', nameFilter, 'address:', addressFilter);
+            
+            cards.forEach(card => {
+                const cardRole = (card.dataset.orderRole || '').toLowerCase();
+                const cardStatus = (card.dataset.orderStatus || '').toLowerCase();
+                const customerName = (card.dataset.customerName || '').toLowerCase();
+                const ownerName = (card.dataset.ownerName || '').toLowerCase();
+                const houseAddress = (card.dataset.houseAddress || '').toLowerCase();
                 
-                // Добавляем дату в множество пройденных, если она валидна
-                if (date >= today) {
-                    const wasAdded = draggedDates.has(newDate);
-                    if (!wasAdded) {
-                        draggedDates.add(newDate);
-                        // Обновляем визуализацию без полной перерисовки
-                        updateDragVisualization();
-                    }
+                // Проверяем фильтр по роли
+                const roleMatch = filters.roles.includes(cardRole);
+                
+                // Проверяем фильтр по статусу
+                const statusMatch = filters.statuses.includes(cardStatus);
+                
+                // Проверяем фильтр по имени (ищем в имени заказчика или владельца)
+                const nameMatch = !nameFilter || 
+                    customerName.includes(nameFilter) || 
+                    ownerName.includes(nameFilter);
+                
+                // Проверяем фильтр по адресу
+                const addressMatch = !addressFilter || 
+                    houseAddress.includes(addressFilter);
+                
+                // Показываем карточку только если все фильтры совпадают
+                if (roleMatch && statusMatch && nameMatch && addressMatch) {
+                    card.style.display = '';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Показываем сообщение, если нет видимых заказов
+            let emptyMessage = grid.querySelector('.orders-empty-message');
+            if (visibleCount === 0) {
+                if (!emptyMessage) {
+                    emptyMessage = document.createElement('div');
+                    emptyMessage.className = 'orders-empty-message';
+                    emptyMessage.textContent = 'Заказы с выбранными фильтрами не найдены.';
+                    grid.appendChild(emptyMessage);
+                }
+            } else {
+                if (emptyMessage) {
+                    emptyMessage.remove();
                 }
             }
         }
         
-        // Обработчик отпускания кнопки мыши
-        function handleMouseUp(e) {
-            if (!isDragging) return;
-            
-            wasDragging = true; // Флаг для предотвращения обработки клика
-            
-            // Восстанавливаем курсор
-            document.body.style.cursor = '';
-            
-            // Удаляем обработчики
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            
-            // Обрабатываем пройденные даты
-            if (draggedDates.size > 0) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                
-                // Фильтруем только валидные даты
-                const validDates = Array.from(draggedDates).filter(dateStr => {
-                    const date = new Date(dateStr);
-                    date.setHours(0, 0, 0, 0);
-                    return date >= today;
-                });
-                
-                if (validDates.length > 0) {
-                    // Сортируем даты
-                    validDates.sort();
-                    
-                    // Определяем действие
-                    const allBooked = validDates.every(d => bookedDates.includes(d));
-                    const action = allBooked ? 'remove' : 'add';
-                    
-                    // Определяем начало и конец для визуализации
-                    const actualStart = validDates[0];
-                    const actualEnd = validDates[validDates.length - 1];
-                    
-                    // Блокируем/разблокируем только те даты, через которые прошли
-                    toggleDateRange(actualStart, actualEnd, action, validDates);
-                }
-            } else if (dragStartDate) {
-                // Если кликнули на одну дату - просто переключаем её
-                toggleDate(dragStartDate, container.querySelector(`[data-date="${dragStartDate}"]`));
+        // Используем делегирование событий для надежности
+        const filtersContainer = container.querySelector('.orders-filters-card') || container;
+        
+        filtersContainer.addEventListener('change', function(e) {
+            const checkbox = e.target;
+            if (checkbox.type === 'checkbox' && (checkbox.dataset.filterRole || checkbox.dataset.filterStatus)) {
+                console.log('Filter changed:', checkbox.dataset.filterRole || checkbox.dataset.filterStatus, checkbox.checked);
+                filterOrders();
             }
-            
-            // Сбрасываем состояние перетаскивания
-            isDragging = false;
-            isDragRemoving = false;
-            dragStartDate = null;
-            draggedDates = new Set();
-            
-            // Сбрасываем флаг через небольшую задержку
-            setTimeout(() => {
-                wasDragging = false;
-            }, 100);
-        }
-
-        // Обработчики навигации
-        container.querySelectorAll('.calendar-nav-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                if (this.dataset.action === 'prev') {
-                    currentMonth--;
-                    if (currentMonth < 0) {
-                        currentMonth = 11;
-                        currentYear--;
-                    }
-                } else {
-                    currentMonth++;
-                    if (currentMonth > 11) {
-                        currentMonth = 0;
-                        currentYear++;
-                    }
-                }
-                // Сбрасываем выбор периода при смене месяца
-                rangeStart = null;
-                rangeEnd = null;
-                isRangeSelecting = false;
-                isDragging = false;
-                draggedDates = new Set();
-                renderCalendar();
+        });
+        
+        // Также добавляем обработчики напрямую для совместимости
+        roleCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                console.log('Role filter changed:', this.dataset.filterRole, this.checked);
+                filterOrders();
             });
         });
         
-        // Сбрасываем перетаскивание при выходе за пределы календаря
-        container.addEventListener('mouseleave', function() {
-            if (isDragging) {
-                const event = new MouseEvent('mouseup', { bubbles: true, cancelable: true });
-                document.dispatchEvent(event);
+        statusCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                console.log('Status filter changed:', this.dataset.filterStatus, this.checked);
+                filterOrders();
+            });
+        });
+        
+        // Инициализируем автодополнение для полей ввода, передавая функцию фильтрации
+        initAutocomplete(container, filterOrders);
+        
+        // Инициализируем фильтрацию при загрузке
+        filterOrders();
+    };
+    
+    // Функция для инициализации автодополнения
+    function initAutocomplete(container, filterOrdersFunc) {
+        const nameInput = container.querySelector('#filter-name-input');
+        const addressInput = container.querySelector('#filter-address-input');
+        const nameDropdown = container.querySelector('#name-autocomplete');
+        const addressDropdown = container.querySelector('#address-autocomplete');
+        
+        if (!nameInput || !addressInput) return;
+        
+        // Собираем все уникальные имена и адреса из заказов
+        const orderCards = container.querySelectorAll('.orders-compact-card');
+        const namesSet = new Set();
+        const addressesSet = new Set();
+        
+        orderCards.forEach(card => {
+            // Используем оригинальные значения с сохранением регистра
+            const customerName = (card.dataset.customerNameOriginal || card.dataset.customerName || '').trim();
+            const ownerName = (card.dataset.ownerNameOriginal || card.dataset.ownerName || '').trim();
+            const address = (card.dataset.houseAddressOriginal || card.dataset.houseAddress || '').trim();
+            
+            if (customerName) namesSet.add(customerName);
+            if (ownerName) namesSet.add(ownerName);
+            if (address) addressesSet.add(address);
+        });
+        
+        const names = Array.from(namesSet).sort();
+        const addresses = Array.from(addressesSet).sort();
+        
+        // Функция для фильтрации и отображения вариантов
+        function showSuggestions(input, dropdown, items, filterValue) {
+            const query = filterValue.toLowerCase().trim();
+            
+            if (query.length === 0) {
+                dropdown.classList.remove('show');
+                return;
+            }
+            
+            // Фильтруем, но сохраняем оригинальные значения с регистром
+            const filtered = items.filter(item => 
+                item.toLowerCase().includes(query)
+            ).slice(0, 10); // Ограничиваем до 10 вариантов
+            
+            if (filtered.length === 0) {
+                dropdown.classList.remove('show');
+                return;
+            }
+            
+            dropdown.innerHTML = '';
+            filtered.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'orders-autocomplete-item';
+                // Используем оригинальное значение с сохранением регистра
+                itemEl.textContent = item;
+                itemEl.addEventListener('click', () => {
+                    // Сохраняем оригинальное значение с регистром
+                    input.value = item;
+                    dropdown.classList.remove('show');
+                    filterOrders();
+                });
+                dropdown.appendChild(itemEl);
+            });
+            
+            dropdown.classList.add('show');
+        }
+        
+        // Обработчики для поля имени
+        let nameHighlightIndex = -1;
+        nameInput.addEventListener('input', function() {
+            nameHighlightIndex = -1;
+            showSuggestions(nameInput, nameDropdown, names, this.value);
+            // Немедленно запускаем фильтрацию при вводе
+            if (filterOrdersFunc) {
+                filterOrdersFunc();
             }
         });
-
-        // Обработчик для сброса выбора периода при клике вне календаря
+        
+        nameInput.addEventListener('keydown', function(e) {
+            const items = nameDropdown.querySelectorAll('.orders-autocomplete-item');
+            if (items.length === 0) return;
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                nameHighlightIndex = Math.min(nameHighlightIndex + 1, items.length - 1);
+                items.forEach((item, idx) => {
+                    item.classList.toggle('highlighted', idx === nameHighlightIndex);
+                });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                nameHighlightIndex = Math.max(nameHighlightIndex - 1, -1);
+                items.forEach((item, idx) => {
+                    item.classList.toggle('highlighted', idx === nameHighlightIndex);
+                });
+            } else if (e.key === 'Enter' && nameHighlightIndex >= 0) {
+                e.preventDefault();
+                items[nameHighlightIndex].click();
+            } else if (e.key === 'Escape') {
+                nameDropdown.classList.remove('show');
+            }
+        });
+        
+        // Обработчики для поля адреса
+        let addressHighlightIndex = -1;
+        addressInput.addEventListener('input', function() {
+            addressHighlightIndex = -1;
+            showSuggestions(addressInput, addressDropdown, addresses, this.value);
+            // Немедленно запускаем фильтрацию при вводе
+            if (filterOrdersFunc) {
+                filterOrdersFunc();
+            }
+        });
+        
+        addressInput.addEventListener('keydown', function(e) {
+            const items = addressDropdown.querySelectorAll('.orders-autocomplete-item');
+            if (items.length === 0) return;
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                addressHighlightIndex = Math.min(addressHighlightIndex + 1, items.length - 1);
+                items.forEach((item, idx) => {
+                    item.classList.toggle('highlighted', idx === addressHighlightIndex);
+                });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                addressHighlightIndex = Math.max(addressHighlightIndex - 1, -1);
+                items.forEach((item, idx) => {
+                    item.classList.toggle('highlighted', idx === addressHighlightIndex);
+                });
+            } else if (e.key === 'Enter' && addressHighlightIndex >= 0) {
+                e.preventDefault();
+                items[addressHighlightIndex].click();
+            } else if (e.key === 'Escape') {
+                addressDropdown.classList.remove('show');
+            }
+        });
+        
+        // Закрываем выпадающие меню при клике вне их
         document.addEventListener('click', function(e) {
-            if (!container.contains(e.target) && isRangeSelecting) {
-                rangeStart = null;
-                rangeEnd = null;
-                isRangeSelecting = false;
-                updateRangeVisualization();
+            if (!nameInput.contains(e.target) && !nameDropdown.contains(e.target)) {
+                nameDropdown.classList.remove('show');
+            }
+            if (!addressInput.contains(e.target) && !addressDropdown.contains(e.target)) {
+                addressDropdown.classList.remove('show');
             }
         });
-
-        // Первоначальная отрисовка
-        renderCalendar();
-        });
     }
-
-    // Инициализация при загрузке страницы
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initCalendars);
-    } else {
-        // Если DOM уже загружен (AJAX-загрузка)
-        initCalendars();
-    }
-
-    // Экспортируем функцию для вызова извне (для AJAX-загрузки)
-    window.initHouseCalendars = initCalendars;
-})();
+    
+    // Пытаемся инициализировать сразу
+    (function() {
+        function tryInit() {
+            const grid = document.getElementById('orders-houses-grid');
+            if (grid && window.initOrdersFilters) {
+                window.initOrdersFilters();
+            }
+        }
+        
+        // Пробуем сразу
+        tryInit();
+        
+        // Пробуем после загрузки DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(tryInit, 100);
+            });
+        } else {
+            setTimeout(tryInit, 200);
+        }
+        
+        // Пробуем еще раз через некоторое время (для AJAX)
+        setTimeout(tryInit, 500);
+        setTimeout(tryInit, 1000);
+    })();
 </script>
+
+

@@ -54,6 +54,13 @@ class User extends Authenticatable
     public function order(){
         return $this->hasMany(Order::class,"user_id","user_id");
     }
+    
+    /**
+     * Заказы, где пользователь является заказчиком
+     */
+    public function ordersAsCustomer(){
+        return $this->hasMany(Order::class,"customer_id","user_id");
+    }
 
     /**
      * Проверяет, является ли переданный пользователь владельцем профиля

@@ -140,7 +140,7 @@ class HouseController extends Controller
         $this->authorize('update', $house);
 
         // Загружаем связи для отображения текущих значений
-        $house->load(['rent_type', 'house_type', 'photo']);
+        $house->load(['rent_type', 'house_type', 'photo', 'house_calendar']);
 
         $currentUser = auth()->user();
         

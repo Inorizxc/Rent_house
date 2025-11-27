@@ -32,8 +32,16 @@ new class extends Component {
     }
 }; ?>
 
-<div class="settings-section-card">
-    <div class="settings-section-title">Безопасность</div>
+<div class="settings-section-card settings-card-enhanced">
+    <div class="settings-section-header">
+        <div class="settings-icon-wrapper settings-icon-security">
+            <svg class="settings-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <div class="settings-section-title">Безопасность</div>
+    </div>
     <form method="POST" wire:submit="updatePassword" class="settings-form">
         <flux:input
             wire:model="current_password"
@@ -59,6 +67,9 @@ new class extends Component {
 
         <div class="settings-form-actions">
             <button type="submit" class="settings-save-button">
+                <svg class="settings-button-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
                 {{ __('Сохранить') }}
             </button>
             <x-action-message class="settings-action-message" on="password-updated">

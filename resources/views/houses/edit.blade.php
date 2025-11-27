@@ -17,9 +17,23 @@
         </form>
     </div>
 
-    <form method="POST" action="{{ route('houses.update', $house) }}" enctype="multipart/form-data" style="background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-        @method('PUT')
-        @include('houses._form', ['house' => $house, 'users' => $users, 'rentTypes' => $rentTypes, 'houseTypes' => $houseTypes, 'currentUser' => $currentUser])
-    </form>
+    <div class="edit-house-layout" style="display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start;">
+        <form method="POST" action="{{ route('houses.update', $house) }}" enctype="multipart/form-data" style="background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            @method('PUT')
+            @include('houses._form', ['house' => $house, 'users' => $users, 'rentTypes' => $rentTypes, 'houseTypes' => $houseTypes, 'currentUser' => $currentUser])
+        </form>
+
+        <div style="position: sticky; top: 24px;">
+            @include('houses.partials.house-calendar', ['house' => $house])
+        </div>
+    </div>
 </div>
+
+<style>
+    @media (max-width: 1024px) {
+        .edit-house-layout {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
 @endsection

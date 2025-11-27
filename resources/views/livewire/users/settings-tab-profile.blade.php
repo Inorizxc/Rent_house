@@ -56,17 +56,25 @@ new class extends Component {
     }
 }; ?>
 
-<div class="settings-section-card">
-    <div class="settings-section-title">Личные данные</div>
+<div class="settings-section-card settings-card-enhanced">
+    <div class="settings-section-header">
+        <div class="settings-icon-wrapper settings-icon-profile">
+            <svg class="settings-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M20.59 22C20.59 18.13 16.74 15 12 15C7.26 15 3.41 18.13 3.41 22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <div class="settings-section-title">Личные данные</div>
+    </div>
     <form wire:submit="updateProfileInformation" class="settings-form">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="settings-form-grid">
             <flux:input wire:model="name" :label="__('Имя')" type="text" required autofocus autocomplete="given-name" />
             <flux:input wire:model="sename" :label="__('Фамилия')" type="text" required autocomplete="family-name" />
         </div>
         
         <flux:input wire:model="patronymic" :label="__('Отчество')" type="text" autocomplete="additional-name" />
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="settings-form-grid">
             <flux:input wire:model="birth_date" :label="__('Дата рождения')" type="date" />
             <flux:input wire:model="phone" :label="__('Номер телефона')" type="tel" autocomplete="tel" />
         </div>
@@ -75,6 +83,9 @@ new class extends Component {
 
         <div class="settings-form-actions">
             <button type="submit" class="settings-save-button">
+                <svg class="settings-button-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
                 {{ __('Сохранить') }}
             </button>
             <x-action-message class="settings-action-message" on="profile-updated">

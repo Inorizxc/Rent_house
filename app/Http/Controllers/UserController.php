@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\House;
 use App\Models\Role;
+use App\Models\Order;
 use App\Services\UserServices\UserService as UserService;
 
 class UserController extends Controller
@@ -50,42 +51,6 @@ class UserController extends Controller
         ]);
     }
 
-    public function tabOrders(string $id, Request $request){
-        $userService = app(UserService::class);
-        $user = $userService->getUserWithRoleHouse($id);
-
-        // Проверяем доступ к приватным данным (только владелец)
-        $currentUser = auth()->user();
-        if (!$currentUser) {
-            abort(403, 'Требуется авторизация');
-        }
-
-        // Используем Policy для проверки доступа к приватным данным
-        $this->authorize('viewPrivateData', $user);
-
-        $isOwner = true; // Если дошли сюда, значит это владелец
-
-        // Получаем дома пользователя с календарями
-        $houses = House::where('user_id', $user->user_id)
-            ->with('house_calendar')
-            ->get();
-
-        if ($request->ajax() || $request->wantsJson()) {
-            return view("users.partials.orders-tab", [
-                "user" => $user,
-                "houses" => $houses,
-                "isOwner" => $isOwner,
-            ])->render();
-        }
-
-        // Если не AJAX запрос, возвращаем полную страницу
-        return view("users.show", [
-            "user" => $user,
-            "houses" => $user->house,
-            "isOwner" => $isOwner,
-        ]);
-    }
-
     public function tabSettings(string $id, Request $request){
         $userService = app(UserService::class);
         $user = $userService->getUserWithRoleHouse($id);
@@ -104,6 +69,57 @@ class UserController extends Controller
         if ($request->ajax() || $request->wantsJson()) {
             return view("users.partials.settings-tab", [
                 "user" => $user,
+                "isOwner" => $isOwner,
+            ])->render();
+        }
+
+        // Если не AJAX запрос, возвращаем полную страницу
+        return view("users.show", [
+            "user" => $user,
+            "houses" => $user->house,
+            "isOwner" => $isOwner,
+        ]);
+    }
+
+    public function tabOrders(string $id, Request $request){
+        $userService = app(UserService::class);
+        $user = $userService->getUserWithRoleHouse($id);
+
+        // Используем Policy для проверки доступа (разрешает гостям просматривать)
+        $currentUser = auth()->user();
+        // Для гостей доступ разрешен, проверку делаем только для авторизованных
+        if ($currentUser) {
+            $this->authorize('view', $user);
+        }
+
+        // Проверяем, является ли текущий пользователь владельцем
+        $isOwner = $currentUser && $currentUser->canEditProfile($user);
+
+        // Получаем заказы, где пользователь является заказчиком
+        $ordersAsCustomer = Order::where('customer_id', $user->user_id)
+            ->with(['house.photo', 'house.rent_type', 'house.house_type', 'customer'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Получаем заказы на дома пользователя (если он арендодатель)
+        $houseIds = $user->house->pluck('house_id');
+        $ordersAsOwner = collect();
+        if ($houseIds->isNotEmpty()) {
+            $ordersAsOwner = Order::whereIn('house_id', $houseIds)
+                ->with(['house.photo', 'house.rent_type', 'house.house_type', 'customer'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
+        // Объединяем заказы и убираем дубликаты
+        $allOrders = $ordersAsCustomer->merge($ordersAsOwner)->unique('order_id')->sortByDesc('created_at');
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return view("users.partials.orders-tab", [
+                "user" => $user,
+                "orders" => $allOrders,
+                "ordersAsCustomer" => $ordersAsCustomer,
+                "ordersAsOwner" => $ordersAsOwner,
                 "isOwner" => $isOwner,
             ])->render();
         }

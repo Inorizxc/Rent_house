@@ -49,7 +49,7 @@ class OrderController extends Controller
 
         return view('orders.index', [
             'orders' => $orders,
-            'orderStatuses' => OrderStatus::all()
+            'orderStatuses' => OrderStatus::cases()
         ]);
     }
 
@@ -428,8 +428,8 @@ class OrderController extends Controller
         // Вычисляем количество дней
         $dayCount = (int)$checkin->diff($checkout)->days;
 
-        // Получаем статус "Ожидается"
-        $defaultStatus = OrderStatus::COMPLETED;
+        // Получаем статус по умолчанию (Рассмотрение)
+        $defaultStatus = OrderStatus::PENDING;
         
         if (!$defaultStatus) {
             $temporaryBlock->delete();

@@ -21,16 +21,54 @@ class Order extends Model
         "order_status",
         "original_data",
         ];
-    protected $casts =[
+    protected $casts = [
         "order_status" => OrderStatus::class,
     ];
     
+    /**
+     * Обработка неизвестных значений статуса при загрузке из БД
+     * Перехватывает значения до автоматического cast
+     */
+    protected function castAttribute($key, $value)
+    {
+        if ($key === 'order_status' && !($value instanceof OrderStatus)) {
+            // Маппинг старых значений на новые
+            $mapping = [
+                'Ожидается' => OrderStatus::PENDING->value,
+                'Рассмотрение' => OrderStatus::PENDING->value,
+                'Обработка' => OrderStatus::PROCESSING->value,
+                'Завершено' => OrderStatus::COMPLETED->value,
+                'Отменено' => OrderStatus::CANCELLED->value,
+                'Возврат' => OrderStatus::REFUND->value,
+            ];
+            
+            if (isset($mapping[$value])) {
+                $value = $mapping[$value];
+            }
+            
+            // Пытаемся найти по значению enum
+            try {
+                return OrderStatus::from($value);
+            } catch (\ValueError $e) {
+                // Если не найдено, возвращаем PENDING по умолчанию
+                return OrderStatus::PENDING;
+            }
+        }
+        
+        return parent::castAttribute($key, $value);
+    }
+    
     public function house(){
-        return $this->hasOne(House::class,"IdHouse","HouseId");
+        return $this->belongsTo(House::class,"house_id","house_id");
     }
 
+    public function customer(){
+        return $this->belongsTo(User::class,"customer_id","user_id");
+    }
+    
+    // Для обратной совместимости
     public function user(){
-        return $this->hasOne(User::class,"customer_id","user_id");
+        return $this->customer();
     }
 
     //public function order_status(){

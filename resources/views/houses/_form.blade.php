@@ -49,7 +49,7 @@
             </div>
         </div>
         <p id="address-status" style="font-size: 11px; color: #666; margin-top: 4px; font-style: italic; min-height: 16px;">
-            Формат: Город, улица, номер дома. Например: "Саратов, улица Исаева, 5" или "ул. Исаева, 5"
+            Формат: Город, ул. Название улицы, д Номер. Например: "Саратов, ул. Степана Разина, д 93"
         </p>
         @if(Route::is('houses.create'))
         <div id="request-url-container" style="margin-top: 8px; padding: 10px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px; display: none;">

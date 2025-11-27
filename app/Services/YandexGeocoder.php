@@ -673,26 +673,18 @@ class YandexGeocoder{
                         }
                     }
                     
-                    // Если есть полный адрес, используем его
+                    // Если есть полный адрес, форматируем его
                     if ($fullAddress) {
+                        $formattedAddress = $this->formatAddress($fullAddress, $subtitle ?? '');
                         $suggestions[] = [
-                            'value' => $fullAddress,
-                            'display' => $fullAddress,
-                            'title' => $title ?? $fullAddress,
+                            'value' => $formattedAddress,
+                            'display' => $formattedAddress,
+                            'title' => $title ?? $formattedAddress,
                             'subtitle' => $subtitle ?? ''
                         ];
                     } elseif ($title) {
-                        // Формируем полный адрес в формате: Город, Улица, дом
-                        $displayAddress = $title;
-                        if (!empty($subtitle) && $subtitle !== $title) {
-                            // Если subtitle содержит город, объединяем их
-                            // Проверяем, не содержится ли уже город в title
-                            if (stripos($title, $subtitle) === false) {
-                                $displayAddress = $subtitle . ', ' . $title;
-                            } else {
-                                $displayAddress = $title;
-                            }
-                        }
+                        // Форматируем адрес в нужном формате: "Саратов, ул. Степана Разина, д 93"
+                        $displayAddress = $this->formatAddress($title, $subtitle ?? '');
 
                         $suggestions[] = [
                             'value' => $displayAddress,
@@ -724,6 +716,138 @@ class YandexGeocoder{
             ]);
             return [];
         }
+    }
+    
+    /**
+     * Форматирует адрес в нужный формат: "Саратов, ул. Степана Разина, д 93"
+     * 
+     * @param string $name Название объекта от Yandex API
+     * @param string $description Описание объекта (обычно город)
+     * @param array|null $geoObject Полный объект GeoObject для извлечения компонентов
+     * @return string Отформатированный адрес
+     */
+    private function formatAddress(string $name, string $description, ?array $geoObject = null): string
+    {
+        $city = '';
+        $street = '';
+        $houseNumber = '';
+        
+        // Извлекаем город из description или из начала name
+        if (!empty($description)) {
+            // Убираем "Россия" и другие лишние слова
+            $description = preg_replace('/\b(?:Россия|Russia)\b/ui', '', $description);
+            $description = trim($description);
+            if (preg_match('/\b(?:Саратов|Москва|Санкт-Петербург|Петербург|СПб)\b/ui', $description, $matches)) {
+                $city = $matches[0];
+            }
+        }
+        
+        // Если город не найден в description, ищем в name
+        if (empty($city) && preg_match('/\b(?:Саратов|Москва|Санкт-Петербург|Петербург|СПб)\b/ui', $name, $matches)) {
+            $city = $matches[0];
+        }
+        
+        // Если город все еще не найден, пробуем извлечь из компонентов адреса
+        if (empty($city) && $geoObject !== null) {
+            $components = $geoObject['metaDataProperty']['GeocoderMetaData']['Address']['Components'] ?? [];
+            foreach ($components as $component) {
+                $kind = $component['kind'] ?? '';
+                if ($kind === 'locality' || $kind === 'area') {
+                    $city = $component['name'] ?? '';
+                    if (!empty($city)) break;
+                }
+            }
+        }
+        
+        // Если город не найден, используем "Саратов" по умолчанию
+        if (empty($city)) {
+            $city = 'Саратов';
+        }
+        
+        // Извлекаем улицу и номер дома из name
+        $nameClean = $name;
+        
+        // Убираем город из начала name, если он там есть
+        $nameClean = preg_replace('/^' . preg_quote($city, '/') . '[, ]*/ui', '', $nameClean);
+        $nameClean = trim($nameClean);
+        
+        // Извлекаем номер дома (обычно в конце, после запятой или пробела)
+        if (preg_match('/(?:,|\s+)(?:д\.?|дом\s*)?(\d+[а-яА-Я]?)(?:\s|$)/u', $nameClean, $matches)) {
+            $houseNumber = trim($matches[1]);
+            // Убираем номер дома из строки
+            $nameClean = preg_replace('/(?:,|\s+)(?:д\.?|дом\s*)?' . preg_quote($houseNumber, '/') . '(?:\s|$)/u', '', $nameClean);
+        } elseif (preg_match('/(?:,|\s+)(\d+[а-яА-Я]?)(?:\s|$)/u', $nameClean, $matches)) {
+            $houseNumber = trim($matches[1]);
+            // Убираем номер дома из строки
+            $nameClean = preg_replace('/(?:,|\s+)' . preg_quote($houseNumber, '/') . '(?:\s|$)/u', '', $nameClean);
+        }
+        
+        // Извлекаем название улицы
+        $nameClean = trim($nameClean);
+        
+        // Убираем слова "улица", "ул." и т.д. из начала, но сохраняем их для форматирования
+        $streetPrefix = '';
+        if (preg_match('/^(?:ул\.?|улица|проспект|пр\.?|пр-т|переулок|пер\.?|бульвар|бул\.?)\s+/ui', $nameClean, $matches)) {
+            $prefix = trim($matches[0]);
+            // Нормализуем префикс
+            if (preg_match('/^ул\.?|улица/ui', $prefix)) {
+                $streetPrefix = 'ул.';
+            } elseif (preg_match('/^проспект|пр\.?|пр-т/ui', $prefix)) {
+                $streetPrefix = 'пр.';
+            } elseif (preg_match('/^переулок|пер\.?/ui', $prefix)) {
+                $streetPrefix = 'пер.';
+            } elseif (preg_match('/^бульвар|бул\.?/ui', $prefix)) {
+                $streetPrefix = 'бул.';
+            }
+            $nameClean = preg_replace('/^(?:ул\.?|улица|проспект|пр\.?|пр-т|переулок|пер\.?|бульвар|бул\.?)\s+/ui', '', $nameClean);
+        }
+        
+        // Если префикс не найден, но есть название улицы, добавляем "ул."
+        if (empty($streetPrefix) && !empty($nameClean)) {
+            $streetPrefix = 'ул.';
+        }
+        
+        $street = trim($nameClean);
+        
+        // Если улица не найдена, пробуем извлечь из компонентов
+        if (empty($street) && $geoObject !== null) {
+            $components = $geoObject['metaDataProperty']['GeocoderMetaData']['Address']['Components'] ?? [];
+            foreach ($components as $component) {
+                $kind = $component['kind'] ?? '';
+                if ($kind === 'street') {
+                    $street = $component['name'] ?? '';
+                    if (!empty($street)) {
+                        // Убираем префикс из компонента, если он там есть
+                        $street = preg_replace('/^(?:ул\.?|улица|проспект|пр\.?|пр-т|переулок|пер\.?|бульвар|бул\.?)\s+/ui', '', $street);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Формируем итоговый адрес
+        $parts = [];
+        
+        // Город
+        if (!empty($city)) {
+            $parts[] = $city;
+        }
+        
+        // Улица
+        if (!empty($street)) {
+            if (!empty($streetPrefix)) {
+                $parts[] = trim($streetPrefix . ' ' . $street);
+            } else {
+                $parts[] = $street;
+            }
+        }
+        
+        // Номер дома
+        if (!empty($houseNumber)) {
+            $parts[] = 'д ' . $houseNumber;
+        }
+        
+        return implode(', ', $parts);
     }
     
     /**
@@ -798,18 +922,8 @@ class YandexGeocoder{
                         $name = $geoObject['name'] ?? '';
                         $description = $geoObject['description'] ?? '';
                         
-                        // Формируем адрес в формате: Город, улица, дом
-                        $displayAddress = $name;
-                        if (!empty($description) && $description !== $name) {
-                            // Если description содержит более полную информацию, используем её
-                            // Проверяем, не содержится ли уже описание в названии
-                            if (stripos($name, $description) === false && stripos($description, $name) === false) {
-                                // Объединяем: обычно description - это город, name - это улица и дом
-                                $displayAddress = $description . ', ' . $name;
-                            } else {
-                                $displayAddress = $name;
-                            }
-                        }
+                        // Форматируем адрес в нужном формате: "Саратов, ул. Степана Разина, д 93"
+                        $displayAddress = $this->formatAddress($name, $description, $geoObject);
                         
                         if (!empty($displayAddress)) {
                             // Фильтруем результаты по уже введенному тексту
