@@ -4,6 +4,9 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+
+
+
 return new class extends Migration
 {
     /**
@@ -17,7 +20,7 @@ return new class extends Migration
             $table->text("date_of_order");
             $table->text("day_count");
             $table->text("customer_id");
-            $table->text("order_status");
+            $table->string("order_status");
             $table->text("original_data");
             $table->timestamps();
         });

@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\House;
 use App\Models\HouseCalendar;
-use App\Models\OrderStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\enum\OrderStatus;
+
 
 class OrderController extends Controller
 {
@@ -54,11 +55,10 @@ class OrderController extends Controller
     public function create()
     {
         $houses = House::where('is_deleted', false)->get();
-        $orderStatuses = OrderStatus::all();
         
         return view('orders.create', [
             'houses' => $houses,
-            'orderStatuses' => $orderStatuses
+            'orderStatuses' => OrderStatus::PENDING,
         ]);
     }
 
@@ -225,18 +225,7 @@ class OrderController extends Controller
         $dayCount = (int)$checkin->diff($checkout)->days;
 
         // Получаем статус "Ожидается" или создаем заказ со статусом по умолчанию
-        $defaultStatus = OrderStatus::where('type', 'Ожидается')->first();
-        if (!$defaultStatus) {
-            // Если статуса нет, берем первый доступный
-            $defaultStatus = OrderStatus::first();
-        }
-
-        if (!$defaultStatus) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Не найден статус заказа'
-            ], 500);
-        }
+        $defaultStatus = OrderStatus::PENDING;
 
         // Создаем массив для original_data
         $originalData = [
@@ -251,7 +240,7 @@ class OrderController extends Controller
             'date_of_order' => $validated['checkin_date'],
             'day_count' => $dayCount,
             'customer_id' => $user->user_id,
-            'order_status_id' => $defaultStatus->order_status_id,
+            'order_status' => OrderStatus::PENDING,
             'original_data' => json_encode($originalData),
         ]);
 
@@ -281,7 +270,7 @@ class OrderController extends Controller
                 'date_of_order' => $order->date_of_order,
                 'day_count' => $order->day_count,
                 'customer_id' => $order->customer_id,
-                'order_status_id' => $order->order_status_id,
+                'order_status' => OrderStatus::PENDING,
             ],
             'dates' => $updatedDates, // Возвращаем обновленные даты календаря
             'message' => 'Заказ успешно создан'

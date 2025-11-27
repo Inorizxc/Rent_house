@@ -24,7 +24,6 @@ class DatabaseSeeder extends Seeder
             ServiceSeeder::class,
             HouseServiceSeeder::class,
             HouseSeeder::class,
-            OrderStatusSeeder::class,
             OrderSeeder::class,
             HouseCalendarSeeder::class,
             PriceListSeeder::class,
