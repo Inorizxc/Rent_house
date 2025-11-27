@@ -5,11 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\House;
 use App\Models\HouseCalendar;
+use App\Models\OrderStatus;
+use App\Models\TemporaryBlock;
+use App\Models\Chat;
+use App\Models\Message;
+use App\Services\ChatService\ChatService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\enum\OrderStatus;
-
+use Carbon\Carbon;
 
 class OrderController extends Controller
 {
@@ -55,10 +59,11 @@ class OrderController extends Controller
     public function create()
     {
         $houses = House::where('is_deleted', false)->get();
+        $orderStatuses = OrderStatus::all();
         
         return view('orders.create', [
             'houses' => $houses,
-            'orderStatuses' => OrderStatus::PENDING,
+            'orderStatuses' => $orderStatuses
         ]);
     }
 
@@ -173,7 +178,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Create order from chat (for booking dates)
+     * Create order from chat (for booking dates) - создает временную блокировку и редиректит на подтверждение
      */
     public function createFromChat(Request $request, $houseId)
     {
@@ -192,89 +197,380 @@ class OrderController extends Controller
             ], 401);
         }
 
-        // Проверяем доступность дат
-        $calendar = $house->house_calendar;
-        $bookedDates = $calendar ? ($calendar->dates ?? []) : [];
-        
         $checkin = new \DateTime($validated['checkin_date']);
         $checkout = new \DateTime($validated['checkout_date']);
-        
-        // Дата выезда не включается в период, поэтому вычитаем 1 день для проверки занятости
         $checkoutForCheck = clone $checkout;
         $checkoutForCheck->modify('-1 day');
 
-        $datesToCheck = [];
+        $datesToBlock = [];
         $current = clone $checkin;
         while ($current <= $checkoutForCheck) {
-            $datesToCheck[] = $current->format('Y-m-d');
+            $datesToBlock[] = $current->format('Y-m-d');
             $current->modify('+1 day');
         }
 
+        // Очищаем истекшие блокировки
+        TemporaryBlock::cleanExpired();
+
+        // Проверяем доступность дат (учитывая постоянные и временные блокировки)
+        $calendar = $house->house_calendar;
+        $bookedDates = $calendar ? ($calendar->dates ?? []) : [];
+        
+        // Получаем активные временные блокировки для этого дома
+        $temporaryBlocks = TemporaryBlock::where('house_id', $houseId)
+            ->where('expires_at', '>', now())
+            ->get();
+        
+        $temporaryBlockedDates = [];
+        foreach ($temporaryBlocks as $block) {
+            $temporaryBlockedDates = array_merge($temporaryBlockedDates, $block->dates ?? []);
+        }
+        $temporaryBlockedDates = array_unique($temporaryBlockedDates);
+
         // Проверяем, не заняты ли даты
-        foreach ($datesToCheck as $date) {
+        foreach ($datesToBlock as $date) {
             if (in_array($date, $bookedDates)) {
                 return response()->json([
                     'success' => false,
                     'error' => "Дата {$date} уже занята"
                 ], 400);
             }
+            // Проверяем временные блокировки других пользователей
+            if (in_array($date, $temporaryBlockedDates)) {
+                $blockingUser = TemporaryBlock::where('house_id', $houseId)
+                    ->where('expires_at', '>', now())
+                    ->whereJsonContains('dates', $date)
+                    ->where('user_id', '!=', $user->user_id)
+                    ->first();
+                
+                if ($blockingUser) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => "Дата {$date} временно заблокирована другим пользователем"
+                    ], 400);
+                }
+            }
         }
 
-        // Вычисляем количество дней (от даты заезда до даты выезда включительно)
-        // Если заезд 1 января, выезд 5 января, то это 4 дня (1, 2, 3, 4)
+        // Удаляем старые временные блокировки этого пользователя для этого дома
+        TemporaryBlock::where('house_id', $houseId)
+            ->where('user_id', $user->user_id)
+            ->delete();
+
+        // Создаем новую временную блокировку на 10 минут
+        $temporaryBlock = TemporaryBlock::create([
+            'house_id' => $house->house_id,
+            'user_id' => $user->user_id,
+            'dates' => $datesToBlock,
+            'expires_at' => now()->addMinutes(10),
+        ]);
+
+        // Редиректим на страницу подтверждения
+        $redirectUrl = route('house.order.confirm.show', $houseId) . '?' . http_build_query([
+            'checkin_date' => $validated['checkin_date'],
+            'checkout_date' => $validated['checkout_date']
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'redirect' => $redirectUrl
+        ]);
+    }
+
+    /**
+     * Показать страницу подтверждения заказа с временной блокировкой
+     */
+    public function showConfirm(Request $request, $houseId)
+    {
+        $request->validate([
+            'checkin_date' => 'required|date|after_or_equal:today',
+            'checkout_date' => 'required|date|after:checkin_date',
+        ]);
+
+        $house = House::with(['user', 'photo'])->findOrFail($houseId);
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Необходима авторизация');
+        }
+
+        $checkin = new \DateTime($request->checkin_date);
+        $checkout = new \DateTime($request->checkout_date);
+        $checkoutForCheck = clone $checkout;
+        $checkoutForCheck->modify('-1 day');
+
+        // Получаем все даты в периоде
+        $datesToBlock = [];
+        $current = clone $checkin;
+        while ($current <= $checkoutForCheck) {
+            $datesToBlock[] = $current->format('Y-m-d');
+            $current->modify('+1 day');
+        }
+
+        // Очищаем истекшие блокировки
+        TemporaryBlock::cleanExpired();
+
+        // Проверяем доступность дат (учитывая постоянные и временные блокировки)
+        $calendar = $house->house_calendar;
+        $bookedDates = $calendar ? ($calendar->dates ?? []) : [];
+        
+        // Получаем активные временные блокировки для этого дома
+        $temporaryBlocks = TemporaryBlock::where('house_id', $houseId)
+            ->where('expires_at', '>', now())
+            ->get();
+        
+        $temporaryBlockedDates = [];
+        foreach ($temporaryBlocks as $block) {
+            $temporaryBlockedDates = array_merge($temporaryBlockedDates, $block->dates ?? []);
+        }
+        $temporaryBlockedDates = array_unique($temporaryBlockedDates);
+
+        // Проверяем, не заняты ли даты
+        foreach ($datesToBlock as $date) {
+            if (in_array($date, $bookedDates)) {
+                return redirect()->back()->with('error', "Дата {$date} уже занята");
+            }
+            // Проверяем временные блокировки других пользователей
+            if (in_array($date, $temporaryBlockedDates)) {
+                $blockingUser = TemporaryBlock::where('house_id', $houseId)
+                    ->where('expires_at', '>', now())
+                    ->whereJsonContains('dates', $date)
+                    ->where('user_id', '!=', $user->user_id)
+                    ->first();
+                
+                if ($blockingUser) {
+                    return redirect()->back()->with('error', "Дата {$date} временно заблокирована другим пользователем");
+                }
+            }
+        }
+
+        // Находим временную блокировку текущего пользователя
+        $temporaryBlock = TemporaryBlock::where('house_id', $houseId)
+            ->where('user_id', $user->user_id)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$temporaryBlock) {
+            return redirect()->back()->with('error', 'Временная блокировка не найдена или истекла');
+        }
+
+        // Вычисляем количество дней
         $dayCount = (int)$checkin->diff($checkout)->days;
 
-        // Получаем статус "Ожидается" или создаем заказ со статусом по умолчанию
-        $defaultStatus = OrderStatus::PENDING;
+        return view('orders.confirm', [
+            'house' => $house,
+            'checkin_date' => $request->checkin_date,
+            'checkout_date' => $request->checkout_date,
+            'day_count' => $dayCount,
+            'temporary_block_id' => $temporaryBlock->temporary_block_id,
+        ]);
+    }
+
+    /**
+     * Подтвердить заказ (окончательная блокировка + создание заказа)
+     */
+    public function confirm(Request $request, $houseId)
+    {
+        $request->validate([
+            'checkin_date' => 'required|date|after_or_equal:today',
+            'checkout_date' => 'required|date|after:checkin_date',
+            'temporary_block_id' => 'required|exists:temporary_blocks,temporary_block_id',
+        ]);
+
+        $house = House::with('user')->findOrFail($houseId);
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Необходима авторизация');
+        }
+
+        // Проверяем, что временная блокировка принадлежит текущему пользователю
+        $temporaryBlock = TemporaryBlock::where('temporary_block_id', $request->temporary_block_id)
+            ->where('user_id', $user->user_id)
+            ->where('house_id', $houseId)
+            ->where('expires_at', '>', now())
+            ->firstOrFail();
+
+        $checkin = new \DateTime($request->checkin_date);
+        $checkout = new \DateTime($request->checkout_date);
+        $checkoutForCheck = clone $checkout;
+        $checkoutForCheck->modify('-1 day');
+
+        $datesToBlock = [];
+        $current = clone $checkin;
+        while ($current <= $checkoutForCheck) {
+            $datesToBlock[] = $current->format('Y-m-d');
+            $current->modify('+1 day');
+        }
+
+        // Проверяем, что даты совпадают с временной блокировкой
+        $blockDates = $temporaryBlock->dates ?? [];
+        sort($blockDates);
+        sort($datesToBlock);
+        
+        if ($blockDates !== $datesToBlock) {
+            $temporaryBlock->delete();
+            return redirect()->back()->with('error', 'Даты не совпадают с временной блокировкой');
+        }
+
+        // Проверяем доступность дат еще раз
+        $calendar = $house->house_calendar;
+        $bookedDates = $calendar ? ($calendar->dates ?? []) : [];
+        
+        foreach ($datesToBlock as $date) {
+            if (in_array($date, $bookedDates)) {
+                // Удаляем временную блокировку
+                $temporaryBlock->delete();
+                return redirect()->back()->with('error', "Дата {$date} уже занята");
+            }
+        }
+
+        // Вычисляем количество дней
+        $dayCount = (int)$checkin->diff($checkout)->days;
+
+        // Получаем статус "Ожидается"
+        $defaultStatus = OrderStatus::where('type', 'Ожидается')->first();
+        if (!$defaultStatus) {
+            $defaultStatus = OrderStatus::first();
+        }
+
+        if (!$defaultStatus) {
+            $temporaryBlock->delete();
+            return redirect()->back()->with('error', 'Не найден статус заказа');
+        }
 
         // Создаем массив для original_data
         $originalData = [
             'house_id' => $house->house_id,
-            'date_of_order' => $validated['checkin_date'],
+            'date_of_order' => $request->checkin_date,
             'day_count' => $dayCount,
             'customer_id' => $user->user_id,
         ];
 
-        $order = Order::create([
-            'house_id' => $house->house_id,
-            'date_of_order' => $validated['checkin_date'],
-            'day_count' => $dayCount,
-            'customer_id' => $user->user_id,
-            'order_status' => OrderStatus::PENDING,
-            'original_data' => json_encode($originalData),
-        ]);
+        // Создаем заказ в БД
+        try {
+            $order = Order::create([
+                'house_id' => $house->house_id,
+                'date_of_order' => $request->checkin_date,
+                'day_count' => $dayCount,
+                'customer_id' => $user->user_id,
+                'order_status_id' => $defaultStatus->order_status_id,
+                'original_data' => json_encode($originalData),
+            ]);
+        } catch (\Exception $e) {
+            // Удаляем временную блокировку при ошибке
+            $temporaryBlock->delete();
+            \Log::error('Ошибка при создании заказа', [
+                'house_id' => $houseId,
+                'user_id' => $user->user_id,
+                'error' => $e->getMessage()
+            ]);
+            return redirect()->back()->with('error', 'Ошибка при создании заказа: ' . $e->getMessage());
+        }
 
-        // Блокируем даты в календаре
+        // Блокируем даты в календаре окончательно
         if ($calendar) {
             $dates = $calendar->dates ?? [];
-            $dates = array_unique(array_merge($dates, $datesToCheck));
+            $dates = array_unique(array_merge($dates, $datesToBlock));
             sort($dates);
             $calendar->dates = $dates;
             $calendar->save();
         } else {
-            $calendar = HouseCalendar::create([
+            HouseCalendar::create([
                 'house_id' => $house->house_id,
-                'dates' => $datesToCheck
+                'dates' => $datesToBlock
             ]);
         }
 
-        // Обновляем календарь для получения актуальных дат
-        $calendar->refresh();
-        $updatedDates = $calendar->dates ?? [];
+        // Удаляем временную блокировку
+        $temporaryBlock->delete();
+
+        // Находим или создаем чат между покупателем и продавцом
+        $seller = $house->user;
+        
+        if (!$seller) {
+            \Log::error('Продавец не найден для дома', ['house_id' => $houseId]);
+            return redirect()->back()->with('error', 'Ошибка: продавец не найден');
+        }
+        
+        $buyerId = $user->user_id;
+        $dealerId = $seller->user_id;
+
+        // Если покупатель и продавец - один и тот же человек, пропускаем создание чата
+        if ($buyerId != $dealerId) {
+            $chatService = app(ChatService::class);
+            $chat = $chatService->getUsersChat($buyerId, $dealerId);
+
+            if (!$chat) {
+                $chat = Chat::create([
+                    'user_id' => $buyerId,
+                    'rent_dealer_id' => $dealerId,
+                ]);
+            }
+
+            // Формируем сообщение о подтверждении заказа
+            $checkinFormatted = Carbon::parse($request->checkin_date)->format('d.m.Y');
+            $checkoutFormatted = Carbon::parse($request->checkout_date)->format('d.m.Y');
+            $orderMessage = "✅ Заказ #{$order->order_id} подтвержден!\n" .
+                           "Период аренды: {$checkinFormatted} - {$checkoutFormatted}\n" .
+                           "Количество дней: {$dayCount}";
+
+            // Отправляем сообщение в чат от имени покупателя
+            try {
+                Message::create([
+                    'chat_id' => $chat->chat_id,
+                    'user_id' => $user->user_id,
+                    'message' => $orderMessage,
+                ]);
+                
+                // Обновляем время обновления чата
+                $chat->touch();
+            } catch (\Exception $e) {
+                // Логируем ошибку, но не прерываем процесс
+                \Log::error('Ошибка при отправке сообщения о заказе', [
+                    'chat_id' => $chat->chat_id ?? null,
+                    'order_id' => $order->order_id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
+        // Перенаправляем на страницу чата
+        return redirect()->route('house.chat', $houseId)
+            ->with('success', 'Заказ успешно создан и подтвержден!');
+    }
+
+    /**
+     * Отменить временную блокировку
+     */
+    public function cancel(Request $request, $houseId)
+    {
+        $request->validate([
+            'temporary_block_id' => 'required|exists:temporary_blocks,temporary_block_id',
+        ]);
+
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Необходима авторизация'
+            ], 401);
+        }
+
+        // Удаляем временную блокировку, если она принадлежит пользователю
+        $temporaryBlock = TemporaryBlock::where('temporary_block_id', $request->temporary_block_id)
+            ->where('user_id', $user->user_id)
+            ->where('house_id', $houseId)
+            ->first();
+
+        if ($temporaryBlock) {
+            $temporaryBlock->delete();
+        }
 
         return response()->json([
             'success' => true,
-            'order' => [
-                'order_id' => $order->order_id,
-                'house_id' => $order->house_id,
-                'date_of_order' => $order->date_of_order,
-                'day_count' => $order->day_count,
-                'customer_id' => $order->customer_id,
-                'order_status' => OrderStatus::PENDING,
-            ],
-            'dates' => $updatedDates, // Возвращаем обновленные даты календаря
-            'message' => 'Заказ успешно создан'
+            'message' => 'Временная блокировка отменена'
         ]);
     }
 }
-

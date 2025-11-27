@@ -37,11 +37,16 @@
         <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Адрес <span style="color: #dc2626;">*</span></label>
         <div style="position: relative;">
             <input type="text" name="adress" id="address-input" value="{{ old('adress', $house->adress ?? '') }}"
-                   placeholder="Например: Саратов, улица Исаева, 5"
+                   placeholder="Начните вводить адрес..."
+                   autocomplete="off"
                    style="width: 100%; padding: 10px 14px; padding-right: 40px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
             <span id="address-loading" style="display: none; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #2563eb; font-size: 16px;">⏳</span>
             <span id="address-success" style="display: none; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #10b981; font-size: 16px;">✓</span>
             <span id="address-error" style="display: none; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #dc2626; font-size: 16px;">✗</span>
+            
+            {{-- Выпадающий список подсказок --}}
+            <div id="address-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: #fff; border: 1px solid #d0d0d0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); z-index: 1000; max-height: 200px; overflow-y: auto;">
+            </div>
         </div>
         <p id="address-status" style="font-size: 11px; color: #666; margin-top: 4px; font-style: italic; min-height: 16px;">
             Формат: Город, улица, номер дома. Например: "Саратов, улица Исаева, 5" или "ул. Исаева, 5"
@@ -203,6 +208,246 @@
 </div>
 
 <script>
+
+// Автокомплит адреса
+(function() {
+    const addressInput = document.getElementById('address-input');
+    const suggestionsContainer = document.getElementById('address-suggestions');
+    let suggestionsDebounceTimer = null;
+    let currentSuggestionsRequest = null;
+    let selectedSuggestionIndex = -1;
+    let suggestions = [];
+    
+    if (!addressInput || !suggestionsContainer) return;
+    
+    // Функция для получения подсказок
+    function fetchSuggestions(query) {
+        if (!query || query.trim().length < 2) {
+            hideSuggestions();
+            return;
+        }
+        
+        const trimmedQuery = query.trim();
+        console.log('Fetching suggestions for:', trimmedQuery); // Для отладки
+        
+        // Отменяем предыдущий запрос
+        if (currentSuggestionsRequest) {
+            currentSuggestionsRequest.abort();
+        }
+        
+        // Создаем новый запрос
+        const xhr = new XMLHttpRequest();
+        currentSuggestionsRequest = xhr;
+        
+        const serverUrl = '{{ route("houses.get-address-suggestions") }}';
+        xhr.open('POST', serverUrl, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        
+        xhr.onload = function() {
+            currentSuggestionsRequest = null;
+            
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    console.log('Suggestions response:', response); // Для отладки
+                    
+                    if (response.success && Array.isArray(response.suggestions)) {
+                        suggestions = response.suggestions; // Уже ограничено на сервере до 3
+                        console.log('Found suggestions:', suggestions.length, suggestions); // Для отладки
+                        if (suggestions.length > 0) {
+                            displaySuggestions(suggestions);
+                        } else {
+                            console.log('No suggestions to display'); // Для отладки
+                            hideSuggestions();
+                        }
+                    } else {
+                        console.warn('No suggestions in response or invalid format:', response); // Для отладки
+                        hideSuggestions();
+                    }
+                } catch (e) {
+                    console.error('Error parsing suggestions response:', e, xhr.responseText); // Для отладки
+                    hideSuggestions();
+                }
+            } else {
+                console.error('Suggestions request failed with status:', xhr.status, xhr.responseText); // Для отладки
+                hideSuggestions();
+            }
+        };
+        
+        xhr.onerror = function() {
+            console.error('Network error while fetching suggestions'); // Для отладки
+            currentSuggestionsRequest = null;
+            hideSuggestions();
+        };
+        
+        xhr.onabort = function() {
+            console.log('Suggestions request aborted'); // Для отладки
+            currentSuggestionsRequest = null;
+        };
+        
+        xhr.send(JSON.stringify({ query: trimmedQuery }));
+    }
+    
+    // Функция для отображения подсказок
+    function displaySuggestions(suggestionsList) {
+        if (!suggestionsList || suggestionsList.length === 0) {
+            hideSuggestions();
+            return;
+        }
+        
+        suggestionsContainer.innerHTML = '';
+        
+        suggestionsList.forEach((suggestion, index) => {
+            const item = document.createElement('div');
+            item.className = 'suggestion-item';
+            item.dataset.index = index;
+            item.style.cssText = 'padding: 12px 14px; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background-color 0.2s; font-size: 14px; color: #333;';
+            item.textContent = suggestion.display || suggestion.value || '';
+            
+            // Стили при наведении
+            item.onmouseenter = function() {
+                this.style.backgroundColor = '#e3f2fd';
+                selectedSuggestionIndex = index;
+            };
+            item.onmouseleave = function() {
+                if (selectedSuggestionIndex !== index) {
+                    this.style.backgroundColor = '#fff';
+                }
+            };
+            
+            // Обработчик клика
+            item.onclick = function() {
+                selectSuggestion(suggestion);
+            };
+            
+            suggestionsContainer.appendChild(item);
+        });
+        
+        // Убираем последнюю границу
+        const lastItem = suggestionsContainer.lastElementChild;
+        if (lastItem) {
+            lastItem.style.borderBottom = 'none';
+        }
+        
+        suggestionsContainer.style.display = 'block';
+        selectedSuggestionIndex = -1;
+    }
+    
+    // Функция для скрытия подсказок
+    function hideSuggestions() {
+        suggestionsContainer.style.display = 'none';
+        suggestionsContainer.innerHTML = '';
+        suggestions = [];
+        selectedSuggestionIndex = -1;
+    }
+    
+    // Функция для выбора подсказки
+    function selectSuggestion(suggestion) {
+        const address = suggestion.value || suggestion.display || '';
+        addressInput.value = address;
+        hideSuggestions();
+        
+        // Триггерим событие input для получения координат
+        addressInput.dispatchEvent(new Event('input'));
+        
+        // Фокусируемся обратно на поле
+        addressInput.focus();
+    }
+    
+    // Обработчик ввода с debounce
+    addressInput.addEventListener('input', function() {
+        const query = this.value;
+        
+        // Очищаем предыдущий таймер
+        if (suggestionsDebounceTimer) {
+            clearTimeout(suggestionsDebounceTimer);
+        }
+        
+        // Если поле пустое, скрываем подсказки
+        if (!query || query.trim().length < 2) {
+            hideSuggestions();
+            return;
+        }
+        
+        // Устанавливаем новый таймер (задержка 300мс)
+        suggestionsDebounceTimer = setTimeout(function() {
+            fetchSuggestions(query);
+        }, 300);
+    });
+    
+    // Обработчик фокуса
+    addressInput.addEventListener('focus', function() {
+        const query = this.value;
+        if (query && query.trim().length >= 2 && suggestions.length > 0) {
+            displaySuggestions(suggestions);
+        }
+    });
+    
+    // Обработчик потери фокуса (с небольшой задержкой, чтобы клик по подсказке успел сработать)
+    addressInput.addEventListener('blur', function() {
+        setTimeout(function() {
+            hideSuggestions();
+        }, 200);
+    });
+    
+    // Обработчик клавиатуры для навигации по подсказкам
+    addressInput.addEventListener('keydown', function(e) {
+        if (suggestionsContainer.style.display === 'none' || suggestions.length === 0) {
+            return;
+        }
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, suggestions.length - 1);
+            highlightSuggestion(selectedSuggestionIndex);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+            if (selectedSuggestionIndex >= 0) {
+                highlightSuggestion(selectedSuggestionIndex);
+            } else {
+                clearHighlight();
+            }
+        } else if (e.key === 'Enter' && selectedSuggestionIndex >= 0) {
+            e.preventDefault();
+            selectSuggestion(suggestions[selectedSuggestionIndex]);
+        } else if (e.key === 'Escape') {
+            hideSuggestions();
+        }
+    });
+    
+    // Функция для подсветки выбранной подсказки
+    function highlightSuggestion(index) {
+        const items = suggestionsContainer.querySelectorAll('.suggestion-item');
+        items.forEach((item, i) => {
+            if (i === index) {
+                item.style.backgroundColor = '#e3f2fd';
+                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            } else {
+                item.style.backgroundColor = '#fff';
+            }
+        });
+    }
+    
+    // Функция для очистки подсветки
+    function clearHighlight() {
+        const items = suggestionsContainer.querySelectorAll('.suggestion-item');
+        items.forEach(item => {
+            item.style.backgroundColor = '#fff';
+        });
+    }
+    
+    // Скрываем подсказки при клике вне поля
+    document.addEventListener('click', function(e) {
+        if (!addressInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+            hideSuggestions();
+        }
+    });
+})();
+
+// Получение координат по адресу
 (function() {
     const addressInput = document.getElementById('address-input');
     const latInput = document.getElementById('lat-input');

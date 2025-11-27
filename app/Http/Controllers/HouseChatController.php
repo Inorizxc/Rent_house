@@ -6,6 +6,7 @@ use App\Models\House;
 use App\Models\Chat;
 use App\Models\Message;
 use App\Models\User;
+use App\Models\TemporaryBlock;
 use Illuminate\Http\Request;
 use App\Services\ChatService\ChatService;
 use App\Services\MessageService\MessageService;
@@ -65,12 +66,33 @@ class HouseChatController extends Controller
         // Загружаем календарь дома
         $house->load('house_calendar');
 
+        // Очищаем истекшие временные блокировки
+        TemporaryBlock::cleanExpired();
+
+        // Получаем активные временные блокировки для этого дома (от других пользователей)
+        $temporaryBlocks = TemporaryBlock::where('house_id', $houseId)
+            ->where('expires_at', '>', now())
+            ->where('user_id', '!=', $currentUser->user_id)
+            ->get();
+        
+        $temporaryBlockedDates = [];
+        foreach ($temporaryBlocks as $block) {
+            $temporaryBlockedDates = array_merge($temporaryBlockedDates, $block->dates ?? []);
+        }
+        $temporaryBlockedDates = array_unique($temporaryBlockedDates);
+
+        // Объединяем постоянные забронированные даты с временными блокировками других пользователей
+        $calendar = $house->house_calendar;
+        $bookedDates = $calendar ? ($calendar->dates ?? []) : [];
+        $allBlockedDates = array_unique(array_merge($bookedDates, $temporaryBlockedDates));
+
         return view('houses.chat', [
             'house' => $house,
             'chat' => $chat,
             'messages' => $messages,
             'currentUser' => $currentUser,
             'interlocutor' => $interlocutor,
+            'blockedDates' => $allBlockedDates,
         ]);
     }
 

@@ -12,7 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('temporary_blocks', function (Blueprint $table) {
-            $table->id();
+            $table->id("temporary_block_id")->unique();
+            $table->foreignId("house_id")->constrained("houses", "house_id")->onDelete("cascade");
+            $table->foreignId("user_id")->constrained("users", "user_id")->onDelete("cascade");
+            $table->json("dates");
+            $table->timestamp('expires_at');
             $table->timestamps();
         });
     }

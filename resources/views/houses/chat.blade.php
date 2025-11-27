@@ -531,7 +531,7 @@
                 <div class="date-selector">
                     <div class="house-calendar-container" 
                          data-house-id="{{ $house->house_id }}" 
-                         data-dates='@json($house->house_calendar->dates ?? [])'
+                         data-dates='@json($blockedDates ?? $house->house_calendar->dates ?? [])'
                          data-readonly="true">
                         <div class="calendar-wrapper">
                             <div class="calendar-header">
@@ -704,36 +704,17 @@
             const data = await response.json();
 
             if (response.ok && data.success) {
-                paymentMessage.textContent = 'Заказ успешно создан!';
-                paymentMessage.style.color = '#10b981';
-                
-                // Сбрасываем выбор
-                selectedCheckinDate = null;
-                selectedCheckoutDate = null;
-                selectedDates = [];
-                isRangeSelecting = false;
-                rangeStartDate = null;
-                
-                // Обновляем календарь (перезагружаем данные с сервера)
-                const container = document.querySelector('.house-calendar-container[data-readonly="true"]');
-                if (container) {
-                    // Обновляем данные календаря из ответа сервера, если они есть
-                    if (data.dates) {
-                        container.dataset.dates = JSON.stringify(data.dates);
-                    }
-                    // Перерисовываем календарь
-                    if (window.initChatCalendar) {
-                        window.initChatCalendar();
-                    }
+                // Редиректим на страницу подтверждения
+                if (data.redirect) {
+                    window.location.href = data.redirect;
                 } else {
-                    // Если контейнер не найден, просто перезагружаем страницу через небольшую задержку
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
+                    // Fallback: редирект с параметрами
+                    const params = new URLSearchParams({
+                        checkin_date: selectedCheckinDate,
+                        checkout_date: selectedCheckoutDate
+                    });
+                    window.location.href = `/house/${houseId}/order/confirm?${params.toString()}`;
                 }
-                
-                updateSelectedDatesInfo();
-                updatePayButton();
             } else {
                 throw new Error(data.error || 'Ошибка при создании заказа');
             }
@@ -1188,7 +1169,8 @@
                 updatePayButton();
             }
 
-            function renderCalendar() {
+            // Сохраняем ссылку на функцию renderCalendar для глобального доступа
+            const renderCalendar = function() {
                 const monthYearEl = container.querySelector('.calendar-month-year');
                 const daysEl = container.querySelector('.calendar-days');
                 
@@ -1546,6 +1528,9 @@
                 }, 100);
             }
 
+            // Сохраняем ссылку на renderCalendar в глобальной области для доступа из window.initChatCalendar
+            window.renderChatCalendar = renderCalendar;
+
             // Первоначальная отрисовка
             renderCalendar();
 
@@ -1575,6 +1560,7 @@
             if (container && container.dataset.houseId) {
                 // Перезагружаем данные календаря
                 const datesData = container.dataset.dates;
+                let bookedDates = [];
                 try {
                     bookedDates = datesData ? JSON.parse(datesData) : [];
                     bookedDates = bookedDates.map(date => {
@@ -1587,8 +1573,13 @@
                     console.warn('Ошибка парсинга дат календаря:', e);
                     bookedDates = [];
                 }
-                // Перерисовываем календарь
-                renderCalendar();
+                // Перерисовываем календарь, если функция доступна
+                if (window.renderChatCalendar) {
+                    window.renderChatCalendar();
+                } else {
+                    // Если функция еще не инициализирована, вызываем полную инициализацию
+                    initChatCalendar();
+                }
             }
         };
 

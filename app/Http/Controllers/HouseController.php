@@ -249,5 +249,47 @@ class HouseController extends Controller
         }
     }
 
+    /**
+     * Получает подсказки адресов для автодополнения через AJAX
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getAddressSuggestions(Request $request)
+    {
+        $request->validate([
+            'query' => 'required|string|max:500'
+        ]);
+
+        $query = $request->input('query');
+        
+        if (empty($query) || strlen(trim($query)) < 2) {
+            return response()->json([
+                'success' => true,
+                'suggestions' => []
+            ]);
+        }
+
+        try {
+            $geocoder = new YandexGeocoder();
+            $suggestions = $geocoder->getAddressSuggestions($query, 3); // Получаем максимум 3 подсказки
+            
+            return response()->json([
+                'success' => true,
+                'suggestions' => $suggestions
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Ошибка при получении подсказок адресов', [
+                'query' => $query,
+                'exception' => $e->getMessage()
+            ]);
+            return response()->json([
+                'success' => false,
+                'suggestions' => [],
+                'message' => 'Произошла ошибка при получении подсказок. Попробуйте позже.'
+            ], 500);
+        }
+    }
+
 
 }

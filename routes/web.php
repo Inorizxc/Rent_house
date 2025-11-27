@@ -22,6 +22,7 @@ Route::controller(RouterController::class)->group(function () {
 Route::controller(HouseController::class)->group(function () {
     Route::get('/house/{id}', 'show')->name('house.show');
     Route::post('/houses/get-coordinates', 'getCoordinates')->name('houses.get-coordinates')->middleware('auth');
+    Route::post('/houses/get-address-suggestions', 'getAddressSuggestions')->name('houses.get-address-suggestions')->middleware('auth');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -38,6 +39,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::controller(OrderController::class)->group(function () {
         Route::post('/house/{houseId}/order', 'createFromChat')->name('house.order.create');
+        Route::get('/house/{houseId}/order/confirm', 'showConfirm')->name('house.order.confirm.show');
+        Route::post('/house/{houseId}/order/confirm', 'confirm')->name('house.order.confirm');
+        Route::post('/house/{houseId}/order/cancel', 'cancel')->name('house.order.cancel');
     });
 
     Route::get('/chats', [ChatController::class, 'index'])->name('chats.index');
