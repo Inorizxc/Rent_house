@@ -62,6 +62,9 @@ class HouseChatController extends Controller
 
         $chatService->update($chat);
 
+        // Загружаем календарь дома
+        $house->load('house_calendar');
+
         return view('houses.chat', [
             'house' => $house,
             'chat' => $chat,

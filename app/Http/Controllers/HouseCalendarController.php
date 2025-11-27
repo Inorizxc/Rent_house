@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\HouseCalendar;
+use App\Models\House;
+use Illuminate\Support\Facades\Auth;
 
 class HouseCalendarController extends Controller
 {
@@ -31,7 +34,7 @@ class HouseCalendarController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Chat $chat)
+    public function show($id)
     {
         //
     }
@@ -39,7 +42,7 @@ class HouseCalendarController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Chat $chat)
+    public function edit($id)
     {
         //
     }
@@ -47,7 +50,7 @@ class HouseCalendarController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Chat $chat)
+    public function update(Request $request, $id)
     {
         //
     }
@@ -58,6 +61,107 @@ class HouseCalendarController extends Controller
     public function destroy(HouseCalendar $calendar)
     {
         $calendar->delete();
+    }
+
+    /**
+     * Update dates for a house calendar
+     */
+    public function updateDates(Request $request, $houseId)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'action' => 'required|in:add,remove'
+        ]);
+
+        $house = House::findOrFail($houseId);
+        
+        // Проверяем, что пользователь является владельцем дома
+        if ($house->user_id !== Auth::id()) {
+            return response()->json(['error' => 'У вас нет прав для изменения этого календаря'], 403);
+        }
+
+        // Получаем или создаем календарь для дома
+        $calendar = HouseCalendar::firstOrCreate(
+            ['house_id' => $houseId],
+            ['dates' => []]
+        );
+
+        $dates = $calendar->dates ?? [];
+        $dateStr = $request->date;
+
+        if ($request->action === 'add') {
+            // Добавляем дату, если её еще нет
+            if (!in_array($dateStr, $dates)) {
+                $dates[] = $dateStr;
+                sort($dates); // Сортируем даты
+            }
+        } else {
+            // Удаляем дату
+            $dates = array_values(array_filter($dates, function($d) use ($dateStr) {
+                return $d !== $dateStr;
+            }));
+        }
+
+        $calendar->dates = $dates;
+        $calendar->save();
+
+        return response()->json([
+            'success' => true,
+            'dates' => $dates,
+            'action' => $request->action
+        ]);
+    }
+
+    /**
+     * Update date range for a house calendar
+     */
+    public function updateDatesRange(Request $request, $houseId)
+    {
+        $request->validate([
+            'dates' => 'required|array',
+            'dates.*' => 'required|date',
+            'action' => 'required|in:add,remove'
+        ]);
+
+        $house = House::findOrFail($houseId);
+        
+        // Проверяем, что пользователь является владельцем дома
+        if ($house->user_id !== Auth::id()) {
+            return response()->json(['error' => 'У вас нет прав для изменения этого календаря'], 403);
+        }
+
+        // Получаем или создаем календарь для дома
+        $calendar = HouseCalendar::firstOrCreate(
+            ['house_id' => $houseId],
+            ['dates' => []]
+        );
+
+        $dates = $calendar->dates ?? [];
+        $newDates = $request->dates;
+
+        if ($request->action === 'add') {
+            // Добавляем даты, которых еще нет
+            foreach ($newDates as $dateStr) {
+                if (!in_array($dateStr, $dates)) {
+                    $dates[] = $dateStr;
+                }
+            }
+            sort($dates); // Сортируем даты
+        } else {
+            // Удаляем даты
+            $dates = array_values(array_filter($dates, function($d) use ($newDates) {
+                return !in_array($d, $newDates);
+            }));
+        }
+
+        $calendar->dates = $dates;
+        $calendar->save();
+
+        return response()->json([
+            'success' => true,
+            'dates' => $dates,
+            'action' => $request->action
+        ]);
     }
 
 }

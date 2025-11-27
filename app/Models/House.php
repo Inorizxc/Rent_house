@@ -64,7 +64,7 @@ class House extends Model
     }
 
     public function house_calendar(){
-        return $this->hasMany(HouseCalendar::class,"house_calendar_id","house_calendar_id");
+        return $this->hasOne(HouseCalendar::class,"house_id","house_id");
     }
 
     public function rent_type(){

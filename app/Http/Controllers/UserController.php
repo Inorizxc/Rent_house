@@ -65,9 +65,15 @@ class UserController extends Controller
 
         $isOwner = true; // Если дошли сюда, значит это владелец
 
+        // Получаем дома пользователя с календарями
+        $houses = House::where('user_id', $user->user_id)
+            ->with('house_calendar')
+            ->get();
+
         if ($request->ajax() || $request->wantsJson()) {
             return view("users.partials.orders-tab", [
                 "user" => $user,
+                "houses" => $houses,
                 "isOwner" => $isOwner,
             ])->render();
         }

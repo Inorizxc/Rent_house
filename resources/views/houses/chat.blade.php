@@ -257,6 +257,173 @@
         box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
     }
 
+    .house-calendar-container {
+        margin-top: 12px;
+    }
+
+    .calendar-wrapper {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px;
+    }
+
+    .calendar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .calendar-month-year {
+        font-size: 15px;
+        font-weight: 600;
+        color: #111827;
+        flex: 1;
+        text-align: center;
+    }
+
+    .calendar-nav-btn {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 20px;
+        color: #374151;
+        transition: all 0.2s;
+    }
+
+    .calendar-nav-btn:hover {
+        background: #e5e7eb;
+        border-color: #d1d5db;
+    }
+
+    .calendar-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+        margin-bottom: 8px;
+    }
+
+    .calendar-weekdays > div {
+        text-align: center;
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+        padding: 4px;
+    }
+
+    .calendar-days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+    }
+
+    .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: #111827;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .calendar-day:not(.past-date):not(.other-month):not(.booked):hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+    }
+
+    .calendar-day.past-date {
+        cursor: not-allowed;
+        color: #d1d5db;
+        background: #f9fafb;
+    }
+
+    .calendar-day.other-month {
+        cursor: default;
+        color: #d1d5db;
+        background: #f9fafb;
+    }
+
+    .calendar-day.booked {
+        background: #fee2e2;
+        border-color: #fca5a5;
+        color: #991b1b;
+        font-weight: 600;
+        cursor: not-allowed;
+    }
+
+    .calendar-day.today {
+        background: #eff6ff;
+        border-color: #3b82f6;
+        font-weight: 600;
+        color: #1e40af;
+    }
+
+    .calendar-day.selected {
+        background: #dbeafe;
+        border-color: #60a5fa;
+        color: #1e40af;
+        font-weight: 600;
+    }
+
+    .calendar-day.dragging {
+        background: #bfdbfe;
+        border-color: #3b82f6;
+        cursor: grabbing;
+    }
+
+    .calendar-day:not(.past-date):not(.other-month):not(.booked) {
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+    }
+
+    .calendar-day.range-start {
+        background: #3b82f6;
+        border-color: #2563eb;
+        color: #ffffff;
+        font-weight: 600;
+    }
+
+    .calendar-day.range-end {
+        background: #3b82f6;
+        border-color: #2563eb;
+        color: #ffffff;
+        font-weight: 600;
+    }
+
+    .calendar-day.range-middle {
+        background: #60a5fa;
+        border-color: #3b82f6;
+        color: #ffffff;
+    }
+
+    .calendar-day.range-removing {
+        background: #fca5a5;
+        border-color: #ef4444;
+        color: #991b1b;
+        font-weight: 600;
+    }
+
+    .btn-pay:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
     .btn-pay {
         width: 100%;
         padding: 12px;
@@ -362,38 +529,43 @@
                 <div class="payment-title">Оплата аренды</div>
                 
                 <div class="date-selector">
-                    <div class="date-input-group">
-                        <div>
-                            <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 6px;">
-                                Дата заезда
-                            </label>
-                            <input type="date" 
-                                   id="checkinDate" 
-                                   class="date-input" 
-                                   name="checkin_date"
-                                   min="{{ date('Y-m-d') }}">
+                    <div class="house-calendar-container" 
+                         data-house-id="{{ $house->house_id }}" 
+                         data-dates='@json($house->house_calendar->dates ?? [])'
+                         data-readonly="true">
+                        <div class="calendar-wrapper">
+                            <div class="calendar-header">
+                                <button class="calendar-nav-btn" data-action="prev">‹</button>
+                                <div class="calendar-month-year"></div>
+                                <button class="calendar-nav-btn" data-action="next">›</button>
+                            </div>
+                            <div class="calendar-grid">
+                                <div class="calendar-weekdays">
+                                    <div>Пн</div>
+                                    <div>Вт</div>
+                                    <div>Ср</div>
+                                    <div>Чт</div>
+                                    <div>Пт</div>
+                                    <div>Сб</div>
+                                    <div>Вс</div>
+                                </div>
+                                <div class="calendar-days"></div>
+                            </div>
                         </div>
-                        <div>
-                            <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 6px;">
-                                Дата выезда
-                            </label>
-                            <input type="date" 
-                                   id="checkoutDate" 
-                                   class="date-input" 
-                                   name="checkout_date"
-                                   min="{{ date('Y-m-d') }}">
-                        </div>
+                    </div>
+                    <div id="selectedDatesInfo" style="margin-top: 12px; font-size: 13px; color: #6b7280; text-align: center;">
+                        Выберите период аренды
                     </div>
                 </div>
 
                 <button type="button" 
                         class="btn-pay" 
                         onclick="handlePayment()"
-                        id="payButton">
+                        id="payButton"
+                        disabled>
                     Оплатить аренду
                 </button>
                 <div id="paymentMessage" style="margin-top: 8px; font-size: 12px; color: #6b7280; text-align: center;">
-                    Функция пока не реализована
                 </div>
             </div>
         </div>
@@ -485,22 +657,126 @@
         }
     }
 
-    // Функция обработки оплаты (пока не реализована)
-    function handlePayment() {
-        const checkinDate = document.getElementById('checkinDate').value;
-        const checkoutDate = document.getElementById('checkoutDate').value;
+    // Глобальные переменные для выбранных дат
+    let selectedCheckinDate = null;
+    let selectedCheckoutDate = null;
+    let selectedDates = []; // Массив выбранных дат
+    let isRangeSelecting = false; // Режим выбора промежутка
+    let rangeStartDate = null; // Начальная дата промежутка
+    
+    // Переменные для drag-and-drop выбора
+    let isDragging = false; // Флаг перетаскивания
+    let dragStartDate = null; // Начальная дата при перетаскивании
+    let dragEndDate = null; // Конечная дата при перетаскивании
+    let wasDragging = false; // Флаг для предотвращения обработки клика после перетаскивания
+    let isDragRemoving = false; // Режим удаления при перетаскивании (если начали с выбранной даты)
+    let draggedDates = new Set(); // Множество дат, через которые прошли при перетаскивании
+
+    // Функция обработки оплаты
+    async function handlePayment() {
+        if (!selectedCheckinDate || !selectedCheckoutDate) {
+            alert('Пожалуйста, выберите период аренды');
+            return;
+        }
+
+        const payButton = document.getElementById('payButton');
+        const paymentMessage = document.getElementById('paymentMessage');
         
-        if (!checkinDate || !checkoutDate) {
-            alert('Пожалуйста, выберите даты заезда и выезда');
-            return;
-        }
+        payButton.disabled = true;
+        payButton.textContent = 'Обработка...';
+        paymentMessage.textContent = '';
+        paymentMessage.style.color = '#6b7280';
 
-        if (new Date(checkoutDate) <= new Date(checkinDate)) {
-            alert('Дата выезда должна быть позже даты заезда');
-            return;
-        }
+        try {
+            const response = await fetch(`/house/${houseId}/order`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    checkin_date: selectedCheckinDate,
+                    checkout_date: selectedCheckoutDate
+                })
+            });
 
-        alert('Функция оплаты пока не реализована.\nВыбранные даты:\nЗаезд: ' + checkinDate + '\nВыезд: ' + checkoutDate);
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                paymentMessage.textContent = 'Заказ успешно создан!';
+                paymentMessage.style.color = '#10b981';
+                
+                // Сбрасываем выбор
+                selectedCheckinDate = null;
+                selectedCheckoutDate = null;
+                selectedDates = [];
+                isRangeSelecting = false;
+                rangeStartDate = null;
+                
+                // Обновляем календарь (перезагружаем данные с сервера)
+                const container = document.querySelector('.house-calendar-container[data-readonly="true"]');
+                if (container) {
+                    // Обновляем данные календаря из ответа сервера, если они есть
+                    if (data.dates) {
+                        container.dataset.dates = JSON.stringify(data.dates);
+                    }
+                    // Перерисовываем календарь
+                    if (window.initChatCalendar) {
+                        window.initChatCalendar();
+                    }
+                } else {
+                    // Если контейнер не найден, просто перезагружаем страницу через небольшую задержку
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                }
+                
+                updateSelectedDatesInfo();
+                updatePayButton();
+            } else {
+                throw new Error(data.error || 'Ошибка при создании заказа');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            paymentMessage.textContent = error.message || 'Ошибка при создании заказа';
+            paymentMessage.style.color = '#ef4444';
+        } finally {
+            payButton.disabled = false;
+            payButton.textContent = 'Оплатить аренду';
+        }
+    }
+
+    // Функция обновления информации о выбранных датах
+    function updateSelectedDatesInfo() {
+        const infoEl = document.getElementById('selectedDatesInfo');
+        if (selectedCheckinDate && selectedCheckoutDate) {
+            const checkin = new Date(selectedCheckinDate);
+            const checkout = new Date(selectedCheckoutDate);
+            // Количество дней = разница между датами (checkout уже на следующий день после последнего дня пребывания)
+            const days = Math.ceil((checkout - checkin) / (1000 * 60 * 60 * 24));
+            infoEl.textContent = `Заезд: ${checkin.toLocaleDateString('ru-RU')} - Выезд: ${checkout.toLocaleDateString('ru-RU')} (${days} ${days === 1 ? 'день' : days < 5 ? 'дня' : 'дней'})`;
+            infoEl.style.color = '#111827';
+            infoEl.style.fontWeight = '500';
+        } else if (isRangeSelecting && rangeStartDate) {
+            infoEl.textContent = `Выбрана начальная дата: ${new Date(rangeStartDate).toLocaleDateString('ru-RU')}. Выберите конечную дату (Ctrl+клик)`;
+            infoEl.style.color = '#3b82f6';
+            infoEl.style.fontWeight = '400';
+        } else if (selectedDates.length > 0) {
+            infoEl.textContent = `Выбрано дат: ${selectedDates.length}. Выберите непрерывный период.`;
+            infoEl.style.color = '#f59e0b';
+            infoEl.style.fontWeight = '400';
+        } else {
+            infoEl.textContent = 'Выберите период аренды (Выберите дату и, не отпуская левую кнопку мыши, наведитеcь на те даты, которые хотите выбрать.)';
+            infoEl.style.color = '#6b7280';
+            infoEl.style.fontWeight = '400';
+        }
+    }
+
+    // Функция обновления состояния кнопки оплаты
+    function updatePayButton() {
+        const payButton = document.getElementById('payButton');
+        payButton.disabled = !(selectedCheckinDate && selectedCheckoutDate);
     }
 
     // Отправка сообщения
@@ -694,6 +970,635 @@
             loadNewMessages();
         }
     });
+
+    // Инициализация календаря для выбора дат
+    (function() {
+        function initChatCalendar() {
+            const container = document.querySelector('.house-calendar-container[data-readonly="true"]');
+            if (!container) return;
+
+            const houseId = container.dataset.houseId;
+            const datesData = container.dataset.dates;
+            let bookedDates = [];
+            
+            try {
+                bookedDates = datesData ? JSON.parse(datesData) : [];
+                bookedDates = bookedDates.map(date => {
+                    if (typeof date === 'string') {
+                        return date.split('T')[0];
+                    }
+                    return date;
+                });
+            } catch (e) {
+                console.warn('Ошибка парсинга дат календаря:', e);
+            }
+
+            let currentDate = new Date();
+            let currentMonth = currentDate.getMonth();
+            let currentYear = currentDate.getFullYear();
+
+            // Функция для получения всех дат в периоде
+            function getDatesInRange(startDate, endDate) {
+                const dates = [];
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                
+                if (start > end) {
+                    [start, end] = [end, start];
+                }
+                
+                const current = new Date(start);
+                while (current <= end) {
+                    dates.push(current.toISOString().split('T')[0]);
+                    current.setDate(current.getDate() + 1);
+                }
+                
+                return dates;
+            }
+
+            // Функция проверки и нормализации выбранных дат
+            function validateAndNormalizeSelectedDates() {
+                if (!selectedDates || selectedDates.length === 0) {
+                    selectedCheckinDate = null;
+                    selectedCheckoutDate = null;
+                    return { valid: true };
+                }
+
+                // Сортируем даты
+                selectedDates.sort();
+                
+                const minDate = selectedDates[0];
+                const maxDate = selectedDates[selectedDates.length - 1];
+                
+                // Получаем все даты между min и max
+                const allDatesInRange = getDatesInRange(minDate, maxDate);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                // Проверяем каждую дату в диапазоне
+                for (let i = 0; i < allDatesInRange.length; i++) {
+                    const dateStr = allDatesInRange[i];
+                    const date = new Date(dateStr);
+                    date.setHours(0, 0, 0, 0);
+                    
+                    // Пропускаем прошедшие даты
+                    if (date < today) continue;
+                    
+                    // Если дата занята - это ошибка (нельзя выбирать занятые)
+                    if (bookedDates.includes(dateStr)) {
+                        return {
+                            valid: false,
+                            error: 'Выбранный период содержит занятые даты'
+                        };
+                    }
+                    
+                    // Если дата не выбрана и не занята - это пропуск
+                    if (!selectedDates.includes(dateStr)) {
+                        return {
+                            valid: false,
+                            error: 'Выбранный период содержит пропуски. Выберите непрерывный период.'
+                        };
+                    }
+                }
+                
+                // Если всё ок - устанавливаем период
+                selectedCheckinDate = minDate;
+                // Дата выезда = maxDate + 1 день
+                const checkoutDate = new Date(maxDate);
+                checkoutDate.setDate(checkoutDate.getDate() + 1);
+                selectedCheckoutDate = checkoutDate.toISOString().split('T')[0];
+                
+                return { valid: true };
+            }
+
+            // Используем глобальные переменные для состояния выбора промежутка
+            // (объявлены выше в глобальной области видимости)
+
+            // Функция выбора промежутка дат
+            function selectDateRange(startDate, endDate) {
+                const rangeDates = getDatesInRange(startDate, endDate);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                // Фильтруем только будущие даты и не занятые
+                const validDates = rangeDates.filter(dateStr => {
+                    const date = new Date(dateStr);
+                    date.setHours(0, 0, 0, 0);
+                    return date >= today && !bookedDates.includes(dateStr);
+                });
+
+                // Добавляем все даты из промежутка
+                validDates.forEach(dateStr => {
+                    if (!selectedDates.includes(dateStr)) {
+                        selectedDates.push(dateStr);
+                    }
+                });
+                
+                // Валидируем и нормализуем
+                const validation = validateAndNormalizeSelectedDates();
+                
+                if (!validation.valid) {
+                    // Если период невалиден - очищаем выбор
+                    selectedDates = [];
+                    selectedCheckinDate = null;
+                    selectedCheckoutDate = null;
+                    if (validation.error) {
+                        alert(validation.error);
+                    }
+                }
+                
+                // Обновляем UI
+                renderCalendar();
+                updateSelectedDatesInfo();
+                updatePayButton();
+            }
+
+            // Функция переключения даты (добавить/удалить)
+            function toggleDate(dateStr, isRangeMode = false) {
+                // Если это режим выбора промежутка
+                if (isRangeMode) {
+                    if (!rangeStartDate) {
+                        // Первый клик - устанавливаем начальную дату
+                        rangeStartDate = dateStr;
+                        isRangeSelecting = true;
+                        renderCalendar();
+                        return;
+                    } else if (rangeStartDate === dateStr) {
+                        // Клик по той же дате - сброс выбора
+                        rangeStartDate = null;
+                        isRangeSelecting = false;
+                        renderCalendar();
+                        return;
+                    } else {
+                        // Второй клик - выбираем промежуток
+                        const startDate = new Date(rangeStartDate);
+                        const endDate = new Date(dateStr);
+                        const actualStart = startDate <= endDate ? rangeStartDate : dateStr;
+                        const actualEnd = startDate <= endDate ? dateStr : rangeStartDate;
+                        
+                        selectDateRange(actualStart, actualEnd);
+                        
+                        // Сбрасываем состояние выбора промежутка
+                        rangeStartDate = null;
+                        isRangeSelecting = false;
+                        return;
+                    }
+                }
+
+                // Обычный режим - переключение одной даты
+                const index = selectedDates.indexOf(dateStr);
+                if (index > -1) {
+                    // Удаляем дату
+                    selectedDates.splice(index, 1);
+                } else {
+                    // Если уже выбрана одна дата, и кликаем на другую - выбираем промежуток
+                    if (selectedDates.length === 1) {
+                        const existingDate = selectedDates[0];
+                        const startDate = new Date(existingDate);
+                        const endDate = new Date(dateStr);
+                        const actualStart = startDate <= endDate ? existingDate : dateStr;
+                        const actualEnd = startDate <= endDate ? dateStr : existingDate;
+                        
+                        // Очищаем текущий выбор и выбираем промежуток
+                        selectedDates = [];
+                        selectDateRange(actualStart, actualEnd);
+                        return;
+                    } else {
+                        // Добавляем дату
+                        selectedDates.push(dateStr);
+                    }
+                }
+                
+                // Валидируем и нормализуем
+                const validation = validateAndNormalizeSelectedDates();
+                
+                if (!validation.valid) {
+                    // Если период невалиден - очищаем выбор
+                    selectedDates = [];
+                    selectedCheckinDate = null;
+                    selectedCheckoutDate = null;
+                    if (validation.error) {
+                        alert(validation.error);
+                    }
+                }
+                
+                // Обновляем UI
+                renderCalendar();
+                updateSelectedDatesInfo();
+                updatePayButton();
+            }
+
+            function renderCalendar() {
+                const monthYearEl = container.querySelector('.calendar-month-year');
+                const daysEl = container.querySelector('.calendar-days');
+                
+                const monthNames = [
+                    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+                    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+                ];
+
+                monthYearEl.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+                const firstDay = new Date(currentYear, currentMonth, 1);
+                const lastDay = new Date(currentYear, currentMonth + 1, 0);
+                const daysInMonth = lastDay.getDate();
+                const startingDayOfWeek = (firstDay.getDay() + 6) % 7;
+
+                daysEl.innerHTML = '';
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                // Дни предыдущего месяца
+                const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
+                for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+                    const day = prevMonthLastDay - i;
+                    const dayEl = document.createElement('div');
+                    dayEl.className = 'calendar-day other-month';
+                    dayEl.textContent = day;
+                    daysEl.appendChild(dayEl);
+                }
+
+                // Дни текущего месяца
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dayEl = document.createElement('div');
+                    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const currentDayDate = new Date(currentYear, currentMonth, day);
+                    currentDayDate.setHours(0, 0, 0, 0);
+                    
+                    dayEl.className = 'calendar-day';
+                    dayEl.textContent = day;
+                    dayEl.dataset.date = dateStr;
+
+                    if (currentDayDate < today) {
+                        dayEl.classList.add('past-date');
+                    }
+
+                    if (currentYear === today.getFullYear() && 
+                        currentMonth === today.getMonth() && 
+                        day === today.getDate()) {
+                        dayEl.classList.add('today');
+                    }
+
+                    // Проверяем, занят ли день
+                    if (bookedDates.includes(dateStr)) {
+                        dayEl.classList.add('booked');
+                        dayEl.title = 'Дата занята';
+                    } else if (currentDayDate >= today) {
+                        // Проверяем, выбрана ли дата
+                        if (selectedDates.includes(dateStr)) {
+                            dayEl.classList.add('selected');
+                        }
+                        
+                        // Подсветка начальной даты при выборе промежутка
+                        if (isRangeSelecting && rangeStartDate === dateStr) {
+                            dayEl.classList.add('range-start');
+                        }
+                        
+                        // Обработчик mousedown - начало перетаскивания
+                        dayEl.addEventListener('mousedown', function(e) {
+                            // Начинаем перетаскивание только левой кнопкой мыши
+                            if (e.button === 0 && !bookedDates.includes(dateStr)) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                
+                                isDragging = true;
+                                dragStartDate = dateStr;
+                                dragEndDate = dateStr;
+                                
+                                // Определяем режим: если начинаем с выбранной даты - режим удаления
+                                isDragRemoving = selectedDates.includes(dateStr);
+                                
+                                // Инициализируем множество пройденных дат
+                                draggedDates = new Set();
+                                draggedDates.add(dateStr);
+                                
+                                // Добавляем класс для визуальной обратной связи
+                                dayEl.classList.add('dragging');
+                                
+                                // Меняем курсор
+                                document.body.style.cursor = isDragRemoving ? 'not-allowed' : 'grabbing';
+                                
+                                // Добавляем обработчики для всего документа
+                                document.addEventListener('mousemove', handleMouseMove);
+                                document.addEventListener('mouseup', handleMouseUp);
+                            }
+                        });
+                        
+                        // Обработчик mouseenter для отслеживания пройденных дат
+                        dayEl.addEventListener('mouseenter', function() {
+                            if (isDragging && !bookedDates.includes(dateStr) && currentDayDate >= today) {
+                                const wasAdded = draggedDates.has(dateStr);
+                                if (!wasAdded) {
+                                    draggedDates.add(dateStr);
+                                    dragEndDate = dateStr;
+                                    renderCalendar(); // Перерисовываем для показа предпросмотра
+                                }
+                            }
+                        });
+                        
+                        // Обработчик клика для выбора дат (только если не было перетаскивания)
+                        dayEl.addEventListener('click', function(e) {
+                            // Если было перетаскивание, не обрабатываем клик
+                            if (wasDragging) {
+                                wasDragging = false;
+                                return;
+                            }
+                            
+                            const isCtrlPressed = e.ctrlKey || e.metaKey; // Поддержка Cmd на Mac
+                            toggleDate(dateStr, isCtrlPressed);
+                        });
+                        
+                        // Обновляем подсказку
+                        if (isRangeSelecting) {
+                            if (rangeStartDate === dateStr) {
+                                dayEl.title = 'Начало промежутка (нажмите Ctrl+клик на конечную дату)';
+                            } else {
+                                dayEl.title = 'Ctrl+клик для выбора конечной даты промежутка';
+                            }
+                        } else if (selectedDates.includes(dateStr)) {
+                            dayEl.title = 'Нажмите, чтобы убрать из выбора. Зажмите ЛКМ и перетащите для выбора промежутка';
+                        } else {
+                            dayEl.title = 'Клик для выбора. Зажмите ЛКМ и перетащите для выбора промежутка';
+                        }
+                    }
+
+                    // Подсветка выбранного периода
+                    if (selectedCheckinDate && selectedCheckoutDate) {
+                        // Валидный период - показываем как диапазон
+                        const rangeDates = getDatesInRange(selectedCheckinDate, selectedCheckoutDate);
+                        // Дата выезда не включается в период, поэтому убираем последний день
+                        rangeDates.pop();
+                        
+                        if (rangeDates.includes(dateStr)) {
+                            // Убираем класс selected, если он был добавлен ранее
+                            dayEl.classList.remove('selected');
+                            if (dateStr === selectedCheckinDate) {
+                                dayEl.classList.add('range-start');
+                            } else if (dateStr === rangeDates[rangeDates.length - 1]) {
+                                dayEl.classList.add('range-end');
+                            } else {
+                                dayEl.classList.add('range-middle');
+                            }
+                        }
+                    } else if (selectedDates.includes(dateStr)) {
+                        // Невалидный период или выбор в процессе - показываем как отдельные выбранные даты
+                        dayEl.classList.add('selected');
+                    }
+                    
+                    // Визуализация выбора промежутка (предпросмотр при Ctrl+клик)
+                    if (isRangeSelecting && rangeStartDate) {
+                        const startDate = new Date(rangeStartDate);
+                        const currentDate = new Date(dateStr);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        
+                        if (currentDate >= today && !bookedDates.includes(dateStr)) {
+                            if (dateStr === rangeStartDate) {
+                                dayEl.classList.add('range-start');
+                            } else if (startDate < currentDate) {
+                                // Показываем предпросмотр промежутка
+                                const previewRange = getDatesInRange(rangeStartDate, dateStr);
+                                if (previewRange.includes(dateStr) && dateStr !== rangeStartDate) {
+                                    if (dateStr === previewRange[previewRange.length - 1]) {
+                                        dayEl.classList.add('range-end');
+                                    } else {
+                                        dayEl.classList.add('range-middle');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Визуализация перетаскивания (drag-and-drop)
+                    if (isDragging && draggedDates && draggedDates.has(dateStr)) {
+                        const currentDate = new Date(dateStr);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        
+                        if (currentDate >= today && !bookedDates.includes(dateStr)) {
+                            // При удалении не показываем подсветку, просто убираем selected класс
+                            if (!isDragRemoving) {
+                                // Режим добавления - синяя подсветка
+                                const datesArray = Array.from(draggedDates).sort();
+                                if (datesArray.length > 0) {
+                                    if (dateStr === datesArray[0]) {
+                                        dayEl.classList.add('range-start');
+                                    } else if (dateStr === datesArray[datesArray.length - 1]) {
+                                        dayEl.classList.add('range-end');
+                                    } else {
+                                        dayEl.classList.add('range-middle');
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    daysEl.appendChild(dayEl);
+                }
+
+                // Дни следующего месяца
+                const totalCells = startingDayOfWeek + daysInMonth;
+                const remainingCells = 42 - totalCells;
+                for (let day = 1; day <= remainingCells && day <= 14; day++) {
+                    const dayEl = document.createElement('div');
+                    dayEl.className = 'calendar-day other-month';
+                    dayEl.textContent = day;
+                    daysEl.appendChild(dayEl);
+                }
+            }
+
+            // Обработчики навигации
+            container.querySelectorAll('.calendar-nav-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (this.dataset.action === 'prev') {
+                        currentMonth--;
+                        if (currentMonth < 0) {
+                            currentMonth = 11;
+                            currentYear--;
+                        }
+                    } else {
+                        currentMonth++;
+                        if (currentMonth > 11) {
+                            currentMonth = 0;
+                            currentYear++;
+                        }
+                    }
+                    // Сбрасываем состояние выбора промежутка при смене месяца
+                    isRangeSelecting = false;
+                    rangeStartDate = null;
+                    renderCalendar();
+                });
+            });
+
+            // Обработчик движения мыши при перетаскивании
+            function handleMouseMove(e) {
+                if (!isDragging) return;
+                
+                // Находим элемент под курсором
+                const elementUnderMouse = document.elementFromPoint(e.clientX, e.clientY);
+                if (!elementUnderMouse) return;
+                
+                // Ищем родительский элемент с data-date
+                let dayElement = elementUnderMouse;
+                while (dayElement && !dayElement.dataset.date) {
+                    dayElement = dayElement.parentElement;
+                }
+                
+                if (dayElement && dayElement.dataset.date) {
+                    const newDate = dayElement.dataset.date;
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const date = new Date(newDate);
+                    date.setHours(0, 0, 0, 0);
+                    
+                    // Добавляем дату в множество пройденных, если она валидна
+                    if (date >= today && !bookedDates.includes(newDate)) {
+                        const wasAdded = draggedDates.has(newDate);
+                        if (!wasAdded) {
+                            draggedDates.add(newDate);
+                            dragEndDate = newDate;
+                            renderCalendar(); // Перерисовываем для показа предпросмотра
+                        }
+                    }
+                }
+            }
+            
+            // Обработчик отпускания кнопки мыши
+            function handleMouseUp(e) {
+                if (!isDragging) return;
+                
+                wasDragging = true; // Флаг для предотвращения обработки клика
+                
+                // Восстанавливаем курсор
+                document.body.style.cursor = '';
+                
+                // Удаляем обработчики
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+                
+                // Убираем класс dragging со всех элементов
+                container.querySelectorAll('.calendar-day.dragging').forEach(el => {
+                    el.classList.remove('dragging');
+                });
+                
+                // Обрабатываем пройденные даты
+                if (draggedDates.size > 0) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    // Фильтруем только валидные даты
+                    const validDates = Array.from(draggedDates).filter(dateStr => {
+                        const date = new Date(dateStr);
+                        date.setHours(0, 0, 0, 0);
+                        return date >= today && !bookedDates.includes(dateStr);
+                    });
+                    
+                    if (validDates.length > 0) {
+                        if (isDragRemoving) {
+                            // Режим удаления - убираем даты из выбора
+                            validDates.forEach(dateStr => {
+                                const index = selectedDates.indexOf(dateStr);
+                                if (index > -1) {
+                                    selectedDates.splice(index, 1);
+                                }
+                            });
+                        } else {
+                            // Режим добавления - добавляем даты
+                            validDates.forEach(dateStr => {
+                                if (!selectedDates.includes(dateStr)) {
+                                    selectedDates.push(dateStr);
+                                }
+                            });
+                        }
+                        
+                        // После перетаскивания пытаемся валидировать, но не очищаем если невалидно
+                        // (пользователь может продолжить выбор)
+                        const validation = validateAndNormalizeSelectedDates();
+                        
+                        // Если валидация не прошла, просто не устанавливаем checkin/checkout
+                        // но оставляем выбранные даты для дальнейшего выбора
+                        if (!validation.valid) {
+                            selectedCheckinDate = null;
+                            selectedCheckoutDate = null;
+                        }
+                        
+                        // Обновляем UI
+                        renderCalendar();
+                        updateSelectedDatesInfo();
+                        updatePayButton();
+                    }
+                } else if (dragStartDate) {
+                    // Если кликнули на одну дату - просто переключаем её
+                    toggleDate(dragStartDate, false);
+                }
+                
+                // Сбрасываем состояние перетаскивания
+                isDragging = false;
+                isDragRemoving = false;
+                dragStartDate = null;
+                dragEndDate = null;
+                draggedDates = new Set();
+                
+                // Сбрасываем флаг через небольшую задержку
+                setTimeout(() => {
+                    wasDragging = false;
+                }, 100);
+            }
+
+            // Первоначальная отрисовка
+            renderCalendar();
+
+            // Сбрасываем состояние выбора промежутка при клике вне календаря
+            document.addEventListener('click', function(e) {
+                if (!container.contains(e.target) && isRangeSelecting) {
+                    isRangeSelecting = false;
+                    rangeStartDate = null;
+                    renderCalendar();
+                    updateSelectedDatesInfo();
+                }
+            });
+            
+            // Сбрасываем перетаскивание при выходе за пределы календаря
+            container.addEventListener('mouseleave', function() {
+                if (isDragging) {
+                    // Завершаем перетаскивание
+                    const event = new MouseEvent('mouseup', { bubbles: true, cancelable: true });
+                    document.dispatchEvent(event);
+                }
+            });
+        }
+
+        // Делаем функцию доступной глобально для обновления календаря
+        window.initChatCalendar = function() {
+            const container = document.querySelector('.house-calendar-container[data-readonly="true"]');
+            if (container && container.dataset.houseId) {
+                // Перезагружаем данные календаря
+                const datesData = container.dataset.dates;
+                try {
+                    bookedDates = datesData ? JSON.parse(datesData) : [];
+                    bookedDates = bookedDates.map(date => {
+                        if (typeof date === 'string') {
+                            return date.split('T')[0];
+                        }
+                        return date;
+                    });
+                } catch (e) {
+                    console.warn('Ошибка парсинга дат календаря:', e);
+                    bookedDates = [];
+                }
+                // Перерисовываем календарь
+                renderCalendar();
+            }
+        };
+
+        // Инициализация при загрузке страницы
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initChatCalendar);
+        } else {
+            initChatCalendar();
+        }
+    })();
 </script>
 @endsection
 

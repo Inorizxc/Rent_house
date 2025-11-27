@@ -646,13 +646,14 @@
 
     .orders-houses-grid .orders-house-actions {
         padding: 0;
-        margin-top: auto;
+        margin-top: 16px;
         padding-top: 12px;
         border-top: 1px solid #e5e7eb;
-        background: #f9fafb;
+        background: transparent;
         display: flex;
         gap: 8px;
-        flex-shrink: 0;
+        border-top: 1px solid #e5e7eb;
+        background: #f9fafb;
     }
 
     .orders-house-actions .btn-primary,
@@ -830,6 +831,11 @@ a {
 
                     // Инициализируем фото-карусели после загрузки контента
                     initPhotoCarousels(panel);
+                    
+                    // Инициализируем календари после загрузки контента
+                    if (window.initHouseCalendars) {
+                        window.initHouseCalendars();
+                    }
 
                 } catch (error) {
                     console.error('Ошибка загрузки вкладки:', error);
@@ -897,6 +903,10 @@ a {
                 } else if (hasContent && panel) {
                     // Если контент уже есть, просто инициализируем фото-карусели
                     initPhotoCarousels(panel);
+                    // И инициализируем календари
+                    if (window.initHouseCalendars) {
+                        window.initHouseCalendars();
+                    }
                 }
             }
 
@@ -969,6 +979,9 @@ a {
                 // Если контент уже есть на странице, просто инициализируем его
                 if (hasContent) {
                     initPhotoCarousels(activePanel);
+                    if (window.initHouseCalendars) {
+                        window.initHouseCalendars();
+                    }
                 } else if (btn && btn.dataset.route) {
                     // Если контента нет, загружаем через AJAX
                     loadTab(activeTab, btn.dataset.route);

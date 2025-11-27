@@ -4,6 +4,7 @@
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\HouseController;
 use App\Http\Controllers\HouseChatController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\RouterController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -28,6 +29,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/house/{houseId}/chat', 'show')->name('house.chat');
         Route::post('/house/{houseId}/chat/message', 'sendMessage')->name('house.chat.send');
         Route::get('/house/{houseId}/chat/messages', 'getMessages')->name('house.chat.messages');
+    });
+
+    Route::controller(\App\Http\Controllers\HouseCalendarController::class)->group(function () {
+        Route::post('/house/{houseId}/calendar/dates', 'updateDates')->name('house.calendar.update-dates');
+        Route::post('/house/{houseId}/calendar/dates/range', 'updateDatesRange')->name('house.calendar.update-dates-range');
+    });
+
+    Route::controller(OrderController::class)->group(function () {
+        Route::post('/house/{houseId}/order', 'createFromChat')->name('house.order.create');
     });
 
     Route::get('/chats', [ChatController::class, 'index'])->name('chats.index');
