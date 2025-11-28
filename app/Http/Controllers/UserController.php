@@ -5,14 +5,26 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\House;
-use App\Models\Role;
 use App\Models\Order;
-use App\Services\UserServices\UserService as UserService;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use App\Services\UserServices\UserService;
+use App\Services\OrderService\OrderService;
+use App\Services\VerificationService\VerificationService;
 
 class UserController extends Controller
 {
+    protected $userService;
+    protected $orderService;
+    protected $verificationService;
+
+    public function __construct(
+        UserService $userService,
+        OrderService $orderService,
+        VerificationService $verificationService
+    ) {
+        $this->userService = $userService;
+        $this->orderService = $orderService;
+        $this->verificationService = $verificationService;
+    }
     
     public function index(){
         $users = User::orderBy("timestamp", "desc")->get();
@@ -24,8 +36,7 @@ class UserController extends Controller
     }
 
     public function tabHouses(string $id, Request $request){
-        $userService = app(UserService::class);
-        $user = $userService->getUserWithRoleHouse($id);
+        $user = $this->userService->getUserWithRoleHouse($id);
 
         // Используем Policy для проверки доступа (разрешает гостям просматривать)
         $currentUser = auth()->user();
@@ -54,8 +65,7 @@ class UserController extends Controller
     }
 
     public function tabSettings(string $id, Request $request){
-        $userService = app(UserService::class);
-        $user = $userService->getUserWithRoleHouse($id);
+        $user = $this->userService->getUserWithRoleHouse($id);
 
         // Проверяем доступ к приватным данным (только владелец)
         $currentUser = auth()->user();
@@ -84,8 +94,7 @@ class UserController extends Controller
     }
 
     public function tabOrders(string $id, Request $request){
-        $userService = app(UserService::class);
-        $user = $userService->getUserWithRoleHouse($id);
+        $user = $this->userService->getUserWithRoleHouse($id);
 
         // Проверяем доступ к заказам (только администратор или владелец профиля)
         $currentUser = auth()->user();
@@ -113,20 +122,11 @@ class UserController extends Controller
         $isOwner = $currentUser->canEditProfile($user);
 
         // Получаем заказы, где пользователь является заказчиком
-        $ordersAsCustomer = Order::where('customer_id', $user->user_id)
-            ->with(['house.photo', 'house.rent_type', 'house.house_type', 'customer'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $ordersAsCustomer = $this->orderService->getOrdersAsCustomer($user->user_id);
 
         // Получаем заказы на дома пользователя (если он арендодатель)
-        $houseIds = $user->house->pluck('house_id');
-        $ordersAsOwner = collect();
-        if ($houseIds->isNotEmpty()) {
-            $ordersAsOwner = Order::whereIn('house_id', $houseIds)
-                ->with(['house.photo', 'house.rent_type', 'house.house_type', 'customer'])
-                ->orderBy('created_at', 'desc')
-                ->get();
-        }
+        $houseIds = $user->house->pluck('house_id')->toArray();
+        $ordersAsOwner = $this->orderService->getOrdersAsOwner($houseIds);
 
         // Объединяем заказы и убираем дубликаты
         $allOrders = $ordersAsCustomer->merge($ordersAsOwner)->unique('order_id')->sortByDesc('created_at');
@@ -239,69 +239,21 @@ class UserController extends Controller
             return back()->with('error', 'Требуется авторизация');
         }
 
-        // Проверяем, не является ли пользователь уже арендодателем или администратором
-        if ($user->isRentDealer() || $user->isAdmin()) {
+        // Проверяем, может ли пользователь подать заявку
+        $canRequest = $this->verificationService->canRequestVerification($user);
+        
+        if (!$canRequest['can_request']) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ваш аккаунт уже верифицирован'
+                    'message' => $canRequest['message']
                 ], 400);
             }
-            return back()->with('error', 'Ваш аккаунт уже верифицирован');
+            return back()->with('error', $canRequest['message']);
         }
 
-        // Проверяем, не подал ли пользователь уже заявку
-        if ($user->need_verification) {
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ваша заявка уже находится на рассмотрении'
-                ], 400);
-            }
-            return back()->with('error', 'Ваша заявка уже находится на рассмотрении');
-        }
-
-        // Проверяем, не заблокирован ли пользователь
-        if ($user->verification_denied_until) {
-            $deniedUntil = Carbon::parse($user->verification_denied_until);
-            if ($deniedUntil->isFuture()) {
-                $message = "Вы сможете подать заявку на верификацию после {$deniedUntil->format('d.m.Y')}";
-                if ($request->ajax() || $request->wantsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => $message
-                    ], 400);
-                }
-                return back()->with('error', $message);
-            }
-        }
-
-        // Устанавливаем флаг верификации
-        $user->need_verification = true;
-        
-        // Проверяем, существует ли колонка, и добавляем её, если нужно
-        try {
-            $columns = DB::select("PRAGMA table_info(users)");
-            $columnExists = false;
-            foreach ($columns as $column) {
-                if ($column->name === 'verification_denied_until') {
-                    $columnExists = true;
-                    break;
-                }
-            }
-            
-            if (!$columnExists) {
-                // Добавляем колонку, если её нет
-                DB::statement('ALTER TABLE users ADD COLUMN verification_denied_until DATETIME NULL');
-            }
-            
-            $user->verification_denied_until = null;
-        } catch (\Exception $e) {
-            // Если не удалось добавить колонку, просто не устанавливаем значение
-            // Это позволит сохранить need_verification даже если колонка не существует
-        }
-        
-        $user->save();
+        // Подаем заявку на верификацию
+        $this->verificationService->requestVerification($user);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

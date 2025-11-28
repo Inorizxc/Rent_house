@@ -4,25 +4,36 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\House;
-use App\Models\HouseCalendar;
 use App\enum\OrderStatus;
-use App\Models\TemporaryBlock;
-use App\Models\Chat;
-use App\Models\Message;
-use App\Services\ChatService\ChatService;
+use App\Services\OrderService\OrderService;
+use App\Services\OrderService\OrderValidationService;
+use App\Services\AuthService\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
+    protected $orderService;
+    protected $orderValidationService;
+    protected $authService;
+
+    public function __construct(
+        OrderService $orderService,
+        OrderValidationService $orderValidationService,
+        AuthService $authService
+    ) {
+        $this->orderService = $orderService;
+        $this->orderValidationService = $orderValidationService;
+        $this->authService = $authService;
+    }
+
     /**
      * Display a listing of the orders.
      */
     public function index(Request $request)
     {
-        $user = Auth::user();
+        $user = $this->authService->checkAuth();
         
         if (!$user) {
             return redirect()->route('login')->with('error', 'Необходима авторизация');
@@ -59,7 +70,7 @@ class OrderController extends Controller
     public function create()
     {
         $houses = House::active()->get();
-        $orderStatuses = OrderStatus::all();
+        $orderStatuses = OrderStatus::cases();
         
         return view('orders.create', [
             'houses' => $houses,
@@ -80,22 +91,7 @@ class OrderController extends Controller
             'order_status_id' => 'required|exists:order_statuses,order_status_id',
         ]);
 
-        // Создаем массив для original_data
-        $originalData = [
-            'house_id' => $validated['house_id'],
-            'date_of_order' => $validated['date_of_order'],
-            'day_count' => $validated['day_count'],
-            'customer_id' => $validated['customer_id'],
-        ];
-
-        $order = Order::create([
-            'house_id' => $validated['house_id'],
-            'date_of_order' => $validated['date_of_order'],
-            'day_count' => $validated['day_count'],
-            'customer_id' => $validated['customer_id'],
-            'order_status_id' => $validated['order_status_id'],
-            'original_data' => json_encode($originalData),
-        ]);
+        $order = $this->orderService->createOrder($validated);
 
         return redirect()->route('orders.show', $order->order_id)
             ->with('success', 'Заказ успешно создан');
@@ -108,7 +104,7 @@ class OrderController extends Controller
     {
         $order = Order::with(['house.user', 'house.photo', 'customer'])->findOrFail($id);
         
-        $currentUser = Auth::user();
+        $currentUser = $this->authService->checkAuth();
         
         if (!$currentUser) {
             return redirect()->route('login')->with('error', 'Необходима авторизация');
@@ -119,20 +115,18 @@ class OrderController extends Controller
             abort(403, 'Заблокированные пользователи не могут просматривать заказы');
         }
         
-        // Проверяем доступ: пользователь может видеть заказ, если он заказчик, владелец дома или администратор
-        $isCustomer = $order->customer_id == $currentUser->user_id;
-        $isOwner = $order->house && $order->house->user_id == $currentUser->user_id;
-        $isAdmin = $currentUser->isAdmin();
+        // Проверяем доступ
+        $access = $this->authService->checkOrderAccess($currentUser, $order);
         
-        if (!$isCustomer && !$isOwner && !$isAdmin) {
+        if (!$access['has_access']) {
             abort(403, 'У вас нет доступа к этому заказу');
         }
         
         return view('orders.show', [
             'order' => $order,
             'currentUser' => $currentUser,
-            'isCustomer' => $isCustomer,
-            'isOwner' => $isOwner,
+            'isCustomer' => $access['is_customer'],
+            'isOwner' => $access['is_owner'],
         ]);
     }
 
@@ -143,7 +137,7 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
         $houses = House::active()->get();
-        $orderStatuses = OrderStatus::all();
+        $orderStatuses = OrderStatus::cases();
         
         return view('orders.edit', [
             'order' => $order,
@@ -167,22 +161,7 @@ class OrderController extends Controller
             'order_status_id' => 'required|exists:order_statuses,order_status_id',
         ]);
 
-        // Обновляем original_data
-        $originalData = [
-            'house_id' => $validated['house_id'],
-            'date_of_order' => $validated['date_of_order'],
-            'day_count' => $validated['day_count'],
-            'customer_id' => $validated['customer_id'],
-        ];
-
-        $order->update([
-            'house_id' => $validated['house_id'],
-            'date_of_order' => $validated['date_of_order'],
-            'day_count' => $validated['day_count'],
-            'customer_id' => $validated['customer_id'],
-            'order_status_id' => $validated['order_status_id'],
-            'original_data' => json_encode($originalData),
-        ]);
+        $this->orderService->updateOrder($order, $validated);
 
         return redirect()->route('orders.show', $order->order_id)
             ->with('success', 'Заказ успешно обновлен');
@@ -205,7 +184,7 @@ class OrderController extends Controller
      */
     public function createFromChat(Request $request, $houseId)
     {
-        $user = Auth::user();
+        $user = $this->authService->checkAuth();
 
         if (!$user) {
             return response()->json([
@@ -215,16 +194,11 @@ class OrderController extends Controller
         }
         
         // Проверяем, не забанен ли пользователь
-        if ($user->isBanned()) {
-            $banUntil = $user->getBanUntilDate();
-            $banReason = $user->ban_reason ? "\n\nПричина: {$user->ban_reason}" : '';
-            $message = $user->isBannedPermanently() 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете создавать заказы.' . $banReason
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете создавать заказы до этой даты." . $banReason;
-            
+        $banCheck = $this->authService->checkBan($user);
+        if ($banCheck) {
             return response()->json([
                 'success' => false,
-                'error' => $message
+                'error' => $banCheck['message']
             ], 403);
         }
         
@@ -240,73 +214,24 @@ class OrderController extends Controller
             abort(404, 'Дом не найден или недоступен');
         }
 
-        $checkin = new \DateTime($validated['checkin_date']);
-        $checkout = new \DateTime($validated['checkout_date']);
-        $checkoutForCheck = clone $checkout;
-        $checkoutForCheck->modify('-1 day');
+        // Генерируем даты для блокировки
+        $datesToBlock = $this->orderValidationService->generateDatesToBlock(
+            $validated['checkin_date'],
+            $validated['checkout_date']
+        );
 
-        $datesToBlock = [];
-        $current = clone $checkin;
-        while ($current <= $checkoutForCheck) {
-            $datesToBlock[] = $current->format('Y-m-d');
-            $current->modify('+1 day');
-        }
-
-        // Очищаем истекшие блокировки
-        TemporaryBlock::cleanExpired();
-
-        // Проверяем доступность дат (учитывая постоянные и временные блокировки)
-        $calendar = $house->house_calendar;
-        $bookedDates = $calendar ? ($calendar->dates ?? []) : [];
+        // Проверяем доступность дат
+        $availability = $this->orderValidationService->checkDatesAvailability($house, $datesToBlock, $user);
         
-        // Получаем активные временные блокировки для этого дома
-        $temporaryBlocks = TemporaryBlock::where('house_id', $houseId)
-            ->where('expires_at', '>', now())
-            ->get();
-        
-        $temporaryBlockedDates = [];
-        foreach ($temporaryBlocks as $block) {
-            $temporaryBlockedDates = array_merge($temporaryBlockedDates, $block->dates ?? []);
-        }
-        $temporaryBlockedDates = array_unique($temporaryBlockedDates);
-
-        // Проверяем, не заняты ли даты
-        foreach ($datesToBlock as $date) {
-            if (in_array($date, $bookedDates)) {
-                return response()->json([
-                    'success' => false,
-                    'error' => "Дата {$date} уже занята"
-                ], 400);
-            }
-            // Проверяем временные блокировки других пользователей
-            if (in_array($date, $temporaryBlockedDates)) {
-                $blockingUser = TemporaryBlock::where('house_id', $houseId)
-                    ->where('expires_at', '>', now())
-                    ->whereJsonContains('dates', $date)
-                    ->where('user_id', '!=', $user->user_id)
-                    ->first();
-                
-                if ($blockingUser) {
-                    return response()->json([
-                        'success' => false,
-                        'error' => "Дата {$date} временно заблокирована другим пользователем"
-                    ], 400);
-                }
-            }
+        if (!$availability['available']) {
+            return response()->json([
+                'success' => false,
+                'error' => $availability['error']
+            ], 400);
         }
 
-        // Удаляем старые временные блокировки этого пользователя для этого дома
-        TemporaryBlock::where('house_id', $houseId)
-            ->where('user_id', $user->user_id)
-            ->delete();
-
-        // Создаем новую временную блокировку на 10 минут
-        $temporaryBlock = TemporaryBlock::create([
-            'house_id' => $house->house_id,
-            'user_id' => $user->user_id,
-            'dates' => $datesToBlock,
-            'expires_at' => now()->addMinutes(10),
-        ]);
+        // Создаем временную блокировку
+        $this->orderValidationService->createTemporaryBlock($house, $user, $datesToBlock);
 
         // Редиректим на страницу подтверждения
         $redirectUrl = route('house.order.confirm.show', $houseId) . '?' . http_build_query([
@@ -331,74 +256,34 @@ class OrderController extends Controller
         ]);
 
         $house = House::with(['user', 'photo'])->findOrFail($houseId);
-        $user = Auth::user();
+        $user = $this->authService->checkAuth();
 
         if (!$user) {
             return redirect()->route('login')->with('error', 'Необходима авторизация');
         }
 
-        $checkin = new \DateTime($request->checkin_date);
-        $checkout = new \DateTime($request->checkout_date);
-        $checkoutForCheck = clone $checkout;
-        $checkoutForCheck->modify('-1 day');
+        // Генерируем даты для блокировки
+        $datesToBlock = $this->orderValidationService->generateDatesToBlock(
+            $request->checkin_date,
+            $request->checkout_date
+        );
 
-        // Получаем все даты в периоде
-        $datesToBlock = [];
-        $current = clone $checkin;
-        while ($current <= $checkoutForCheck) {
-            $datesToBlock[] = $current->format('Y-m-d');
-            $current->modify('+1 day');
-        }
-
-        // Очищаем истекшие блокировки
-        TemporaryBlock::cleanExpired();
-
-        // Проверяем доступность дат (учитывая постоянные и временные блокировки)
-        $calendar = $house->house_calendar;
-        $bookedDates = $calendar ? ($calendar->dates ?? []) : [];
+        // Проверяем доступность дат
+        $availability = $this->orderValidationService->checkDatesAvailability($house, $datesToBlock, $user);
         
-        // Получаем активные временные блокировки для этого дома
-        $temporaryBlocks = TemporaryBlock::where('house_id', $houseId)
-            ->where('expires_at', '>', now())
-            ->get();
-        
-        $temporaryBlockedDates = [];
-        foreach ($temporaryBlocks as $block) {
-            $temporaryBlockedDates = array_merge($temporaryBlockedDates, $block->dates ?? []);
-        }
-        $temporaryBlockedDates = array_unique($temporaryBlockedDates);
-
-        // Проверяем, не заняты ли даты
-        foreach ($datesToBlock as $date) {
-            if (in_array($date, $bookedDates)) {
-                return redirect()->back()->with('error', "Дата {$date} уже занята");
-            }
-            // Проверяем временные блокировки других пользователей
-            if (in_array($date, $temporaryBlockedDates)) {
-                $blockingUser = TemporaryBlock::where('house_id', $houseId)
-                    ->where('expires_at', '>', now())
-                    ->whereJsonContains('dates', $date)
-                    ->where('user_id', '!=', $user->user_id)
-                    ->first();
-                
-                if ($blockingUser) {
-                    return redirect()->back()->with('error', "Дата {$date} временно заблокирована другим пользователем");
-                }
-            }
+        if (!$availability['available']) {
+            return redirect()->back()->with('error', $availability['error']);
         }
 
         // Находим временную блокировку текущего пользователя
-        $temporaryBlock = TemporaryBlock::where('house_id', $houseId)
-            ->where('user_id', $user->user_id)
-            ->where('expires_at', '>', now())
-            ->first();
+        $temporaryBlock = $this->orderValidationService->findUserTemporaryBlock($houseId, $user->user_id);
 
         if (!$temporaryBlock) {
             return redirect()->back()->with('error', 'Временная блокировка не найдена или истекла');
         }
 
         // Вычисляем количество дней
-        $dayCount = (int)$checkin->diff($checkout)->days;
+        $dayCount = $this->orderService->calculateDayCount($request->checkin_date, $request->checkout_date);
 
         return view('orders.confirm', [
             'house' => $house,
@@ -414,21 +299,16 @@ class OrderController extends Controller
      */
     public function confirm(Request $request, $houseId)
     {
-        $user = Auth::user();
+        $user = $this->authService->checkAuth();
 
         if (!$user) {
             return redirect()->route('login')->with('error', 'Необходима авторизация');
         }
         
         // Проверяем, не забанен ли пользователь
-        if ($user->isBanned()) {
-            $banUntil = $user->getBanUntilDate();
-            $banReason = $user->ban_reason ? "\n\nПричина: {$user->ban_reason}" : '';
-            $message = $user->isBannedPermanently() 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете подтверждать заказы.' . $banReason
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете подтверждать заказы до этой даты." . $banReason;
-            
-            return redirect()->back()->with('error', $message);
+        $banCheck = $this->authService->checkBan($user);
+        if ($banCheck) {
+            return redirect()->back()->with('error', $banCheck['message']);
         }
         
         $request->validate([
@@ -439,49 +319,34 @@ class OrderController extends Controller
 
         $house = House::with('user')->findOrFail($houseId);
 
-        // Проверяем, что временная блокировка принадлежит текущему пользователю
-        $temporaryBlock = TemporaryBlock::where('temporary_block_id', $request->temporary_block_id)
-            ->where('user_id', $user->user_id)
-            ->where('house_id', $houseId)
-            ->where('expires_at', '>', now())
-            ->firstOrFail();
+        // Генерируем даты для блокировки
+        $datesToBlock = $this->orderValidationService->generateDatesToBlock(
+            $request->checkin_date,
+            $request->checkout_date
+        );
 
-        $checkin = new \DateTime($request->checkin_date);
-        $checkout = new \DateTime($request->checkout_date);
-        $checkoutForCheck = clone $checkout;
-        $checkoutForCheck->modify('-1 day');
+        // Проверяем и валидируем временную блокировку
+        $temporaryBlock = $this->orderValidationService->validateTemporaryBlock(
+            $request->temporary_block_id,
+            $houseId,
+            $user->user_id,
+            $datesToBlock
+        );
 
-        $datesToBlock = [];
-        $current = clone $checkin;
-        while ($current <= $checkoutForCheck) {
-            $datesToBlock[] = $current->format('Y-m-d');
-            $current->modify('+1 day');
-        }
-
-        // Проверяем, что даты совпадают с временной блокировкой
-        $blockDates = $temporaryBlock->dates ?? [];
-        sort($blockDates);
-        sort($datesToBlock);
-        
-        if ($blockDates !== $datesToBlock) {
-            $temporaryBlock->delete();
-            return redirect()->back()->with('error', 'Даты не совпадают с временной блокировкой');
+        if (!$temporaryBlock) {
+            return redirect()->back()->with('error', 'Временная блокировка не найдена, истекла или даты не совпадают');
         }
 
         // Проверяем доступность дат еще раз
-        $calendar = $house->house_calendar;
-        $bookedDates = $calendar ? ($calendar->dates ?? []) : [];
+        $availability = $this->orderValidationService->checkDatesAvailability($house, $datesToBlock);
         
-        foreach ($datesToBlock as $date) {
-            if (in_array($date, $bookedDates)) {
-                // Удаляем временную блокировку
-                $temporaryBlock->delete();
-                return redirect()->back()->with('error', "Дата {$date} уже занята");
-            }
+        if (!$availability['available']) {
+            $temporaryBlock->delete();
+            return redirect()->back()->with('error', $availability['error']);
         }
 
         // Вычисляем количество дней
-        $dayCount = (int)$checkin->diff($checkout)->days;
+        $dayCount = $this->orderService->calculateDayCount($request->checkin_date, $request->checkout_date);
 
         // Получаем статус по умолчанию (Рассмотрение)
         $defaultStatus = OrderStatus::PENDING;
@@ -491,28 +356,19 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Не найден статус заказа');
         }
 
-        // Создаем массив для original_data
-        $originalData = [
-            'house_id' => $house->house_id,
-            'date_of_order' => $request->checkin_date,
-            'day_count' => $dayCount,
-            'customer_id' => $user->user_id,
-        ];
-
         // Создаем заказ в БД
         try {
-            $order = Order::create([
+            $order = $this->orderService->createOrder([
                 'house_id' => $house->house_id,
                 'date_of_order' => $request->checkin_date,
                 'day_count' => $dayCount,
                 'customer_id' => $user->user_id,
                 'order_status' => $defaultStatus,
-                'original_data' => json_encode($originalData),
             ]);
         } catch (\Exception $e) {
             // Удаляем временную блокировку при ошибке
             $temporaryBlock->delete();
-            \Log::error('Ошибка при создании заказа', [
+            Log::error('Ошибка при создании заказа', [
                 'house_id' => $houseId,
                 'user_id' => $user->user_id,
                 'error' => $e->getMessage()
@@ -521,18 +377,7 @@ class OrderController extends Controller
         }
 
         // Блокируем даты в календаре окончательно
-        if ($calendar) {
-            $dates = $calendar->dates ?? [];
-            $dates = array_unique(array_merge($dates, $datesToBlock));
-            sort($dates);
-            $calendar->dates = $dates;
-            $calendar->save();
-        } else {
-            HouseCalendar::create([
-                'house_id' => $house->house_id,
-                'dates' => $datesToBlock
-            ]);
-        }
+        $this->orderService->blockDates($house, $datesToBlock);
 
         // Удаляем временную блокировку
         $temporaryBlock->delete();
@@ -541,7 +386,7 @@ class OrderController extends Controller
         $seller = $house->user;
         
         if (!$seller) {
-            \Log::error('Продавец не найден для дома', ['house_id' => $houseId]);
+            Log::error('Продавец не найден для дома', ['house_id' => $houseId]);
             return redirect()->back()->with('error', 'Ошибка: продавец не найден');
         }
         
@@ -550,41 +395,15 @@ class OrderController extends Controller
 
         // Если покупатель и продавец - один и тот же человек, пропускаем создание чата
         if ($buyerId != $dealerId) {
-            $chatService = app(ChatService::class);
-            $chat = $chatService->getUsersChat($buyerId, $dealerId);
-
-            if (!$chat) {
-                $chat = Chat::create([
-                    'user_id' => $buyerId,
-                    'rent_dealer_id' => $dealerId,
-                ]);
-            }
-
-            // Формируем сообщение о подтверждении заказа
-            $checkinFormatted = Carbon::parse($request->checkin_date)->format('d.m.Y');
-            $checkoutFormatted = Carbon::parse($request->checkout_date)->format('d.m.Y');
-            $orderMessage = "✅ Заказ #{$order->order_id} подтвержден!\n" .
-                           "Период аренды: {$checkinFormatted} - {$checkoutFormatted}\n" .
-                           "Количество дней: {$dayCount}";
-
-            // Отправляем сообщение в чат от имени покупателя
-            try {
-                Message::create([
-                    'chat_id' => $chat->chat_id,
-                    'user_id' => $user->user_id,
-                    'message' => $orderMessage,
-                ]);
-                
-                // Обновляем время обновления чата
-                $chat->touch();
-            } catch (\Exception $e) {
-                // Логируем ошибку, но не прерываем процесс
-                \Log::error('Ошибка при отправке сообщения о заказе', [
-                    'chat_id' => $chat->chat_id ?? null,
-                    'order_id' => $order->order_id,
-                    'error' => $e->getMessage()
-                ]);
-            }
+            $chat = $this->orderService->getOrCreateChat($buyerId, $dealerId);
+            $this->orderService->sendOrderConfirmationMessage(
+                $chat,
+                $order,
+                $request->checkin_date,
+                $request->checkout_date,
+                $dayCount,
+                $user->user_id
+            );
         }
 
         // Перенаправляем на страницу чата
@@ -597,7 +416,7 @@ class OrderController extends Controller
      */
     public function cancel(Request $request, $houseId)
     {
-        $user = Auth::user();
+        $user = $this->authService->checkAuth();
 
         if (!$user) {
             return response()->json([
@@ -607,16 +426,11 @@ class OrderController extends Controller
         }
         
         // Проверяем, не забанен ли пользователь
-        if ($user->isBanned()) {
-            $banUntil = $user->getBanUntilDate();
-            $banReason = $user->ban_reason ? "\n\nПричина: {$user->ban_reason}" : '';
-            $message = $user->isBannedPermanently() 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете отменять заказы.' . $banReason
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете отменять заказы до этой даты." . $banReason;
-            
+        $banCheck = $this->authService->checkBan($user);
+        if ($banCheck) {
             return response()->json([
                 'success' => false,
-                'error' => $message
+                'error' => $banCheck['message']
             ], 403);
         }
         
@@ -624,15 +438,12 @@ class OrderController extends Controller
             'temporary_block_id' => 'required|exists:temporary_blocks,temporary_block_id',
         ]);
 
-        // Удаляем временную блокировку, если она принадлежит пользователю
-        $temporaryBlock = TemporaryBlock::where('temporary_block_id', $request->temporary_block_id)
-            ->where('user_id', $user->user_id)
-            ->where('house_id', $houseId)
-            ->first();
-
-        if ($temporaryBlock) {
-            $temporaryBlock->delete();
-        }
+        // Удаляем временную блокировку
+        $removed = $this->orderValidationService->removeTemporaryBlock(
+            $request->temporary_block_id,
+            $houseId,
+            $user->user_id
+        );
 
         return response()->json([
             'success' => true,

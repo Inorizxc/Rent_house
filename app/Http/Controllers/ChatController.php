@@ -4,26 +4,43 @@ namespace App\Http\Controllers;
 
 use App\Models\Chat;
 use App\Models\Message;
-use App\Models\House;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Services\ChatService\ChatService;
 use App\Services\HouseServices\HouseService;
 use App\Services\MessageService\MessageService;
+use App\Services\AuthService\AuthService;
 
 class ChatController extends Controller
 {
+    protected $chatService;
+    protected $houseService;
+    protected $messageService;
+    protected $authService;
+
+    public function __construct(
+        ChatService $chatService,
+        HouseService $houseService,
+        MessageService $messageService,
+        AuthService $authService
+    ) {
+        $this->chatService = $chatService;
+        $this->houseService = $houseService;
+        $this->messageService = $messageService;
+        $this->authService = $authService;
+    }
+
     /**
      * Display a listing of all chats for the current user.
      */
     public function index()
     {
-        $currentUser = auth()->user();
+        $currentUser = $this->authService->checkAuth();
         if (!$currentUser) {
             return redirect()->route('login')->with('error', 'Необходима авторизация');
         }
-        $chatService = app(ChatService::class);
-        $chatsWithInfo = $chatService->getChatWithInfo();
+        
+        $chatsWithInfo = $this->chatService->getChatWithInfo();
         return view('chats.index', [
             'chats' => $chatsWithInfo,
             'currentUser' => $currentUser,
@@ -51,7 +68,7 @@ class ChatController extends Controller
      */
     public function show($chatId)
     {
-        $currentUser = auth()->user();
+        $currentUser = $this->authService->checkAuth();
 
         if (!$currentUser) {
             return redirect()->route('login')->with('error', 'Необходима авторизация');
@@ -59,27 +76,22 @@ class ChatController extends Controller
 
         $chat = Chat::with(['user', 'rentDealer'])->findOrFail($chatId);
 
-        if ($chat->user_id != $currentUser->user_id && $chat->rent_dealer_id != $currentUser->user_id) {
+        if (!$this->authService->checkChatAccess($currentUser, $chat)) {
             return redirect()->route('chats.index')->with('error', 'У вас нет доступа к этому чату');
         }
-        $chatService = app(ChatService::class);
-        $houseService = app(HouseService::class);
-        $messageService = app(MessageService::class);
 
-        $interlocutor = $chatService->getInterlocutor($chat);
+        $interlocutor = $this->chatService->getInterlocutor($chat);
 
         if (!$interlocutor) {
             return redirect()->route('chats.index')->with('error', 'Собеседник не найден');
         }
 
-        $messages = $messageService->getMessages($chat);
-
-        $houses = $houseService->getHousesOfUser($interlocutor);
-
+        $messages = $this->messageService->getMessages($chat);
+        $houses = $this->houseService->getHousesOfUser($interlocutor);
         $house = $houses->count() == 1 ? $houses->first() : null;
 
         // Обновляем время последнего просмотра чата для текущего пользователя
-        $chatService->update($chat);
+        $this->chatService->update($chat);
 
         return view('chats.show', [
             'chat' => $chat,
@@ -96,7 +108,7 @@ class ChatController extends Controller
      */
     public function startWithUser($userId)
     {
-        $currentUser = auth()->user();
+        $currentUser = $this->authService->checkAuth();
 
         if (!$currentUser) {
             return redirect()->route('login')->with('error', 'Необходима авторизация');
@@ -110,10 +122,8 @@ class ChatController extends Controller
 
         $buyerId = $currentUser->user_id;
         $dealerId = $otherUser->user_id;
-        
-        $chatService = app(ChatService::class);
 
-        $chat = $chatService->getUsersChat($buyerId,$dealerId);
+        $chat = $this->chatService->getUsersChat($buyerId, $dealerId);
 
         if (!$chat) {
             $chat = Chat::create([
@@ -130,7 +140,7 @@ class ChatController extends Controller
      */
     public function sendMessage(Request $request, $chatId)
     {
-        $currentUser = auth()->user();
+        $currentUser = $this->authService->checkAuth();
 
         if (!$currentUser) {
             return response()->json([
@@ -140,17 +150,9 @@ class ChatController extends Controller
         }
         
         // Проверяем, не забанен ли пользователь
-        if ($currentUser->isBanned()) {
-            $banUntil = $currentUser->getBanUntilDate();
-            $banReason = $currentUser->ban_reason ? "\n\nПричина: {$currentUser->ban_reason}" : '';
-            $message = $currentUser->isBannedPermanently() 
-                ? 'Ваш аккаунт заблокирован навсегда. Вы не можете отправлять сообщения.' . $banReason
-                : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете отправлять сообщения до этой даты." . $banReason;
-            
-            return response()->json([
-                'success' => false,
-                'error' => $message
-            ], 403);
+        $banCheck = $this->messageService->canSendMessage($currentUser);
+        if ($banCheck) {
+            return response()->json($banCheck, 403);
         }
         
         try {
@@ -167,7 +169,7 @@ class ChatController extends Controller
         $chat = Chat::findOrFail($chatId);
 
         // Проверяем, что пользователь является участником чата
-        if ($chat->user_id != $currentUser->user_id && $chat->rent_dealer_id != $currentUser->user_id) {
+        if (!$this->authService->checkChatAccess($currentUser, $chat)) {
             return response()->json([
                 'success' => false,
                 'error' => 'У вас нет доступа к этому чату'
@@ -175,45 +177,9 @@ class ChatController extends Controller
         }
 
         try {
-            // Создаем сообщение
-            $message = Message::create([
-                'chat_id' => $chat->chat_id,
-                'user_id' => $currentUser->user_id,
-                'message' => $validated['message'],
-            ]);
-
-            // Обновляем время обновления чата
-            $chat->touch();
-
-            // Загружаем связь с пользователем для ответа
-            $message->load('user');
-
-            // Преобразуем сообщение в массив для JSON ответа
-            return response()->json([
-                'success' => true,
-                'message' => [
-                    'message_id' => $message->message_id,
-                    'chat_id' => $message->chat_id,
-                    'user_id' => $message->user_id,
-                    'message' => $message->message,
-                    'created_at' => $message->created_at->toIso8601String(),
-                    'user' => [
-                        'user_id' => $message->user->user_id,
-                        'name' => $message->user->name,
-                        'sename' => $message->user->sename,
-                        'patronymic' => $message->user->patronymic,
-                    ]
-                ],
-            ]);
+            $result = $this->messageService->sendMessage($chat, $currentUser->user_id, $validated['message']);
+            return response()->json($result);
         } catch (\Exception $e) {
-            \Log::error('Ошибка при отправке сообщения', [
-                'chat_id' => $chatId,
-                'user_id' => $currentUser->user_id ?? null,
-                'message' => $validated['message'] ?? null,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
             return response()->json([
                 'success' => false,
                 'error' => 'Ошибка при сохранении сообщения: ' . $e->getMessage()
@@ -226,7 +192,7 @@ class ChatController extends Controller
      */
     public function getMessages(Request $request, $chatId)
     {
-        $currentUser = auth()->user();
+        $currentUser = $this->authService->checkAuth();
 
         if (!$currentUser) {
             return response()->json(['error' => 'Необходима авторизация'], 401);
@@ -235,20 +201,12 @@ class ChatController extends Controller
         $chat = Chat::findOrFail($chatId);
 
         // Проверяем, что пользователь является участником чата
-        if ($chat->user_id != $currentUser->user_id && $chat->rent_dealer_id != $currentUser->user_id) {
+        if (!$this->authService->checkChatAccess($currentUser, $chat)) {
             return response()->json(['error' => 'У вас нет доступа к этому чату'], 403);
         }
 
         $lastMessageId = $request->query('lastMessageId');
-
-        $query = Message::where('chat_id', $chat->chat_id)
-            ->with('user');
-
-        if ($lastMessageId) {
-            $query->where('message_id', '>', $lastMessageId);
-        }
-
-        $messages = $query->orderBy('created_at', 'asc')->get();
+        $messages = $this->messageService->getNewMessages($chat, $lastMessageId);
 
         return response()->json(['messages' => $messages]);
     }
@@ -282,16 +240,13 @@ class ChatController extends Controller
      */
     public function getUnreadCount()
     {
-        $currentUser = auth()->user();
+        $currentUser = $this->authService->checkAuth();
 
         if (!$currentUser) {
             return response()->json(['unreadCount' => 0], 401);
         }
 
-        $unreadCount = 0;
-        $chatService = app(ChatService::class);
-
-        $unreadCount= $chatService->getUnreadCount();
+        $unreadCount = $this->chatService->getUnreadCount();
         return response()->json(['unreadCount' => $unreadCount]);
     }
 }
