@@ -138,7 +138,7 @@
                                     {{ $authorFio }}
                                 </div>
                             @endif
-                            <div class="message-content">{{ $message->message }}</div>
+                            <div class="message-content">{!! preg_replace('/Заказ\s*#(\d+)/i', '<a href="/orders/$1" class="order-link" style="color: #4f46e5; text-decoration: underline; font-weight: 600;">Заказ #$1</a>', e($message->message)) !!}</div>
                             <div class="message-meta">
                                 {{ $message->created_at->format('d.m.Y H:i') }}
                             </div>
@@ -488,7 +488,7 @@
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
-        contentDiv.textContent = messageData.message;
+        contentDiv.innerHTML = processOrderLinks(messageData.message);
         messageDiv.appendChild(contentDiv);
 
         const metaDiv = document.createElement('div');
@@ -500,6 +500,13 @@
 
         messagesContainer.appendChild(messageDiv);
         scrollToBottom();
+    }
+
+    // Обработка ссылок на заказы в тексте сообщений
+    function processOrderLinks(text) {
+        return text.replace(/Заказ\s*#(\d+)/gi, (match, orderId) => {
+            return `<a href="/orders/${orderId}" class="order-link" style="color: #4f46e5; text-decoration: underline; font-weight: 600;">Заказ #${orderId}</a>`;
+        });
     }
 
     // Прокрутка вниз

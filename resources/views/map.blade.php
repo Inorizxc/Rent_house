@@ -26,7 +26,7 @@
                         <option value="">Любой</option>
                     </select>
                 </div>
-<!-- Суета -->
+
                 <div class="filters-row">
                     <div class="field">
                         <label for="price_min">Цена от</label>

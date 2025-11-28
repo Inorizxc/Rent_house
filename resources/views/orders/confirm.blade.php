@@ -3,32 +3,32 @@
 @section('title', 'Подтверждение заказа')
 
 @section('main_content')
-<div class="page-wrapper">
-    <div class="confirm-container" style="max-width: 600px; margin: 40px auto; padding: 24px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <h1 class="confirm-title" style="font-size: 24px; font-weight: 600; margin-bottom: 24px; color: #111827;">Подтверждение заказа</h1>
+<div class="page-wrapper confirm-page-wrapper">
+    <div class="confirm-container">
+        <h1 class="confirm-title">Подтверждение заказа</h1>
 
         @if(session('error'))
-            <div class="message message-error" style="margin-bottom: 16px; padding: 12px; border-radius: 8px; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">
+            <div class="message message-error">
                 {{ session('error') }}
             </div>
         @endif
 
         @if(session('success'))
-            <div class="message message-success" style="margin-bottom: 16px; padding: 12px; border-radius: 8px; background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7;">
+            <div class="message message-success">
                 {{ session('success') }}
             </div>
         @endif
 
-        <div class="timer-warning" id="timerWarning" style="margin-bottom: 24px; padding: 12px; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; color: #92400e;">
+        <div class="timer-warning" id="timerWarning">
             <strong>⏰ Внимание!</strong> У вас осталось <span id="timer">10:00</span> минут для подтверждения заказа. После истечения времени даты будут освобождены.
         </div>
 
-        <div class="house-info" style="margin-bottom: 24px; padding: 16px; background: #f9fafb; border-radius: 8px;">
-            <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #111827;">Информация о доме</h2>
-            <div style="margin-bottom: 8px;">
+        <div class="house-info">
+            <h2>Информация о доме</h2>
+            <div>
                 <strong>Адрес:</strong> {{ $house->adress ?? '—' }}
             </div>
-            <div style="margin-bottom: 8px;">
+            <div>
                 <strong>Площадь:</strong> {{ $house->area ? $house->area . ' м²' : '—' }}
             </div>
             <div>
@@ -41,24 +41,24 @@
             </div>
         </div>
 
-        <div class="order-details" style="margin-bottom: 24px; padding: 16px; background: #f9fafb; border-radius: 8px;">
-            <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #111827;">Детали заказа</h2>
-            <div style="margin-bottom: 8px;">
+        <div class="order-details">
+            <h2>Детали заказа</h2>
+            <div>
                 <strong>Дата заезда:</strong> {{ \Carbon\Carbon::parse($checkin_date)->format('d.m.Y') }}
             </div>
-            <div style="margin-bottom: 8px;">
+            <div>
                 <strong>Дата выезда:</strong> {{ \Carbon\Carbon::parse($checkout_date)->format('d.m.Y') }}
             </div>
-            <div style="margin-bottom: 8px;">
+            <div>
                 <strong>Количество дней:</strong> {{ $day_count }}
             </div>
         </div>
 
-        <div class="confirm-actions" style="display: flex; gap: 12px;">
-            <button id="confirmButton" onclick="confirmOrder()" style="flex: 1; padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+        <div class="confirm-actions">
+            <button id="confirmButton" onclick="confirmOrder()">
                 Подтвердить
             </button>
-            <button id="cancelButton" onclick="cancelOrder()" style="flex: 1; padding: 12px 24px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            <button id="cancelButton" onclick="cancelOrder()">
                 Отказаться
             </button>
         </div>

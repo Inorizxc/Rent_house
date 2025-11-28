@@ -1,12 +1,12 @@
 @csrf
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+<div class="house-form-grid">
     {{-- Пользователь (Арендодатель) --}}
-    <div>
-        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Арендодатель</label>
+    <div class="house-form-field">
+        <label class="house-form-label">Арендодатель</label>
         @if($currentUser && $currentUser->isAdmin())
             {{-- Для администраторов: выбор из списка --}}
-            <select name="user_id" style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+            <select name="user_id" class="house-form-select">
                 <option value="">— Не выбран —</option>
                 @foreach ($users as $user)
                     @php
@@ -24,77 +24,74 @@
                 $currentUserFullName = trim(($currentUser->sename ?? '').' '.($currentUser->name ?? '').' '.($currentUser->patronymic ?? '')) ?: 'User #'.$currentUser->user_id;
             @endphp
             <input type="hidden" name="user_id" value="{{ $currentUser->user_id }}">
-            <input type="text" value="{{ $currentUserFullName }}" disabled 
-                   style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #f5f5f5; color: #666; cursor: not-allowed;">
+            <input type="text" value="{{ $currentUserFullName }}" disabled class="house-form-input">
         @endif
         @error('user_id') 
-            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+            <p class="house-form-error">{{ $message }}</p> 
         @enderror
     </div>
 
     {{-- Адрес --}}
-    <div>
-        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Адрес <span style="color: #dc2626;">*</span></label>
-        <div style="position: relative;">
+    <div class="house-form-field">
+        <label class="house-form-label">Адрес <span class="required">*</span></label>
+        <div class="house-form-input-wrapper">
             <input type="text" name="adress" id="address-input" value="{{ old('adress', $house->adress ?? '') }}"
                    placeholder="Начните вводить адрес..."
                    autocomplete="off"
-                   style="width: 100%; padding: 10px 14px; padding-right: 40px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
-            <span id="address-loading" style="display: none; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #2563eb; font-size: 16px;">⏳</span>
-            <span id="address-success" style="display: none; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #10b981; font-size: 16px;">✓</span>
-            <span id="address-error" style="display: none; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #dc2626; font-size: 16px;">✗</span>
+                   class="house-form-input" style="padding-right: 40px;">
+            <span id="address-loading" class="house-form-input-icon loading">⏳</span>
+            <span id="address-success" class="house-form-input-icon success">✓</span>
+            <span id="address-error" class="house-form-input-icon error">✗</span>
             
             {{-- Выпадающий список подсказок --}}
-            <div id="address-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: #fff; border: 1px solid #d0d0d0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); z-index: 1000; max-height: 200px; overflow-y: auto;">
+            <div id="address-suggestions" class="house-form-suggestions">
             </div>
         </div>
-        <p id="address-status" style="font-size: 11px; color: #666; margin-top: 4px; font-style: italic; min-height: 16px;">
+        <p id="address-status" class="house-form-status">
             Формат: Город, ул. Название улицы, д Номер. Например: "Саратов, ул. Степана Разина, д 93"
         </p>
         @if(Route::is('houses.create'))
-        <div id="request-url-container" style="margin-top: 8px; padding: 10px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px; display: none;">
-            <p style="font-size: 11px; font-weight: 600; color: #333; margin-bottom: 6px;">Сформированная ссылка для запроса:</p>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <div>
-                    <p style="font-size: 10px; color: #666; margin-bottom: 2px;">Запрос к нашему серверу:</p>
-                    <code id="server-request-url" style="font-size: 10px; color: #2563eb; word-break: break-all; display: block; padding: 4px; background: #fff; border-radius: 4px;"></code>
+        <div id="request-url-container" class="house-form-request-url">
+            <p class="house-form-request-url-title">Сформированная ссылка для запроса:</p>
+            <div class="house-form-request-url-content">
+                <div class="house-form-request-url-item">
+                    <p class="house-form-request-url-label">Запрос к нашему серверу:</p>
+                    <code id="server-request-url" class="house-form-request-url-code server"></code>
                 </div>
-                <div>
-                    <p style="font-size: 10px; color: #666; margin-bottom: 2px;">Примерный запрос к Yandex API:</p>
-                    <code id="yandex-request-url" style="font-size: 10px; color: #10b981; word-break: break-all; display: block; padding: 4px; background: #fff; border-radius: 4px;"></code>
+                <div class="house-form-request-url-item">
+                    <p class="house-form-request-url-label">Примерный запрос к Yandex API:</p>
+                    <code id="yandex-request-url" class="house-form-request-url-code yandex"></code>
                 </div>
             </div>
         </div>
         @endif
         @error('adress') 
-            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+            <p class="house-form-error">{{ $message }}</p> 
         @enderror
     </div>
 
     {{-- Площадь --}}
-    <div>
-        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Площадь (м²)</label>
-        <input type="number" step="0.01" name="area" value="{{ old('area', $house->area ?? '') }}"
-               style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+    <div class="house-form-field">
+        <label class="house-form-label">Площадь (м²)</label>
+        <input type="number" step="0.01" name="area" value="{{ old('area', $house->area ?? '') }}" class="house-form-input">
         @error('area') 
-            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+            <p class="house-form-error">{{ $message }}</p> 
         @enderror
     </div>
 
     {{-- Цена --}}
-    <div>
-        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Цена</label>
-        <input type="number" name="price_id" value="{{ old('price_id', $house->price_id ?? '') }}"
-               style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+    <div class="house-form-field">
+        <label class="house-form-label">Цена</label>
+        <input type="number" name="price_id" value="{{ old('price_id', $house->price_id ?? '') }}" class="house-form-input">
         @error('price_id') 
-            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+            <p class="house-form-error">{{ $message }}</p> 
         @enderror
     </div>
 
     {{-- Тип аренды --}}
-    <div>
-        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Тип аренды</label>
-        <select name="rent_type_name" style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+    <div class="house-form-field">
+        <label class="house-form-label">Тип аренды</label>
+        <select name="rent_type_name" class="house-form-select">
             <option value="">— Не выбран —</option>
             @foreach ($rentTypes as $rentType)
                 @php
@@ -107,14 +104,14 @@
             @endforeach
         </select>
         @error('rent_type_name') 
-            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+            <p class="house-form-error">{{ $message }}</p> 
         @enderror
     </div>
 
     {{-- Тип дома --}}
-    <div>
-        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Тип дома</label>
-        <select name="house_type_name" style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+    <div class="house-form-field">
+        <label class="house-form-label">Тип дома</label>
+        <select name="house_type_name" class="house-form-select">
             <option value="">— Не выбран —</option>
             @foreach ($houseTypes as $houseType)
                 @php
@@ -127,7 +124,7 @@
             @endforeach
         </select>
         @error('house_type_name') 
-            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+            <p class="house-form-error">{{ $message }}</p> 
         @enderror
     </div>
 
@@ -137,33 +134,28 @@
     <input type="hidden" name="lng" id="lng-input" value="{{ old('lng', $house->lng ?? '') }}">
 
     {{-- Удалён --}}
-    <div>
-        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Удалён?</label>
-        <select name="is_deleted" style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
+    <div class="house-form-field">
+        <label class="house-form-label">Удалён?</label>
+        <select name="is_deleted" class="house-form-select">
             <option value="0" {{ old('is_deleted', $house->is_deleted ?? 0) == 0 ? 'selected' : '' }}>Нет</option>
             <option value="1" {{ old('is_deleted', $house->is_deleted ?? 0) == 1 ? 'selected' : '' }}>Да</option>
         </select>
         @error('is_deleted') 
-            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+            <p class="house-form-error">{{ $message }}</p> 
         @enderror
     </div>
 
     {{-- Фото --}}
-    <div style="grid-column: 1 / -1;">
-        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333;">Фото</label>
+    <div class="house-form-photos">
+        <label class="house-form-label">Фото</label>
         
         {{-- Существующие фотографии (только для редактирования) --}}
         @if(isset($house) && $house->house_id && $house->photo && $house->photo->count() > 0)
-        <div id="existing-photos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;">
+        <div id="existing-photos" class="house-form-photos-grid">
             @foreach($house->photo as $photo)
-            <div class="photo-item" data-photo-id="{{ $photo->photo_id }}" style="position: relative; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #f5f5f5;">
-                <img src="{{ asset('storage/' . $photo->path) }}" alt="Фото" 
-                     style="width: 100%; height: 150px; object-fit: cover; display: block;">
-                <button type="button" class="delete-photo-btn" data-photo-id="{{ $photo->photo_id }}" 
-                        style="position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border: none; border-radius: 50%; background: rgba(220, 38, 38, 0.9); color: #fff; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: 0.2s ease;"
-                        onmouseover="this.style.background='rgba(220, 38, 38, 1)';"
-                        onmouseout="this.style.background='rgba(220, 38, 38, 0.9)';"
-                        title="Удалить фото">
+            <div class="house-form-photo-item" data-photo-id="{{ $photo->photo_id }}">
+                <img src="{{ asset('storage/' . $photo->path) }}" alt="Фото" class="house-form-photo-img">
+                <button type="button" class="house-form-photo-delete delete-photo-btn" data-photo-id="{{ $photo->photo_id }}" title="Удалить фото">
                     ×
                 </button>
             </div>
@@ -172,37 +164,30 @@
         @endif
         
         {{-- Поле для загрузки новых фотографий --}}
-        <input type="file" name="images[]" id="images-input" accept="image/*" multiple
-               style="width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #fff; color: #333;">
-        <p style="font-size: 12px; color: #666; margin-top: 4px;">Можно выбрать несколько фотографий одновременно</p>
+        <input type="file" name="images[]" id="images-input" accept="image/*" multiple class="house-form-input">
+        <p class="house-form-status">Можно выбрать несколько фотографий одновременно</p>
         
         {{-- Предпросмотр выбранных файлов --}}
-        <div id="preview-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; display: none;">
+        <div id="preview-container" class="house-form-photo-preview">
         </div>
         
         {{-- Скрытое поле для хранения ID удаленных фотографий --}}
         <input type="hidden" name="deleted_photos" id="deleted-photos-input" value="">
         
         @error('images.*') 
-            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+            <p class="house-form-error">{{ $message }}</p> 
         @enderror
         @error('images') 
-            <p style="font-size: 12px; color: #dc2626; margin-top: 4px;">{{ $message }}</p> 
+            <p class="house-form-error">{{ $message }}</p> 
         @enderror
     </div>
 </div>
 
-<div style="margin-top: 32px; display: flex; justify-content: flex-end; gap: 12px;">
-    <a href="{{ route('houses.index') }}" 
-       style="padding: 10px 20px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; color: #333; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.2s ease; display: inline-block;"
-       onmouseover="this.style.background='#f5f5f5'; this.style.borderColor='#d0d0d0';"
-       onmouseout="this.style.background='#fff'; this.style.borderColor='#e0e0e0';">
+<div class="house-form-actions">
+    <a href="{{ route('map') }}" class="house-form-btn-cancel">
         Отмена
     </a>
-    <button type="submit"
-            style="padding: 10px 20px; border: none; border-radius: 8px; background: #2563eb; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s ease;"
-            onmouseover="this.style.background='#1d4ed8';"
-            onmouseout="this.style.background='#2563eb';">
+    <button type="submit" class="house-form-btn-submit">
         Сохранить
     </button>
 </div>
@@ -301,9 +286,8 @@
         
         suggestionsList.forEach((suggestion, index) => {
             const item = document.createElement('div');
-            item.className = 'suggestion-item';
+            item.className = 'house-form-suggestion-item';
             item.dataset.index = index;
-            item.style.cssText = 'padding: 12px 14px; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background-color 0.2s; font-size: 14px; color: #333;';
             item.textContent = suggestion.display || suggestion.value || '';
             
             // Стили при наведении
@@ -668,12 +652,12 @@
     if (imagesInput) {
         imagesInput.addEventListener('change', function(e) {
             previewContainer.innerHTML = '';
-            previewContainer.style.display = 'none';
+            previewContainer.classList.remove('show');
             
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
             
-            previewContainer.style.display = 'grid';
+            previewContainer.classList.add('show');
             
             files.forEach((file, index) => {
                 if (!file.type.startsWith('image/')) return;
@@ -681,21 +665,17 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const div = document.createElement('div');
-                    div.className = 'preview-item';
-                    div.style.cssText = 'position: relative; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #f5f5f5;';
+                    div.className = 'house-form-photo-item';
                     div.dataset.fileIndex = index;
                     
                     const img = document.createElement('img');
                     img.src = e.target.result;
-                    img.style.cssText = 'width: 100%; height: 150px; object-fit: cover; display: block;';
+                    img.className = 'house-form-photo-img';
                     
                     const removeBtn = document.createElement('button');
                     removeBtn.type = 'button';
-                    removeBtn.className = 'remove-preview-btn';
+                    removeBtn.className = 'house-form-photo-delete remove-preview-btn';
                     removeBtn.textContent = '×';
-                    removeBtn.style.cssText = 'position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border: none; border-radius: 50%; background: rgba(220, 38, 38, 0.9); color: #fff; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: 0.2s ease;';
-                    removeBtn.onmouseover = function() { this.style.background = 'rgba(220, 38, 38, 1)'; };
-                    removeBtn.onmouseout = function() { this.style.background = 'rgba(220, 38, 38, 0.9)'; };
                     removeBtn.onclick = function() {
                         // Находим индекс элемента в контейнере
                         const previewItems = Array.from(previewContainer.children);
@@ -715,7 +695,7 @@
                         
                         // Если превью пусто, скрываем контейнер
                         if (previewContainer.children.length === 0) {
-                            previewContainer.style.display = 'none';
+                            previewContainer.classList.remove('show');
                         }
                     };
                     

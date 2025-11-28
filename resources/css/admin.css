@@ -59,7 +59,7 @@
 
 .action-buttons{display:flex;gap:8px;align-items:center}
 
-.btn{padding:8px 16px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all .2s ease;font-family:'Inter',sans-serif;text-decoration:none;display:inline-block}
+.btn{padding:8px 16px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all .2s ease;font-family:'Inter',sans-serif;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;min-height:36px;line-height:1.2}
 
 .btn-success{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff}
 
@@ -69,9 +69,9 @@
 
 .btn-danger:hover{background:#b91c1c}
 
-.reject-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center}
+.reject-modal,.ban-modal{display:none!important;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center}
 
-.reject-modal.show{display:flex}
+.reject-modal.show,.ban-modal.show{display:flex!important}
 
 .modal-content{background:#fff;border-radius:12px;padding:24px;max-width:400px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.2)}
 
@@ -222,15 +222,19 @@
 
 .ban-status.deleted{background:#f3f4f6;color:#6b7280}
 
-.ban-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ban-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-start}
+
+.verification-table td,.data-table td{vertical-align:middle}
 
 .house-image{width:60px;height:60px;object-fit:cover;border-radius:8px}
 
-.radio-group{display:flex;flex-direction:column;gap:8px}
+.radio-group{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 
-.radio-option{display:flex;align-items:center}
+.radio-option{display:flex;align-items:center;gap:8px;justify-content:flex-start}
 
-.radio-option label{margin:0;font-weight:400;cursor:pointer}
+.radio-option input[type="radio"]{margin:0;cursor:pointer;flex-shrink:0;width:auto}
+
+.radio-option label{display:inline;margin:0;font-weight:400;cursor:pointer;flex:0 1 auto;margin-bottom:0}
 
 .back-link{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:#fff;border:1px solid #e0e0e0;border-radius:8px;color:#333;text-decoration:none;font-size:14px;transition:all .2s;margin-bottom:16px}
 

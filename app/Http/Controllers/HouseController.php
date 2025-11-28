@@ -19,8 +19,7 @@ class HouseController extends Controller
 {
     //
     public function index(){
-        $houses = House::active()->orderBy("timestamp", "desc")->get();
-        return view("houses.index", ["houses"=>$houses]);
+        return redirect()->route('map');
     }
     public function show(string $id)
     {

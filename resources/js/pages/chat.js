@@ -147,7 +147,7 @@ class ChatManager {
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
-        contentDiv.textContent = messageData.message;
+        contentDiv.innerHTML = this.processMessageText(messageData.message);
         messageDiv.appendChild(contentDiv);
 
         const metaDiv = document.createElement('div');
@@ -157,6 +157,13 @@ class ChatManager {
 
         this.messagesContainer.appendChild(messageDiv);
         scrollToBottom(this.messagesContainer);
+    }
+
+    processMessageText(text) {
+        // Заменяем "Заказ #123" на кликабельную ссылку
+        return text.replace(/Заказ\s*#(\d+)/gi, (match, orderId) => {
+            return `<a href="/orders/${orderId}" class="order-link" style="color: #4f46e5; text-decoration: underline; font-weight: 600;">Заказ #${orderId}</a>`;
+        });
     }
 
     async loadNewMessages() {

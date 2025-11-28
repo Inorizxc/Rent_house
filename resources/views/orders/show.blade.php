@@ -69,14 +69,6 @@
                             {{ number_format($pricePerDay, 0, ',', ' ') }} ₽
                         </div>
                     </div>
-                    @if($order->day_count)
-                        <div class="info-row">
-                            <div class="info-label">Общая сумма:</div>
-                            <div class="info-value" style="font-weight: 700; font-size: 16px; color: #047857;">
-                                {{ number_format($totalAmount, 0, ',', ' ') }} ₽
-                            </div>
-                        </div>
-                    @endif
                 @endif
                 <div class="info-row">
                     <div class="info-label">Статус:</div>
@@ -91,6 +83,28 @@
                     </div>
                 </div>
             </div>
+
+            @if($order->house && $order->house->price_id && $order->day_count)
+                @php
+                    $pricePerDay = (float)$order->house->price_id;
+                    $totalAmount = $pricePerDay * (int)($order->day_count ?? 0);
+                @endphp
+                <div class="section-title" style="margin-top: 24px;">Суммарная стоимость</div>
+                <div class="order-total-section">
+                    <div class="order-total-row">
+                        <div class="order-total-label">Цена за день:</div>
+                        <div class="order-total-value">{{ number_format($pricePerDay, 0, ',', ' ') }} ₽</div>
+                    </div>
+                    <div class="order-total-row">
+                        <div class="order-total-label">Количество дней:</div>
+                        <div class="order-total-value">{{ $order->day_count }} дн.</div>
+                    </div>
+                    <div class="order-total-row order-total-final">
+                        <div class="order-total-label">Итого:</div>
+                        <div class="order-total-value-final">{{ number_format($totalAmount, 0, ',', ' ') }} ₽</div>
+                    </div>
+                </div>
+            @endif
 
             @if($order->house)
                 <div class="section-title" style="margin-top: 24px;">Информация о доме</div>
@@ -143,7 +157,7 @@
             @endif
         </div>
 
-        <div class="order-card" style="position: sticky; top: 67px; align-self: flex-start; height: auto;">
+        <div class="order-card order-card-sticky">
             <div class="section-title">Участники заказа</div>
             
             @if($isCustomer && $order->house && $order->house->user)
@@ -226,5 +240,88 @@
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    const stickyCard = document.querySelector('.order-card-sticky');
+    if (!stickyCard) return;
+
+    const headerHeight = 57; // Высота шапки
+    const stickyOffset = 8; // Отступ от шапки
+    const stickyTop = headerHeight + stickyOffset;
+
+    let initialTop = 0;
+    let savedLeft = 0;
+    let savedWidth = 0;
+
+    function initSticky() {
+        const rect = stickyCard.getBoundingClientRect();
+        initialTop = rect.top + window.scrollY;
+    }
+
+    function handleScroll() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (scrollTop + stickyTop >= initialTop) {
+            if (!stickyCard.classList.contains('is-sticky')) {
+                // Сохраняем текущую позицию и ширину перед переходом в sticky
+                const rect = stickyCard.getBoundingClientRect();
+                savedLeft = rect.left;
+                savedWidth = rect.width;
+                
+                stickyCard.classList.add('is-sticky');
+                stickyCard.style.width = savedWidth + 'px';
+                stickyCard.style.left = savedLeft + 'px';
+            } else {
+                // Обновляем left позицию при изменении размера окна
+                const container = stickyCard.closest('.order-container');
+                if (container) {
+                    const containerRect = container.getBoundingClientRect();
+                    // Вычисляем позицию правого столбца в grid (2fr 1fr)
+                    const leftColumnWidth = (containerRect.width - 24) * 2 / 3; // 2fr из 3 частей минус gap
+                    const rightColumnLeft = containerRect.left + leftColumnWidth + 24; // + gap
+                    stickyCard.style.left = rightColumnLeft + 'px';
+                }
+            }
+        } else {
+            if (stickyCard.classList.contains('is-sticky')) {
+                stickyCard.classList.remove('is-sticky');
+                stickyCard.style.width = '';
+                stickyCard.style.left = '';
+            }
+        }
+    }
+
+    // Инициализация при загрузке
+    function init() {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                initSticky();
+                handleScroll();
+            });
+        } else {
+            initSticky();
+            handleScroll();
+        }
+    }
+    
+    init();
+    
+    // Обработка скролла
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Пересчет при изменении размера окна
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            if (!stickyCard.classList.contains('is-sticky')) {
+                initSticky();
+            }
+            handleScroll();
+        }, 100);
+    }, { passive: true });
+})();
+</script>
 @endsection
 

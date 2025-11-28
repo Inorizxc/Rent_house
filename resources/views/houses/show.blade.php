@@ -139,7 +139,7 @@
                         Показать на карте
                     </a>
 
-                    <a href="{{ route('houses.index') }}" class="btn-secondary">
+                    <a href="{{ route('map') }}" class="btn-secondary">
                         ← Назад к списку домов
                     </a>
                 </div>
@@ -147,4 +147,87 @@
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    const stickyCard = document.querySelector('.right');
+    if (!stickyCard) return;
+
+    const headerHeight = 57; // Высота шапки
+    const stickyOffset = 8; // Отступ от шапки
+    const stickyTop = headerHeight + stickyOffset;
+
+    let initialTop = 0;
+    let savedLeft = 0;
+    let savedWidth = 0;
+
+    function initSticky() {
+        const rect = stickyCard.getBoundingClientRect();
+        initialTop = rect.top + window.scrollY;
+    }
+
+    function handleScroll() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (scrollTop + stickyTop >= initialTop) {
+            if (!stickyCard.classList.contains('is-sticky')) {
+                // Сохраняем текущую позицию и ширину перед переходом в sticky
+                const rect = stickyCard.getBoundingClientRect();
+                savedLeft = rect.left;
+                savedWidth = rect.width;
+                
+                stickyCard.classList.add('is-sticky');
+                stickyCard.style.width = savedWidth + 'px';
+                stickyCard.style.left = savedLeft + 'px';
+            } else {
+                // Обновляем left позицию при изменении размера окна
+                const container = stickyCard.closest('.container');
+                if (container) {
+                    const containerRect = container.getBoundingClientRect();
+                    // Вычисляем позицию правого столбца в grid (2fr 1fr)
+                    const leftColumnWidth = (containerRect.width - 24) * 2 / 3; // 2fr из 3 частей минус gap
+                    const rightColumnLeft = containerRect.left + leftColumnWidth + 24; // + gap
+                    stickyCard.style.left = rightColumnLeft + 'px';
+                }
+            }
+        } else {
+            if (stickyCard.classList.contains('is-sticky')) {
+                stickyCard.classList.remove('is-sticky');
+                stickyCard.style.width = '';
+                stickyCard.style.left = '';
+            }
+        }
+    }
+
+    // Инициализация при загрузке
+    function init() {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                initSticky();
+                handleScroll();
+            });
+        } else {
+            initSticky();
+            handleScroll();
+        }
+    }
+    
+    init();
+    
+    // Обработка скролла
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Пересчет при изменении размера окна
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            if (!stickyCard.classList.contains('is-sticky')) {
+                initSticky();
+            }
+            handleScroll();
+        }, 100);
+    }, { passive: true });
+})();
+</script>
 @endsection

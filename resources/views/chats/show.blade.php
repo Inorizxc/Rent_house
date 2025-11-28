@@ -4,7 +4,7 @@
 
 @section('main_content')
 <div class="page-wrapper">
-        <div class="chat-container" style="grid-template-columns: {{ $house ? '350px 1fr' : '1fr' }};">
+        <div class="chat-container" style="grid-template-columns: {{ $house ? '1fr 3fr' : '1fr' }};">
         @if($house)
         <!-- Панель информации о доме -->
         <div class="house-info-panel">
@@ -104,7 +104,7 @@
                                     {{ $authorFio }}
                                 </div>
                             @endif
-                            <div class="message-content">{{ $message->message }}</div>
+                            <div class="message-content">{!! preg_replace('/Заказ\s*#(\d+)/i', '<a href="/orders/$1" class="order-link" style="color: #4f46e5; text-decoration: underline; font-weight: 600;">Заказ #$1</a>', e($message->message)) !!}</div>
                             <div class="message-meta">
                                 {{ $message->created_at->format('d.m.Y H:i') }}
                             </div>
