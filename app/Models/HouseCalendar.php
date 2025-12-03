@@ -22,4 +22,13 @@ class HouseCalendar extends Model
     public function house(){
         return $this->belongsTo(House::class,"house_id","house_id");
     }
+
+    //public static function selfDelete(){
+    //    $table = self::where('date', '<>', null);
+    //    foreach($row as $table){
+    //        if($row->date<now()){
+    //            $row->delete();
+    //        }
+    //    }
+    //}
 }

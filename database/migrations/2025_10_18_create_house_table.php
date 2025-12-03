@@ -25,6 +25,8 @@ return new class extends Migration
             $table->text("is_deleted");
             $table->text("lng");
             $table->text("lat");
+            $table->boolean('is_banned_permanently')->default(false);
+            $table->dateTime('banned_until')->nullable();
             $table->timestamps();
         });
     }
