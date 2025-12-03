@@ -31,21 +31,16 @@ class UserController extends Controller
         return view("users.index", ["users"=>$users]);
     }
     public function show(string $id){
-        // Редиректим на вкладку houses по умолчанию
         return redirect()->route('profile.tab.houses', $id);
     }
 
     public function tabHouses(string $id, Request $request){
         $user = $this->userService->getUserWithRoleHouse($id);
-
-        // Используем Policy для проверки доступа (разрешает гостям просматривать)
         $currentUser = auth()->user();
-        // Для гостей доступ разрешен, проверку делаем только для авторизованных
         if ($currentUser) {
             $this->authorize('view', $user);
         }
 
-        // Проверяем, является ли текущий пользователь владельцем
         $isOwner = $currentUser && $currentUser->canEditProfile($user);
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -56,7 +51,6 @@ class UserController extends Controller
             ])->render();
         }
 
-        // Если не AJAX запрос, возвращаем полную страницу
         return view("users.show", [
             "user" => $user,
             "houses" => $user->house,
@@ -67,16 +61,14 @@ class UserController extends Controller
     public function tabSettings(string $id, Request $request){
         $user = $this->userService->getUserWithRoleHouse($id);
 
-        // Проверяем доступ к приватным данным (только владелец)
         $currentUser = auth()->user();
         if (!$currentUser) {
             abort(403, 'Требуется авторизация');
         }
 
-        // Используем Policy для проверки доступа к приватным данным
         $this->authorize('viewPrivateData', $user);
 
-        $isOwner = true; // Если дошли сюда, значит это владелец
+        $isOwner = true;
 
         if ($request->ajax() || $request->wantsJson()) {
             return view("users.partials.settings-tab", [
@@ -85,7 +77,6 @@ class UserController extends Controller
             ])->render();
         }
 
-        // Если не AJAX запрос, возвращаем полную страницу
         return view("users.show", [
             "user" => $user,
             "houses" => $user->house,
@@ -96,42 +87,32 @@ class UserController extends Controller
     public function tabOrders(string $id, Request $request){
         $user = $this->userService->getUserWithRoleHouse($id);
 
-        // Проверяем доступ к заказам (только администратор или владелец профиля)
         $currentUser = auth()->user();
         if (!$currentUser) {
             abort(403, 'Требуется авторизация для просмотра заказов');
         }
 
-        // Перезагружаем роли пользователя для корректной проверки бана
         $currentUser->load('roles');
-        
-        // Забаненные пользователи не могут просматривать заказы (проверка ДО Policy)
+
         if ($currentUser->isBanned()) {
             abort(403, 'Заблокированные пользователи не могут просматривать заказы');
         }
 
-        // Используем Policy для проверки доступа к заказам (внутри Policy также есть проверка бана)
         $this->authorize('viewOrders', $user);
 
-        // Дополнительная проверка бана после authorize (на случай, если что-то прошло)
         if ($currentUser->isBanned()) {
             abort(403, 'Заблокированные пользователи не могут просматривать заказы');
         }
 
-        // Проверяем, является ли текущий пользователь владельцем
         $isOwner = $currentUser->canEditProfile($user);
 
-        // Получаем заказы, где пользователь является заказчиком
         $ordersAsCustomer = $this->orderService->getOrdersAsCustomer($user->user_id);
 
-        // Получаем заказы на дома пользователя (если он арендодатель)
         $houseIds = $user->house->pluck('house_id')->toArray();
         $ordersAsOwner = $this->orderService->getOrdersAsOwner($houseIds);
 
-        // Объединяем заказы и убираем дубликаты
         $allOrders = $ordersAsCustomer->merge($ordersAsOwner)->unique('order_id')->sortByDesc('created_at');
 
-        // Получаем списки заказчиков и владельцев для фильтров
         $customers = User::whereIn('user_id', $allOrders->pluck('customer_id')->unique()->filter())
             ->orderBy('name')
             ->get();
@@ -152,7 +133,6 @@ class UserController extends Controller
             ])->render();
         }
 
-        // Если не AJAX запрос, возвращаем полную страницу
         return view("users.show", [
             "user" => $user,
             "houses" => $user->house,

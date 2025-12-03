@@ -16,9 +16,6 @@ class HouseChatController extends Controller
 {   
 
 
-    /**
-     * Показать чат для конкретного дома
-     */
     public function show($houseId)
     {
 
@@ -63,13 +60,10 @@ class HouseChatController extends Controller
 
         $chatService->update($chat);
 
-        // Загружаем календарь дома
         $house->load('house_calendar');
 
-        // Очищаем истекшие временные блокировки
         TemporaryBlock::cleanExpired();
 
-        // Получаем активные временные блокировки для этого дома (от других пользователей)
         $temporaryBlocks = TemporaryBlock::where('house_id', $houseId)
             ->where('expires_at', '>', now())
             ->where('user_id', '!=', $currentUser->user_id)
@@ -81,7 +75,6 @@ class HouseChatController extends Controller
         }
         $temporaryBlockedDates = array_unique($temporaryBlockedDates);
 
-        // Объединяем постоянные забронированные даты с временными блокировками других пользователей
         $calendar = $house->house_calendar;
         $bookedDates = $calendar ? ($calendar->dates ?? []) : [];
         $allBlockedDates = array_unique(array_merge($bookedDates, $temporaryBlockedDates));
@@ -96,9 +89,6 @@ class HouseChatController extends Controller
         ]);
     }
 
-    /**
-     * Отправить сообщение в чат
-     */
     public function sendMessage(Request $request, $houseId)
     {
         $chatService = app(ChatService::class);
@@ -113,8 +103,7 @@ class HouseChatController extends Controller
                 'error' => 'Необходима авторизация'
             ], 401);
         }
-        
-        // Проверяем, не забанен ли пользователь
+
         if ($currentUser->isBanned()) {
             $banUntil = $currentUser->getBanUntilDate();
             $banReason = $currentUser->ban_reason ? "\n\nПричина: {$currentUser->ban_reason}" : '';
@@ -159,20 +148,16 @@ class HouseChatController extends Controller
         }
 
         try {
-            // Создаем сообщение КАК БУДТО БЫ ПЕРЕПИСАТЬ
             $message = Message::create([
                 'chat_id' => $chat->chat_id,
                 'user_id' => $currentUser->user_id,
                 'message' => $validated['message'],
             ]);
 
-            // Обновляем время обновления чата
             $chat->touch();
 
-            // Загружаем связь с пользователем для ответа
             $message->load('user');
 
-            // Преобразуем сообщение в массив для JSON ответа
             return response()->json([
                 'success' => true,
                 'message' => [
@@ -197,9 +182,6 @@ class HouseChatController extends Controller
         }
     }
 
-    /**
-     * Получить новые сообщения (для AJAX запросов)
-     */
     public function getMessages(Request $request, $houseId)
     {
 

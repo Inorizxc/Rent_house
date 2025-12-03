@@ -13,12 +13,10 @@ use App\enum\OrderStatus;
 
 class AdminPanelController extends Controller
 {
-    /**
-     * Отображает админ-панель с таблицами БД
-     */
+
     public function index(Request $request)
     {
-        // Получаем список всех таблиц из БД
+
         $tableNames = collect(DB::select("
             SELECT name
             FROM sqlite_master
@@ -41,7 +39,6 @@ class AdminPanelController extends Controller
             $columns = collect(DB::select("PRAGMA table_info(" . DB::getPdo()->quote($selectedTable) . ")"));
         }
 
-        // Обработка добавления записи
         if ($request->isMethod('post') && $selectedTable) {
             $blocked = ['id', 'created_at', 'updated_at', 'deleted_at'];
             $fillable = $columns
@@ -66,7 +63,6 @@ class AdminPanelController extends Controller
             }
         }
 
-        // Получение данных для отображения
         $rows = collect();
         $total = 0;
         $pages = 1;
@@ -94,13 +90,10 @@ class AdminPanelController extends Controller
         ]);
     }
 
-    /**
-     * Обновление записи в таблице
-     */
+   
     public function update(Request $request, $table, $id)
     {
         try {
-            // Проверяем существование таблицы
             $tableNames = collect(DB::select("
                 SELECT name
                 FROM sqlite_master
@@ -111,16 +104,13 @@ class AdminPanelController extends Controller
                 return back()->with('error', 'Таблица не найдена');
             }
 
-            // Определяем primary key
             $primaryKey = $this->getPrimaryKey($table);
             if (!$primaryKey) {
                 return back()->with('error', 'Не удалось определить первичный ключ таблицы');
             }
 
-            // Получаем информацию о колонках
             $columns = collect(DB::select("PRAGMA table_info(" . DB::getPdo()->quote($table) . ")"));
-            
-            // Блокируем изменение системных полей
+
             $blocked = ['id', 'created_at', 'updated_at', 'deleted_at'];
             $fillable = $columns
                 ->pluck('name')
@@ -128,7 +118,6 @@ class AdminPanelController extends Controller
                 ->values()
                 ->all();
 
-            // Получаем данные для обновления
             $payload = $request->only($fillable);
             foreach ($payload as $key => $value) {
                 if ($value === '') {
@@ -137,7 +126,6 @@ class AdminPanelController extends Controller
             }
 
             if (!empty($payload)) {
-                // Обновляем запись
                 DB::table($table)
                     ->where($primaryKey, $id)
                     ->update($payload);
@@ -152,13 +140,9 @@ class AdminPanelController extends Controller
         }
     }
 
-    /**
-     * Удаление записи из таблицы
-     */
     public function delete(Request $request, $table, $id)
     {
         try {
-            // Определяем primary key
             $primaryKey = $this->getPrimaryKey($table);
             if (!$primaryKey) {
                 return back()->with('error', 'Не удалось определить первичный ключ таблицы');
@@ -172,12 +156,8 @@ class AdminPanelController extends Controller
         }
     }
 
-    /**
-     * Получение первичного ключа таблицы
-     */
     private function getPrimaryKey($table)
     {
-        // Безопасная проверка имени таблицы
         $tableNames = collect(DB::select("
             SELECT name
             FROM sqlite_master
@@ -194,21 +174,16 @@ class AdminPanelController extends Controller
                 return $column->name;
             }
         }
-        // Если не найден, пробуем стандартные варианты
         $columns = collect($info)->pluck('name')->toArray();
         if (in_array('id', $columns)) {
             return 'id';
         }
-        // Пробуем другие стандартные варианты
         if (in_array($table . '_id', $columns)) {
             return $table . '_id';
         }
         return null;
     }
 
-    /**
-     * Отображает все чаты в админ-панели
-     */
     public function chats(Request $request)
     {
         $limit = (int) $request->get('per', 20);
@@ -245,7 +220,6 @@ class AdminPanelController extends Controller
                 return $chat;
             });
 
-        // Получаем списки пользователей для фильтров (те, кто участвует в чатах)
         $userIds = collect();
         $userIds = $userIds->merge(Chat::pluck('user_id'));
         $userIds = $userIds->merge(Chat::pluck('rent_dealer_id'));
@@ -267,9 +241,6 @@ class AdminPanelController extends Controller
         ]);
     }
 
-    /**
-     * Отображает детали конкретного чата
-     */
     public function chatShow($chatId)
     {
         $chat = Chat::with(['user', 'rentDealer'])->findOrFail($chatId);
@@ -285,9 +256,6 @@ class AdminPanelController extends Controller
         ]);
     }
 
-    /**
-     * Отображает все заказы в админ-панели
-     */
     public function orders(Request $request)
     {
         $limit = (int) $request->get('per', 20);
@@ -306,7 +274,7 @@ class AdminPanelController extends Controller
                 $status = OrderStatus::from($statusFilter);
                 $query->where('order_status', $status);
             } catch (\ValueError $e) {
-                // Игнорируем неверный статус
+
             }
         }
 
@@ -329,7 +297,6 @@ class AdminPanelController extends Controller
             ->limit($limit)
             ->get();
 
-        // Получаем список всех пользователей для фильтров
         $customers = User::whereHas('ordersAsCustomer')->orderBy('name')->get();
         $owners = User::whereHas('house', function($q) {
             $q->whereHas('order');
@@ -350,9 +317,6 @@ class AdminPanelController extends Controller
         ]);
     }
 
-    /**
-     * Отображает детали конкретного заказа
-     */
     public function orderShow($orderId)
     {
         $order = Order::with(['house.user', 'house.photo', 'customer'])
