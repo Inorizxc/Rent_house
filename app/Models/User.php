@@ -5,13 +5,15 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use App\Models\Role;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
+    use Notifiable, TwoFactorAuthenticatable;
     protected $table = "users";
     protected $primaryKey = "user_id";
     public $incrementing = true;
@@ -32,6 +34,8 @@ class User extends Authenticatable
         'banned_until', // Для временного бана - дата окончания
         'ban_reason', // Причина бана
         'original_role_id', // Сохраняем оригинальную роль перед баном
+        'verified_deny_reason',
+        'verified_email',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -41,6 +45,7 @@ class User extends Authenticatable
         'verification_denied_until' => 'datetime',
         'banned_until' => 'datetime',
         'original_role_id' => 'integer',
+        'verified_email' => 'boolean',
     ];
 
     public static function boot(){

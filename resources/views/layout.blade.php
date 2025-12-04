@@ -40,7 +40,7 @@
                                     if (!$lastMessage) {
                                         continue;
                                     }
-
+                                    
                                     // Определяем, когда пользователь последний раз просматривал чат
                                     $lastReadAt = null;
                                     if ($chat->user_id == $currentUser->user_id) {
@@ -59,6 +59,29 @@
                                 }
                             }
                         @endphp
+
+
+                        @if($currentUser)
+                            @if ($currentUser->ban_reason !=null)
+                        <div class="ban_reason" id="chatLinkWrapper">
+                            
+                            @if($currentUser->is_banned_permanently)
+                            <a
+                                class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal"
+                            >
+                                Причина бана: {{ $currentUser->ban_reason }}.  Забанен навсегда.
+                            </a>
+                            @else
+                                <a
+                                class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal"
+                            >
+                                Причина бана: {{ $currentUser->ban_reason }}.   Забанен до: {{ $currentUser->banned_until->format('d.m.Y H:i') }}.
+                            </a>
+                            @endif
+                        </div>
+                        @endif
+                        @endif
+
                         <div class="chat-link-wrapper" id="chatLinkWrapper">
                             <a
                                 href="{{ route('chats.index') }}"
@@ -70,6 +93,7 @@
                                 <span class="chat-badge" id="chatBadge">{{ $unreadCount > 99 ? '99+' : $unreadCount }}</span>
                             @endif
                         </div>
+                        
                         <div class="user-menu-wrapper" style="position:relative;">
                             <div class="user-menu">
                                 <button
