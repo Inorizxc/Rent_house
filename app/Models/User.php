@@ -242,23 +242,34 @@ class User extends Authenticatable
         
         // Если роль "Забанен"
         if ($this->role_id == $bannedRole->role_id) {
+            // ЗАКОММЕНТИРОВАНО: Автоматическая проверка и разбан истекших банов
             // Для временного бана проверяем дату окончания
+            // if ($this->banned_until) {
+            //     if ($this->banned_until instanceof \Carbon\Carbon) {
+            //         // Если дата прошла, автоматически разбаниваем
+            //         if ($this->banned_until->isPast()) {
+            //             $this->unban();
+            //             return false;
+            //         }
+            //         return true;
+            //     }
+            //     $banDate = \Carbon\Carbon::parse($this->banned_until, 'Europe/Moscow');
+            //     if ($banDate->isPast()) {
+            //         $this->unban();
+            //         return false;
+            //     }
+            //     return true;
+            // }
+            
+            // Временный бан - проверяем только дату без автоматического разбана
             if ($this->banned_until) {
                 if ($this->banned_until instanceof \Carbon\Carbon) {
-                    // Если дата прошла, автоматически разбаниваем
-                    if ($this->banned_until->isPast()) {
-                        $this->unban();
-                        return false;
-                    }
-                    return true;
+                    return !$this->banned_until->isPast();
                 }
                 $banDate = \Carbon\Carbon::parse($this->banned_until, 'Europe/Moscow');
-                if ($banDate->isPast()) {
-                    $this->unban();
-                    return false;
-                }
-                return true;
+                return !$banDate->isPast();
             }
+            
             // Постоянный бан (нет даты окончания)
             return true;
         }
