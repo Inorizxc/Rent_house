@@ -46,6 +46,9 @@ Route::middleware(['auth', 'banned'])->group(function () {
         Route::get('/house/{houseId}/order/confirm', 'showConfirm')->name('house.order.confirm.show');
         Route::post('/house/{houseId}/order/confirm', 'confirm')->name('house.order.confirm');
         Route::post('/house/{houseId}/order/cancel', 'cancel')->name('house.order.cancel');
+        Route::post('/orders/{orderId}/confirm-seller', 'confirmBySeller')->name('orders.confirm.seller');
+        Route::post('/orders/{orderId}/request-refund', 'requestRefund')->name('orders.request.refund');
+        Route::post('/orders/{orderId}/cancel-customer', 'cancelByCustomer')->name('orders.cancel.customer');
     });
 
     Route::controller(ChatController::class)->group(function () {

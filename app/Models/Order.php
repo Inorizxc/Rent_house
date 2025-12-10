@@ -19,10 +19,12 @@ class Order extends Model
         "day_count",
         "customer_id",
         "order_status",
+        "seller_confirmed",
         "original_data",
         ];
     protected $casts = [
         "order_status" => OrderStatus::class,
+        "seller_confirmed" => "boolean",
     ];
     
     /**

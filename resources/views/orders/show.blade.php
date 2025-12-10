@@ -216,11 +216,48 @@
                 </div>
             @endif
 
-            @if($isCustomer && $order->house)
+            @if($isCustomer && $order->house) 
                 <div class="actions">
                     <a href="{{ route('house.chat', $order->house->house_id) }}" class="btn-primary">
                         Написать владельцу
                     </a>
+                </div>
+            @endif
+
+            {{-- Действия для покупателя --}}
+            @if($isCustomer)
+                @if($order->order_status === \App\enum\OrderStatus::PENDING && !$order->seller_confirmed)
+                    <div class="actions" style="margin-top: 12px;">
+                        <form method="POST" action="{{ route('orders.cancel.customer', $order->order_id) }}" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="btn-secondary" onclick="return confirm('Вы уверены, что хотите отменить заказ?')">
+                                Отменить заказ
+                            </button>
+                        </form>
+                    </div>
+                @elseif($order->order_status === \App\enum\OrderStatus::PROCESSING || $order->order_status === \App\enum\OrderStatus::COMPLETED)
+                    @if($order->order_status !== \App\enum\OrderStatus::REFUND)
+                        <div class="actions" style="margin-top: 12px;">
+                            <form method="POST" action="{{ route('orders.request.refund', $order->order_id) }}" style="display: inline;">
+                                @csrf
+                                <button type="submit" class="btn-secondary" onclick="return confirm('Вы уверены, что хотите запросить возврат средств?')">
+                                    Запросить возврат
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+                @endif
+            @endif
+
+            {{-- Действия для продавца --}}
+            @if($isOwner && $order->order_status === \App\enum\OrderStatus::PENDING && !$order->seller_confirmed)
+                <div class="actions" style="margin-top: 12px;">
+                    <form method="POST" action="{{ route('orders.confirm.seller', $order->order_id) }}" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn-primary" onclick="return confirm('Вы подтверждаете, что будете выполнять этот заказ? Деньги будут начислены на ваш баланс.')">
+                            Подтвердить выполнение заказа
+                        </button>
+                    </form>
                 </div>
             @endif
 

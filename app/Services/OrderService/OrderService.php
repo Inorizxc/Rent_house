@@ -41,6 +41,7 @@ class OrderService
             'customer_id' => $data['customer_id'],
             'order_status_id' => $data['order_status_id'] ?? null,
             'order_status' => $data['order_status'] ?? null,
+            'seller_confirmed' => $data['seller_confirmed'] ?? false,
             'original_data' => json_encode($originalData),
         ]);
     }
@@ -169,6 +170,134 @@ class OrderService
             ->with(['house.photo', 'house.rent_type', 'house.house_type', 'customer'])
             ->orderBy('created_at', 'desc')
             ->get();
+    }
+
+    /**
+     * Вычисляет стоимость заказа
+     */
+    public function calculateOrderAmount(Order $order): float
+    {
+        if (!$order->house || !$order->house->price_id || !$order->day_count) {
+            return 0;
+        }
+
+        $pricePerDay = (float) $order->house->price_id;
+        return $pricePerDay * (int) $order->day_count;
+    }
+
+    /**
+     * Подтверждает заказ продавцом и начисляет деньги
+     */
+    public function confirmBySeller(Order $order): bool
+    {
+        if ($order->seller_confirmed) {
+            return false; // Уже подтвержден
+        }
+
+        if ($order->order_status !== OrderStatus::PENDING) {
+            return false; // Неверный статус
+        }
+
+        $house = $order->house;
+        if (!$house) {
+            return false;
+        }
+
+        $seller = $house->user;
+        if (!$seller) {
+            return false;
+        }
+
+        // Вычисляем сумму заказа
+        $amount = $this->calculateOrderAmount($order);
+
+        if ($amount <= 0) {
+            return false;
+        }
+
+        // Начисляем деньги продавцу
+        $seller->balance = ($seller->balance ?? 0) + $amount;
+        $seller->save();
+
+        // Обновляем заказ
+        $order->seller_confirmed = true;
+        $order->order_status = OrderStatus::PROCESSING;
+        $order->save();
+
+        return true;
+    }
+
+    /**
+     * Запрашивает возврат средств
+     */
+    public function requestRefund(Order $order): bool
+    {
+        if ($order->order_status === OrderStatus::REFUND) {
+            return false; // Уже запрошен возврат
+        }
+
+        if ($order->order_status === OrderStatus::CANCELLED) {
+            return false; // Заказ отменен
+        }
+
+        $order->order_status = OrderStatus::REFUND;
+        $order->save();
+
+        return true;
+    }
+
+    /**
+     * Отменяет заказ покупателем (если продавец еще не подтвердил)
+     */
+    public function cancelByCustomer(Order $order): bool
+    {
+        if ($order->order_status === OrderStatus::CANCELLED) {
+            return false; // Уже отменен
+        }
+
+        // Если продавец уже подтвердил, нельзя просто отменить
+        if ($order->seller_confirmed) {
+            return false;
+        }
+
+        $order->order_status = OrderStatus::CANCELLED;
+        $order->save();
+
+        // Освобождаем даты в календаре
+        if ($order->house) {
+            $this->unblockDates($order->house, $order);
+        }
+
+        return true;
+    }
+
+    /**
+     * Освобождает даты в календаре при отмене заказа
+     */
+    public function unblockDates(House $house, Order $order): void
+    {
+        $calendar = $house->house_calendar;
+        
+        if (!$calendar || !$calendar->dates) {
+            return;
+        }
+
+        // Генерируем даты заказа
+        $checkinDate = new \DateTime($order->date_of_order);
+        $datesToUnblock = [];
+        
+        for ($i = 0; $i < $order->day_count; $i++) {
+            $date = clone $checkinDate;
+            $date->modify("+{$i} days");
+            $datesToUnblock[] = $date->format('Y-m-d');
+        }
+
+        // Удаляем даты из календаря
+        $existingDates = $calendar->dates ?? [];
+        $updatedDates = array_values(array_diff($existingDates, $datesToUnblock));
+        
+        $calendar->dates = $updatedDates;
+        $calendar->save();
     }
 }
 

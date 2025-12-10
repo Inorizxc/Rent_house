@@ -456,4 +456,85 @@ class OrderController extends Controller
             'message' => 'Временная блокировка отменена'
         ]);
     }
+
+    /**
+     * Подтвердить заказ продавцом (начисление денег)
+     */
+    public function confirmBySeller(Request $request, $orderId)
+    {
+        $user = $this->authService->checkAuth();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Необходима авторизация');
+        }
+
+        $order = Order::with(['house.user'])->findOrFail($orderId);
+
+        // Проверяем, что пользователь является владельцем дома
+        if (!$order->house || $order->house->user_id != $user->user_id) {
+            abort(403, 'У вас нет прав для подтверждения этого заказа');
+        }
+
+        $result = $this->orderService->confirmBySeller($order);
+
+        if ($result) {
+            return redirect()->back()->with('success', 'Заказ подтвержден! Деньги начислены на ваш баланс.');
+        } else {
+            return redirect()->back()->with('error', 'Не удалось подтвердить заказ. Возможно, он уже подтвержден или имеет неверный статус.');
+        }
+    }
+
+    /**
+     * Запросить возврат средств
+     */
+    public function requestRefund(Request $request, $orderId)
+    {
+        $user = $this->authService->checkAuth();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Необходима авторизация');
+        }
+
+        $order = Order::findOrFail($orderId);
+
+        // Проверяем, что пользователь является покупателем
+        if ($order->customer_id != $user->user_id) {
+            abort(403, 'У вас нет прав для запроса возврата по этому заказу');
+        }
+
+        $result = $this->orderService->requestRefund($order);
+
+        if ($result) {
+            return redirect()->back()->with('success', 'Запрос на возврат средств отправлен.');
+        } else {
+            return redirect()->back()->with('error', 'Не удалось отправить запрос на возврат. Возможно, он уже отправлен или заказ отменен.');
+        }
+    }
+
+    /**
+     * Отменить заказ покупателем (если продавец еще не подтвердил)
+     */
+    public function cancelByCustomer(Request $request, $orderId)
+    {
+        $user = $this->authService->checkAuth();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Необходима авторизация');
+        }
+
+        $order = Order::findOrFail($orderId);
+
+        // Проверяем, что пользователь является покупателем
+        if ($order->customer_id != $user->user_id) {
+            abort(403, 'У вас нет прав для отмены этого заказа');
+        }
+
+        $result = $this->orderService->cancelByCustomer($order);
+
+        if ($result) {
+            return redirect()->back()->with('success', 'Заказ отменен.');
+        } else {
+            return redirect()->back()->with('error', 'Не удалось отменить заказ. Возможно, продавец уже подтвердил его выполнение.');
+        }
+    }
 }
