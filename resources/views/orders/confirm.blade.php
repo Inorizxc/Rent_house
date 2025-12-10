@@ -71,19 +71,16 @@
     const checkoutDate = '{{ $checkout_date }}';
     const temporaryBlockId = {{ $temporary_block_id }};
     
-    // Время истечения из БД (timestamp в миллисекундах)
     const expiresAtTimestamp = {{ $expires_at->timestamp }} * 1000;
     
     let timerInterval;
 
-    // Вычисляем оставшееся время на основе времени истечения из БД
     function getRemainingTime() {
         const now = Date.now();
         const remaining = Math.max(0, Math.floor((expiresAtTimestamp - now) / 1000));
         return remaining;
     }
 
-    // Таймер обратного отсчета
     function updateTimer() {
         const timeLeft = getRemainingTime();
         const minutes = Math.floor(timeLeft / 60);
@@ -93,24 +90,20 @@
         
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
-            // Автоматически отменяем заказ при истечении времени
             cancelOrder(true);
         return;
         }
     }
 
-    // Запускаем таймер
     const initialTimeLeft = getRemainingTime();
     if (initialTimeLeft <= 0) {
-        // Время уже истекло, сразу отменяем заказ
         cancelOrder(true);
     } else {
-        // Запускаем таймер только если время еще не истекло
         timerInterval = setInterval(updateTimer, 1000);
         updateTimer();
     }
 
-    // Подтверждение заказа
+
     async function confirmOrder() {
         const confirmButton = document.getElementById('confirmButton');
         const cancelButton = document.getElementById('cancelButton');
@@ -121,7 +114,6 @@
         
         clearInterval(timerInterval);
 
-        // Используем форму для отправки данных (чтобы правильно обработать redirect)
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `/house/${houseId}/order/confirm`;
@@ -154,7 +146,7 @@
         form.submit();
     }
 
-    // Отмена заказа
+
     async function cancelOrder(isExpired = false) {
         const confirmButton = document.getElementById('confirmButton');
         const cancelButton = document.getElementById('cancelButton');
@@ -187,7 +179,6 @@
             const data = await response.json();
 
             if (response.ok && data.success) {
-                // Перенаправляем на страницу чата
                 window.location.href = `/house/${houseId}/chat`;
             } else {
                 throw new Error(data.error || 'Ошибка при отмене заказа');
@@ -195,7 +186,6 @@
         } catch (error) {
             console.error('Error:', error);
             alert(error.message || 'Ошибка при отмене заказа');
-            // Все равно перенаправляем на страницу чата
             window.location.href = `/house/${houseId}/chat`;
         }
     }

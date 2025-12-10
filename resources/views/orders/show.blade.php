@@ -22,7 +22,6 @@
                             default => 'pending'
                         };
                         $statusText = $order->order_status->value;
-                        // Если статус REFUND, показываем более понятный текст
                         if ($order->order_status === \App\enum\OrderStatus::REFUND) {
                             if ($order->isRefunded()) {
                                 $statusText = 'Возврат выполнен';
@@ -315,8 +314,8 @@
     const stickyCard = document.querySelector('.order-card-sticky');
     if (!stickyCard) return;
 
-    const headerHeight = 57; // Высота шапки
-    const stickyOffset = 8; // Отступ от шапки
+    const headerHeight = 57;
+    const stickyOffset = 8;
     const stickyTop = headerHeight + stickyOffset;
 
     let initialTop = 0;
@@ -333,7 +332,6 @@
         
         if (scrollTop + stickyTop >= initialTop) {
             if (!stickyCard.classList.contains('is-sticky')) {
-                // Сохраняем текущую позицию и ширину перед переходом в sticky
                 const rect = stickyCard.getBoundingClientRect();
                 savedLeft = rect.left;
                 savedWidth = rect.width;
@@ -342,13 +340,11 @@
                 stickyCard.style.width = savedWidth + 'px';
                 stickyCard.style.left = savedLeft + 'px';
             } else {
-                // Обновляем left позицию при изменении размера окна
                 const container = stickyCard.closest('.order-container');
                 if (container) {
                     const containerRect = container.getBoundingClientRect();
-                    // Вычисляем позицию правого столбца в grid (2fr 1fr)
-                    const leftColumnWidth = (containerRect.width - 24) * 2 / 3; // 2fr из 3 частей минус gap
-                    const rightColumnLeft = containerRect.left + leftColumnWidth + 24; // + gap
+                    const leftColumnWidth = (containerRect.width - 24) * 2 / 3;
+                    const rightColumnLeft = containerRect.left + leftColumnWidth + 24;
                     stickyCard.style.left = rightColumnLeft + 'px';
                 }
             }
@@ -361,7 +357,6 @@
         }
     }
 
-    // Инициализация при загрузке
     function init() {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function() {
@@ -376,10 +371,8 @@
     
     init();
     
-    // Обработка скролла
     window.addEventListener('scroll', handleScroll, { passive: true });
     
-    // Пересчет при изменении размера окна
     let resizeTimeout;
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimeout);

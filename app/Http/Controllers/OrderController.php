@@ -28,9 +28,7 @@ class OrderController extends Controller
         $this->authService = $authService;
     }
 
-    /**
-     * Display a listing of the orders.
-     */
+
     public function index(Request $request)
     {
         $user = $this->authService->checkAuth();
@@ -41,17 +39,14 @@ class OrderController extends Controller
 
         $query = Order::with(['house', 'user', 'order_status']);
 
-        // Фильтрация по пользователю (если нужно)
         if ($request->has('customer_id')) {
             $query->where('customer_id', $request->customer_id);
         }
 
-        // Фильтрация по дому
         if ($request->has('house_id')) {
             $query->where('house_id', $request->house_id);
         }
 
-        // Фильтрация по статусу
         if ($request->has('order_status_id')) {
             $query->where('order_status_id', $request->order_status_id);
         }
@@ -64,9 +59,7 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new order.
-     */
+
     public function create()
     {
         $houses = House::active()->get();
@@ -78,9 +71,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created order in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -97,9 +87,7 @@ class OrderController extends Controller
             ->with('success', 'Заказ успешно создан');
     }
 
-    /**
-     * Display the specified order.
-     */
+
     public function show($id)
     {
         $order = Order::with(['house.user', 'house.photo', 'customer'])->findOrFail($id);
@@ -110,12 +98,10 @@ class OrderController extends Controller
             return redirect()->route('login')->with('error', 'Необходима авторизация');
         }
         
-        // Забаненные пользователи не могут просматривать заказы
         if ($currentUser->isBanned()) {
             abort(403, 'Заблокированные пользователи не могут просматривать заказы');
         }
         
-        // Проверяем доступ
         $access = $this->authService->checkOrderAccess($currentUser, $order);
         
         if (!$access['has_access']) {
@@ -130,9 +116,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing the specified order.
-     */
     public function edit($id)
     {
         $order = Order::findOrFail($id);
@@ -146,9 +129,7 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified order in storage.
-     */
+
     public function update(Request $request, $id)
     {
         $order = Order::findOrFail($id);
@@ -167,9 +148,7 @@ class OrderController extends Controller
             ->with('success', 'Заказ успешно обновлен');
     }
 
-    /**
-     * Remove the specified order from storage.
-     */
+
     public function destroy($id)
     {
         $order = Order::findOrFail($id);
@@ -179,9 +158,7 @@ class OrderController extends Controller
             ->with('success', 'Заказ успешно удален');
     }
 
-    /**
-     * Create order from chat (for booking dates) - создает временную блокировку и редиректит на подтверждение
-     */
+
     public function createFromChat(Request $request, $houseId)
     {
         $user = $this->authService->checkAuth();
@@ -193,7 +170,6 @@ class OrderController extends Controller
             ], 401);
         }
         
-        // Проверяем, не забанен ли пользователь
         $banCheck = $this->authService->checkBan($user);
         if ($banCheck) {
             return response()->json([
@@ -209,18 +185,15 @@ class OrderController extends Controller
 
         $house = House::findOrFail($houseId);
         
-        // Проверяем, не забанен ли дом и не удален ли он
         if ($house->is_deleted || $house->isBanned()) {
             abort(404, 'Дом не найден или недоступен');
         }
 
-        // Генерируем даты для блокировки
         $datesToBlock = $this->orderValidationService->generateDatesToBlock(
             $validated['checkin_date'],
             $validated['checkout_date']
         );
 
-        // Проверяем доступность дат
         $availability = $this->orderValidationService->checkDatesAvailability($house, $datesToBlock, $user);
         
         if (!$availability['available']) {
@@ -230,10 +203,8 @@ class OrderController extends Controller
             ], 400);
         }
 
-        // Создаем временную блокировку
         $this->orderValidationService->createTemporaryBlock($house, $user, $datesToBlock);
 
-        // Редиректим на страницу подтверждения
         $redirectUrl = route('house.order.confirm.show', $houseId) . '?' . http_build_query([
             'checkin_date' => $validated['checkin_date'],
             'checkout_date' => $validated['checkout_date']
@@ -245,9 +216,7 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Показать страницу подтверждения заказа с временной блокировкой
-     */
+
     public function showConfirm(Request $request, $houseId)
     {
 
@@ -268,30 +237,25 @@ class OrderController extends Controller
             ->with('success', 'Денег нет у тебя нищеброд');
             //return redirect()->route('map')->with('error', 'Недостаточно средств на балансе');
         }
-        // Генерируем даты для блокировки
         $datesToBlock = $this->orderValidationService->generateDatesToBlock(
             $request->checkin_date,
             $request->checkout_date
         );
 
-        // Проверяем доступность дат
         $availability = $this->orderValidationService->checkDatesAvailability($house, $datesToBlock, $user);
         
         if (!$availability['available']) {
             return redirect()->back()->with('error', $availability['error']);
         }
 
-        // Находим временную блокировку текущего пользователя
         $temporaryBlock = $this->orderValidationService->findUserTemporaryBlock($houseId, $user->user_id);
 
         if (!$temporaryBlock) {
             return redirect()->back()->with('error', 'Временная блокировка не найдена или истекла');
         }
 
-        // Вычисляем количество дней
         $dayCount = $this->orderService->calculateDayCount($request->checkin_date, $request->checkout_date);
 
-        // Вычисляем оставшееся время в секундах
         $expiresAt = $temporaryBlock->expires_at;
         $remainingSeconds = max(0, now()->diffInSeconds($expiresAt, false));
 
@@ -306,9 +270,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Подтвердить заказ (окончательная блокировка + создание заказа)
-     */
     public function confirm(Request $request, $houseId)
     {
         $user = $this->authService->checkAuth();
@@ -317,7 +278,6 @@ class OrderController extends Controller
             return redirect()->route('login')->with('error', 'Необходима авторизация');
         }
         
-        // Проверяем, не забанен ли пользователь
         $banCheck = $this->authService->checkBan($user);
         if ($banCheck) {
             return redirect()->back()->with('error', $banCheck['message']);
@@ -331,13 +291,11 @@ class OrderController extends Controller
 
         $house = House::with('user')->findOrFail($houseId);
         
-        // Генерируем даты для блокировки
         $datesToBlock = $this->orderValidationService->generateDatesToBlock(
             $request->checkin_date,
             $request->checkout_date
         );
 
-        // Проверяем и валидируем временную блокировку
         $temporaryBlock = $this->orderValidationService->validateTemporaryBlock(
             $request->temporary_block_id,
             $houseId,
@@ -349,7 +307,6 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Временная блокировка не найдена, истекла или даты не совпадают');
         }
 
-        // Проверяем доступность дат еще раз
         $availability = $this->orderValidationService->checkDatesAvailability($house, $datesToBlock);
         
         if (!$availability['available']) {
@@ -357,12 +314,8 @@ class OrderController extends Controller
             return redirect()->back()->with('error', $availability['error']);
         }
 
-        // Вычисляем количество дней
         $dayCount = $this->orderService->calculateDayCount($request->checkin_date, $request->checkout_date);
 
-
-
-        // Получаем статус по умолчанию (Рассмотрение)
         $defaultStatus = OrderStatus::PENDING;
         
         if (!$defaultStatus) {
@@ -370,7 +323,6 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Не найден статус заказа');
         }
 
-        // Создаем заказ в БД
         try {
             $order = $this->orderService->createOrder([
                 'house_id' => $house->house_id,
@@ -380,7 +332,6 @@ class OrderController extends Controller
                 'order_status' => $defaultStatus,
             ]);
         } catch (\Exception $e) {
-            // Удаляем временную блокировку при ошибке
             $temporaryBlock->delete();
             Log::error('Ошибка при создании заказа', [
                 'house_id' => $houseId,
@@ -390,13 +341,10 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Ошибка при создании заказа: ' . $e->getMessage());
         }
 
-        // Блокируем даты в календаре окончательно
         $this->orderService->blockDates($house, $datesToBlock);
 
-        // Удаляем временную блокировку
         $temporaryBlock->delete();
 
-        // Находим или создаем чат между покупателем и продавцом
         $seller = $house->user;
         
         if (!$seller) {
@@ -407,7 +355,6 @@ class OrderController extends Controller
         $buyerId = $user->user_id;
         $dealerId = $seller->user_id;
 
-        // Если покупатель и продавец - один и тот же человек, пропускаем создание чата
         if ($buyerId != $dealerId) {
             $chat = $this->orderService->getOrCreateChat($buyerId, $dealerId);
             $this->orderService->sendOrderConfirmationMessage(
@@ -420,14 +367,10 @@ class OrderController extends Controller
             );
         }
 
-        // Перенаправляем на страницу чата
         return redirect()->route('house.chat', $houseId)
             ->with('success', 'Заказ успешно создан и подтвержден!');
     }
 
-    /**
-     * Отменить временную блокировку
-     */
     public function cancel(Request $request, $houseId)
     {
         $user = $this->authService->checkAuth();
@@ -439,7 +382,6 @@ class OrderController extends Controller
             ], 401);
         }
         
-        // Проверяем, не забанен ли пользователь
         $banCheck = $this->authService->checkBan($user);
         if ($banCheck) {
             return response()->json([
@@ -452,7 +394,6 @@ class OrderController extends Controller
             'temporary_block_id' => 'required|exists:temporary_blocks,temporary_block_id',
         ]);
 
-        // Удаляем временную блокировку
         $removed = $this->orderValidationService->removeTemporaryBlock(
             $request->temporary_block_id,
             $houseId,
@@ -465,9 +406,7 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Подтвердить заказ арендодателем (перевести средства)
-     */
+
     public function approve($id)
     {
         $user = $this->authService->checkAuth();
@@ -478,21 +417,17 @@ class OrderController extends Controller
 
         $order = Order::with(['house.user', 'customer'])->findOrFail($id);
 
-        // Проверяем, что пользователь является владельцем дома
         if (!$order->house || $order->house->user_id != $user->user_id) {
             abort(403, 'У вас нет прав на подтверждение этого заказа');
         }
 
-        // Проверяем, что заказ еще не обработан
         if ($order->order_status === OrderStatus::COMPLETED) {
             return redirect()->back()->with('error', 'Заказ уже обработан');
         }
 
-        // Переводим средства
         $success = $this->orderService->transferFrozenFunds($order);
 
         if ($success) {
-            // Обновляем статус заказа на "Завершено"
             $order->order_status = OrderStatus::COMPLETED;
             $order->save();
 
@@ -502,10 +437,7 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Запросить возврат средств (арендатор)
-     * Только меняет статус на REFUND, не возвращает средства
-     */
+
     public function requestRefund($id)
     {
         $user = $this->authService->checkAuth();
@@ -516,12 +448,10 @@ class OrderController extends Controller
 
         $order = Order::with(['house.user', 'customer'])->findOrFail($id);
 
-        // Проверяем, что пользователь является заказчиком
         if ($order->customer_id != $user->user_id) {
             abort(403, 'У вас нет прав на запрос возврата для этого заказа');
         }
 
-        // Проверяем, что заказ еще не в статусе возврата или отмены
         if ($order->order_status === OrderStatus::REFUND) {
             return redirect()->back()->with('error', 'Возврат уже запрошен или выполнен');
         }
@@ -530,17 +460,13 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Заказ отменен');
         }
 
-        // Меняем статус на REFUND (запрос возврата)
         $order->order_status = OrderStatus::REFUND;
         $order->save();
 
         return redirect()->back()->with('success', 'Запрос на возврат средств отправлен. Ожидайте подтверждения от арендодателя или администратора.');
     }
 
-    /**
-     * Подтвердить возврат средств (арендодатель)
-     * Подтверждает запрос возврата и возвращает средства
-     */
+
     public function approveRefund($id)
     {
         $user = $this->authService->checkAuth();
@@ -551,22 +477,18 @@ class OrderController extends Controller
 
         $order = Order::with(['house.user', 'customer'])->findOrFail($id);
 
-        // Проверяем, что пользователь является владельцем дома
         if (!$order->house || $order->house->user_id != $user->user_id) {
             abort(403, 'У вас нет прав на подтверждение возврата для этого заказа');
         }
 
-        // Проверяем, что заказ в статусе запроса возврата
         if ($order->order_status !== OrderStatus::REFUND) {
             return redirect()->back()->with('error', 'Запрос на возврат не найден');
         }
 
-        // Проверяем, не был ли возврат уже выполнен
         if ($order->isRefunded()) {
             return redirect()->back()->with('error', 'Возврат средств уже был выполнен ранее.');
         }
 
-        // Выполняем возврат средств
         $success = $this->orderService->refundOrder($order);
 
         if ($success) {

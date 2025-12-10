@@ -1,8 +1,3 @@
-/**
- * Модуль для работы с вкладками профиля
- */
-
-// Функция для инициализации фото-каруселей
 function initPhotoCarousels(container) {
     const photoBlocks = container.querySelectorAll('[data-house-photos]');
     photoBlocks.forEach(block => {
@@ -25,7 +20,6 @@ function initPhotoCarousels(container) {
     });
 }
 
-// Функция для определения активной вкладки из URL
 function getActiveTabFromURL() {
     const path = window.location.pathname;
     if (path.match(/\/tab\/settings/)) return 'settings';
@@ -34,7 +28,6 @@ function getActiveTabFromURL() {
     return 'houses';
 }
 
-// Функция для загрузки контента вкладки через AJAX
 async function loadTab(tab, route, panel) {
     if (!panel) return;
 
@@ -55,7 +48,6 @@ async function loadTab(tab, route, panel) {
         const html = await response.text();
         panel.innerHTML = html;
 
-        // Выполняем скрипты из загруженного HTML
         const scripts = panel.querySelectorAll('script');
         scripts.forEach(oldScript => {
             const newScript = document.createElement('script');
@@ -68,7 +60,6 @@ async function loadTab(tab, route, panel) {
             oldScript.remove();
         });
 
-        // Небольшая задержка для обновления DOM
         setTimeout(() => {
             initPhotoCarousels(panel);
 
@@ -112,7 +103,7 @@ async function loadTab(tab, route, panel) {
     }
 }
 
-// Функция для проверки наличия контента в панели
+
 function hasContent(panel) {
     if (!panel) return false;
     return (
@@ -128,7 +119,7 @@ function hasContent(panel) {
     );
 }
 
-// Функция для переключения вкладки
+
 function switchTab(tab, route, buttons, panels, skipLoad = false) {
     const btn = Array.from(buttons).find(b => b.dataset.tab === tab);
     if (!btn) return;
@@ -136,7 +127,7 @@ function switchTab(tab, route, buttons, panels, skipLoad = false) {
     const panel = document.getElementById('tab-' + tab);
     const hasContentInPanel = hasContent(panel);
 
-    // Обновляем активные кнопки и панели
+
     buttons.forEach(b => b.classList.remove('active'));
     panels.forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
@@ -145,12 +136,11 @@ function switchTab(tab, route, buttons, panels, skipLoad = false) {
         panel.classList.add('active');
     }
 
-    // Обновляем URL
+
     if (route) {
         window.history.replaceState({ tab, route }, '', route);
     }
 
-    // Загружаем контент через AJAX только если его нет и не пропущена загрузка
     if (route && !skipLoad && !hasContentInPanel) {
         loadTab(tab, route, panel);
     } else if (hasContentInPanel && panel) {
@@ -164,7 +154,6 @@ function switchTab(tab, route, buttons, panels, skipLoad = false) {
     }
 }
 
-// Инициализация при загрузке страницы
 function initProfileTabs() {
     const buttons = document.querySelectorAll('.profile-tab-btn');
     const panels = document.querySelectorAll('.profile-tab-panel');
@@ -175,7 +164,6 @@ function initProfileTabs() {
         return;
     }
 
-    // Проверяем наличие основных элементов профиля
     const profileWrapper = document.querySelector('.profile-wrapper');
     const profileHeader = document.querySelector('.profile-header');
 
@@ -184,7 +172,6 @@ function initProfileTabs() {
         return;
     }
 
-    // Обработчик клика по вкладкам
     buttons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -194,7 +181,6 @@ function initProfileTabs() {
         });
     });
 
-    // Обработчик события popstate
     window.addEventListener('popstate', (e) => {
         const currentPath = window.location.pathname;
 
@@ -214,7 +200,6 @@ function initProfileTabs() {
         window.location.reload();
     });
 
-    // Определяем активную вкладку при первой загрузке
     const activeTab = getActiveTabFromURL();
     const activePanel = document.getElementById('tab-' + activeTab);
 
@@ -245,14 +230,12 @@ function initProfileTabs() {
     }
 }
 
-// Инициализируем при загрузке DOM
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initProfileTabs);
 } else {
     initProfileTabs();
 }
 
-// Также инициализируем при полной загрузке страницы
 window.addEventListener('load', () => {
     setTimeout(initProfileTabs, 100);
 });
