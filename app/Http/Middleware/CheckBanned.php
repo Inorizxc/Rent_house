@@ -14,53 +14,22 @@ class CheckBanned
         $user = $request->user();
         
         if ($user) {
-<<<<<<< HEAD
-            // ЗАКОММЕНТИРОВАНО: Автоматическая проверка и разбан истекших банов
-            // Проверяем и автоматически разбаниваем, если срок истек
-            // Метод isBanned() уже делает это автоматически, но проверяем явно для надежности
-            // if ($user->banned_until) {
-            //     $banDate = $user->banned_until instanceof \Carbon\Carbon 
-            //         ? $user->banned_until->setTimezone('Europe/Moscow')
-            //         : \Carbon\Carbon::parse($user->banned_until, 'Europe/Moscow');
-            //     
-            //     if ($banDate->isPast()) {
-            //         $user->unban();
-            //         // После разбана продолжаем выполнение запроса
-            //         return $next($request);
-            //     }
-            // }
-            
-            // Проверяем, забанен ли пользователь (после проверки истекших банов)
-=======
-            if ($user->banned_until) {
-                $banDate = $user->banned_until instanceof \Carbon\Carbon 
-                    ? $user->banned_until->setTimezone('Europe/Moscow')
-                    : \Carbon\Carbon::parse($user->banned_until, 'Europe/Moscow');
-                
-                if ($banDate->isPast()) {
-                    $user->unban();
-                    return $next($request);
-                }
-            }
-
->>>>>>> 5aa33b28e8c427fe9f510799b248d1be5651b98f
             if ($user->isBanned()) {
-                if (in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'])) {
-                    $banUntil = $user->getBanUntilDate();
-                    $banReason = $user->ban_reason ? "\n\nПричина: {$user->ban_reason}" : '';
-                    $message = $user->isBannedPermanently() 
-                        ? 'Ваш аккаунт заблокирован навсегда. Вы не можете выполнять действия на сайте.' . $banReason
-                        : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете выполнять действия на сайте до этой даты." . $banReason;
-                    
-                    if ($request->ajax() || $request->wantsJson()) {
-                        return response()->json([
-                            'success' => false,
-                            'error' => $message
-                    ], 403);
-                    }
-                    
-                    return back()->with('error', $message)->withInput();
+                
+                $banUntil = $user->getBanUntilDate();
+                $banReason = $user->ban_reason ? "\n\nПричина: {$user->ban_reason}" : '';
+                $message = $user->isBannedPermanently() 
+                    ? 'Ваш аккаунт заблокирован навсегда. Вы не можете выполнять действия на сайте.' . $banReason
+                    : "Ваш аккаунт заблокирован до {$banUntil->format('d.m.Y H:i')}. Вы не можете выполнять действия на сайте до этой даты." . $banReason;
+                
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => $message
+                ], 403);
                 }
+                return back();
+                
             }
         }
         

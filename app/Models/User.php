@@ -103,11 +103,9 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        // Проверяем роль через связь
         if (!$this->relationLoaded('roles')) {
             $this->load('roles');
         }
-
         return $this->roles && strtolower($this->roles->uniq_name ?? '') === 'admin';
     }
 
@@ -160,61 +158,9 @@ class User extends Authenticatable
 
     public function isBanned(): bool
     {
-        if (!$this->roles) {
-            $this->load('roles');
-        }
-        
-        $bannedRole = Role::where('uniq_name', 'Banned')->first();
-        if (!$bannedRole) {
-            return false;
-        }
-        
-        if ($this->role_id == $bannedRole->role_id) {
-<<<<<<< HEAD
-            // ЗАКОММЕНТИРОВАНО: Автоматическая проверка и разбан истекших банов
-            // Для временного бана проверяем дату окончания
-            // if ($this->banned_until) {
-            //     if ($this->banned_until instanceof \Carbon\Carbon) {
-            //         // Если дата прошла, автоматически разбаниваем
-            //         if ($this->banned_until->isPast()) {
-            //             $this->unban();
-            //             return false;
-            //         }
-            //         return true;
-            //     }
-            //     $banDate = \Carbon\Carbon::parse($this->banned_until, 'Europe/Moscow');
-            //     if ($banDate->isPast()) {
-            //         $this->unban();
-            //         return false;
-            //     }
-            //     return true;
-            // }
-            
-            // Временный бан - проверяем только дату без автоматического разбана
-            if ($this->banned_until) {
-                if ($this->banned_until instanceof \Carbon\Carbon) {
-                    return !$this->banned_until->isPast();
-=======
-            if ($this->banned_until) {
-                if ($this->banned_until instanceof \Carbon\Carbon) {
-                    if ($this->banned_until->isPast()) {
-                        $this->unban();
-                        return false;
-                    }
-                    return true;
->>>>>>> 5aa33b28e8c427fe9f510799b248d1be5651b98f
-                }
-                $banDate = \Carbon\Carbon::parse($this->banned_until, 'Europe/Moscow');
-                return !$banDate->isPast();
-            }
-<<<<<<< HEAD
-            
-            // Постоянный бан (нет даты окончания)
-=======
->>>>>>> 5aa33b28e8c427fe9f510799b248d1be5651b98f
+        if($this->role_id=='5'){
             return true;
         }
-        
         return false;
     }
 
@@ -222,10 +168,9 @@ class User extends Authenticatable
     {
         $bannedRole = Role::where('uniq_name', 'Banned')->first();
         if (!$bannedRole || $this->role_id != $bannedRole->role_id) {
-            return; // Пользователь не забанен
+            return;
         }
-        
-        // Восстанавливаем оригинальную роль или устанавливаем роль "User" по умолчанию
+
         $originalRoleId = $this->original_role_id;
         if (!$originalRoleId) {
             $userRole = Role::where('uniq_name', 'User')->first();
@@ -236,7 +181,7 @@ class User extends Authenticatable
             $this->role_id = $originalRoleId;
             $this->original_role_id = null;
             $this->banned_until = null;
-            $this->ban_reason = null; // Очищаем причину бана при разбане
+            $this->ban_reason = null;
             $this->save();
         }
     }

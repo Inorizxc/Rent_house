@@ -132,47 +132,6 @@ class BanController extends Controller
         return redirect()->route('admin.bans', ['type' => 'users']);
     }
 
-    public function banHouse(Request $request, $houseId)
-    {
-        $this->ensureBanColumnsExist();
-        
-        $request->validate([
-            'ban_type' => 'required|in:temporary,permanent',
-            'ban_until' => 'required_if:ban_type,temporary|nullable|date|after:now',
-        ]);
-
-        $house = House::findOrFail($houseId);
-
-        if ($request->input('ban_type') === 'permanent') {
-            $house->is_banned_permanently = true;
-            $house->banned_until = null;
-        } else {
-            $house->is_banned_permanently = false;
-            if ($request->has('ban_until') && $request->input('ban_until')) {
-                $house->banned_until = Carbon::parse($request->input('ban_until'), 'Europe/Moscow');
-            } else {
-
-                    $house->banned_until = Carbon::now('Europe/Moscow')->addDays(7);
-            }
-        }
-
-        $house->save();
-        $house->refresh(); 
-
-        return redirect()->route('admin.bans', ['type' => 'houses', 'page' => $request->get('page', 1)]);
-    }
-
-    public function unbanHouse($houseId)
-    {
-        $house = House::findOrFail($houseId);
-        
-        $house->is_banned_permanently = false;
-        $house->banned_until = null;
-        $house->save();
-
-        return redirect()->route('admin.bans', ['type' => 'houses']);
-    }
-
     public function deleteHouse($houseId)
     {
         $house = House::findOrFail($houseId);

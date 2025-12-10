@@ -52,8 +52,7 @@ class HouseController extends Controller
         }
 
         $house = new House();
-        
-        // Для администраторов показываем всех пользователей, для арендодателей - только их
+
         if ($currentUser && $currentUser->isAdmin()) {
             $users = User::orderBy('name')->get(['user_id','name','sename','patronymic']);
         } else {

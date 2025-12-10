@@ -72,7 +72,7 @@ class UserPolicy
         if (!$user) {
             return false;
         }
-        $user->load('roles');
+        //$user->load('roles');
         if ($user->isBanned()) {
             return false;
         }
