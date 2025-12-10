@@ -43,6 +43,8 @@ Route::middleware(['auth', 'banned'])->group(function () {
     Route::controller(OrderController::class)->group(function () {
         Route::get('/orders/{id}', 'show')->name('orders.show');
         Route::post('/orders/{id}/approve', 'approve')->name('orders.approve');
+        Route::post('/orders/{id}/refund/request', 'requestRefund')->name('orders.refund.request');
+        Route::post('/orders/{id}/refund/approve', 'approveRefund')->name('orders.refund.approve');
         Route::post('/house/{houseId}/order', 'createFromChat')->name('house.order.create');
         Route::get('/house/{houseId}/order/confirm', 'showConfirm')->name('house.order.confirm.show');
         Route::post('/house/{houseId}/order/confirm', 'confirm')->name('house.order.confirm');
@@ -127,6 +129,7 @@ Route::middleware(['auth', 'admin'])->prefix('adminpanel')->name('admin.')->grou
         // Заказы
         Route::get('/orders', 'orders')->name('orders');
         Route::get('/orders/{orderId}', 'orderShow')->name('order.show');
+        Route::post('/orders/{orderId}/refund', 'refundOrder')->name('orders.refund');
     });
     
     // Верификация

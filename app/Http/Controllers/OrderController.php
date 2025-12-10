@@ -495,4 +495,78 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Ошибка при переводе средств. Попробуйте позже.');
         }
     }
+
+    /**
+     * Запросить возврат средств (арендатор)
+     * Только меняет статус на REFUND, не возвращает средства
+     */
+    public function requestRefund($id)
+    {
+        $user = $this->authService->checkAuth();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Необходима авторизация');
+        }
+
+        $order = Order::with(['house.user', 'customer'])->findOrFail($id);
+
+        // Проверяем, что пользователь является заказчиком
+        if ($order->customer_id != $user->user_id) {
+            abort(403, 'У вас нет прав на запрос возврата для этого заказа');
+        }
+
+        // Проверяем, что заказ еще не в статусе возврата или отмены
+        if ($order->order_status === OrderStatus::REFUND) {
+            return redirect()->back()->with('error', 'Возврат уже запрошен или выполнен');
+        }
+
+        if ($order->order_status === OrderStatus::CANCELLED) {
+            return redirect()->back()->with('error', 'Заказ отменен');
+        }
+
+        // Меняем статус на REFUND (запрос возврата)
+        $order->order_status = OrderStatus::REFUND;
+        $order->save();
+
+        return redirect()->back()->with('success', 'Запрос на возврат средств отправлен. Ожидайте подтверждения от арендодателя или администратора.');
+    }
+
+    /**
+     * Подтвердить возврат средств (арендодатель)
+     * Подтверждает запрос возврата и возвращает средства
+     */
+    public function approveRefund($id)
+    {
+        $user = $this->authService->checkAuth();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Необходима авторизация');
+        }
+
+        $order = Order::with(['house.user', 'customer'])->findOrFail($id);
+
+        // Проверяем, что пользователь является владельцем дома
+        if (!$order->house || $order->house->user_id != $user->user_id) {
+            abort(403, 'У вас нет прав на подтверждение возврата для этого заказа');
+        }
+
+        // Проверяем, что заказ в статусе запроса возврата
+        if ($order->order_status !== OrderStatus::REFUND) {
+            return redirect()->back()->with('error', 'Запрос на возврат не найден');
+        }
+
+        // Проверяем, не был ли возврат уже выполнен
+        if ($order->isRefunded()) {
+            return redirect()->back()->with('error', 'Возврат средств уже был выполнен ранее.');
+        }
+
+        // Выполняем возврат средств
+        $success = $this->orderService->refundOrder($order);
+
+        if ($success) {
+            return redirect()->back()->with('success', 'Возврат средств подтвержден! Средства возвращены арендатору.');
+        } else {
+            return redirect()->back()->with('error', 'Ошибка при возврате средств. Попробуйте позже.');
+        }
+    }
 }

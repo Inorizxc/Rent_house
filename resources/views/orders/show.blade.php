@@ -21,9 +21,18 @@
                             \App\enum\OrderStatus::REFUND => 'refund',
                             default => 'pending'
                         };
+                        $statusText = $order->order_status->value;
+                        // Если статус REFUND, показываем более понятный текст
+                        if ($order->order_status === \App\enum\OrderStatus::REFUND) {
+                            if ($order->isRefunded()) {
+                                $statusText = 'Возврат выполнен';
+                            } else {
+                                $statusText = 'Ожидает подтверждения возврата';
+                            }
+                        }
                     @endphp
                     <span class="order-status-badge order-status-{{ $statusClass }}">
-                        {{ $order->order_status->value }}
+                        {{ $statusText }}
                     </span>
                 @endif
             </div>
@@ -216,7 +225,7 @@
                 </div>
             @endif
 
-            @if($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED)
+            @if($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND)
                 <div class="actions">
                     <form method="POST" action="{{ route('orders.approve', $order->order_id) }}" style="display: inline;">
                         @csrf
@@ -227,8 +236,57 @@
                 </div>
             @endif
 
+            @if($isOwner && $order->order_status === \App\enum\OrderStatus::REFUND && !$order->isRefunded())
+                <div class="actions" style="margin-top: {{ $isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND ? '12px' : '0' }};">
+                    <form method="POST" action="{{ route('orders.refund.approve', $order->order_id) }}" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn-primary" style="background: #059669; color: white;" onclick="return confirm('Подтвердить возврат средств арендатору? Средства будут возвращены на баланс арендатора.')">
+                            Подтвердить возврат
+                        </button>
+                    </form>
+                </div>
+            @endif
+
+            @if($isOwner && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::CANCELLED && $order->order_status != \App\enum\OrderStatus::COMPLETED && !$order->isRefunded())
+                <div class="actions" style="margin-top: {{ $isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND ? '12px' : '0' }};">
+                    <form method="POST" action="{{ route('orders.refund.approve', $order->order_id) }}" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn-secondary" style="background: #ef4444; color: white;" onclick="return confirm('Вернуть средства арендатору? Средства будут возвращены на баланс арендатора.')">
+                            Вернуть средства
+                        </button>
+                    </form>
+                </div>
+            @endif
+
+            @if($isCustomer && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::CANCELLED)
+                <div class="actions" style="margin-top: {{ ($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND) || ($isOwner && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::CANCELLED && $order->order_status != \App\enum\OrderStatus::COMPLETED) ? '12px' : '0' }};">
+                    <form method="POST" action="{{ route('orders.refund.request', $order->order_id) }}" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn-secondary" style="background: #ef4444; color: white;" onclick="return confirm('Запросить возврат средств? Запрос будет отправлен арендодателю и администратору для подтверждения.')">
+                            Запросить возврат
+                        </button>
+                    </form>
+                </div>
+            @endif
+
+            @if($isCustomer && $order->order_status === \App\enum\OrderStatus::REFUND)
+                <div class="actions" style="margin-top: 12px;">
+                    @if($order->isRefunded())
+                        <div style="padding: 12px; background: #d1fae5; border: 1px solid #10b981; border-radius: 6px; color: #065f46;">
+                            <strong>✅ Возврат средств выполнен</strong><br>
+                            <small>Средства были возвращены на ваш баланс {{ $order->refunded_at ? $order->refunded_at->format('d.m.Y H:i') : '' }}.</small>
+                        </div>
+                    @else
+                        <div style="padding: 12px; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 6px; color: #92400e;">
+                            <strong>Ожидается подтверждение возврата</strong><br>
+                            <small>Ваш запрос на возврат средств отправлен. Ожидайте подтверждения от арендодателя или администратора.</small>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
             @if($isCustomer && $order->house)
-                <div class="actions" style="margin-top: {{ $isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED ? '12px' : '0' }};">
+                <div class="actions" style="margin-top: 12px;">
                     <a href="{{ route('house.chat', $order->house->house_id) }}" class="btn-primary">
                         Написать владельцу
                     </a>

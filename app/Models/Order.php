@@ -21,10 +21,12 @@ class Order extends Model
         "customer_id",
         "order_status",
         "original_data",
+        "refunded_at",
         ];
     protected $casts = [
         "order_status" => OrderStatus::class,
         "total_amount" => "decimal:2",
+        "refunded_at" => "datetime",
     ];
     
     /**
@@ -76,4 +78,12 @@ class Order extends Model
     //public function order_status(){
     //    return $this->hasOne(OrderStatus::class,"order_status_id","order_status_id");
     //}
+
+    /**
+     * Проверяет, был ли выполнен возврат средств
+     */
+    public function isRefunded(): bool
+    {
+        return $this->refunded_at !== null;
+    }
 }

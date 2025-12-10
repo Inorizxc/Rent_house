@@ -10,9 +10,17 @@ use App\Models\User;
 use App\Models\Order;
 use App\Models\House;
 use App\enum\OrderStatus;
+use App\Services\OrderService\OrderService;
 
 class AdminPanelController extends Controller
 {
+    protected $orderService;
+
+    public function __construct(OrderService $orderService)
+    {
+        $this->orderService = $orderService;
+    }
+
     /**
      * Отображает админ-панель с таблицами БД
      */
@@ -303,6 +311,50 @@ class AdminPanelController extends Controller
         return view('admin.order-show', [
             'order' => $order,
         ]);
+    }
+
+    /**
+     * Возврат средств за заказ (админ)
+     * Может как запросить возврат, так и подтвердить существующий запрос
+     */
+    public function refundOrder($orderId)
+    {
+        $order = Order::with(['house.user', 'customer'])->findOrFail($orderId);
+
+        // Проверяем, не был ли возврат уже выполнен
+        if ($order->isRefunded()) {
+            return redirect()->back()->with('error', 'Возврат средств уже был выполнен ранее.');
+        }
+
+        // Если заказ уже в статусе возврата - подтверждаем и возвращаем средства
+        if ($order->order_status === OrderStatus::REFUND) {
+            // Выполняем возврат средств
+            $success = $this->orderService->refundOrder($order);
+
+            if ($success) {
+                return redirect()->back()->with('success', 'Возврат средств подтвержден! Средства возвращены арендатору.');
+            } else {
+                return redirect()->back()->with('error', 'Ошибка при возврате средств. Проверьте логи для деталей.');
+            }
+        }
+
+        // Если заказ не в статусе возврата - сначала меняем статус на REFUND
+        if ($order->order_status === OrderStatus::CANCELLED) {
+            return redirect()->back()->with('error', 'Заказ отменен, возврат невозможен');
+        }
+
+        // Меняем статус на REFUND (запрос возврата)
+        $order->order_status = OrderStatus::REFUND;
+        $order->save();
+
+        // Сразу подтверждаем и возвращаем средства (админ может сразу подтвердить)
+        $success = $this->orderService->refundOrder($order);
+
+        if ($success) {
+            return redirect()->back()->with('success', 'Возврат средств выполнен! Средства возвращены арендатору.');
+        } else {
+            return redirect()->back()->with('error', 'Ошибка при возврате средств. Проверьте логи для деталей.');
+        }
     }
 }
 

@@ -95,6 +95,11 @@
                         break;
                     case \App\enum\OrderStatus::REFUND:
                         $statusClass = 'status-refund';
+                        if ($order->isRefunded()) {
+                            $statusValue = 'Возврат выполнен';
+                        } else {
+                            $statusValue = 'Ожидает подтверждения возврата';
+                        }
                         break;
                 }
             @endphp
@@ -207,6 +212,48 @@
                 <div class="info-card">
                     <h3>Дополнительная информация</h3>
                     <pre style="background: #ffffff; padding: 12px; border-radius: 6px; border: 1px solid #e5e5e5; font-size: 12px; overflow-x: auto;">{{ json_encode(json_decode($order->original_data), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                </div>
+            @endif
+
+            @if($order->total_amount)
+                <div class="info-card">
+                    <h3>Сумма заказа</h3>
+                    <div class="info-value" style="font-size: 20px; font-weight: 600; color: #059669;">
+                        {{ number_format((float)$order->total_amount, 2, ',', ' ') }} ₽
+                    </div>
+                </div>
+            @endif
+
+            @if($order->order_status === \App\enum\OrderStatus::REFUND)
+                @if($order->isRefunded())
+                    <div class="info-card" style="border: 2px solid #10b981; background: #d1fae5;">
+                        <h3 style="color: #065f46;">✅ Возврат средств выполнен</h3>
+                        <p style="color: #065f46; margin: 12px 0;">
+                            Возврат средств был выполнен {{ $order->refunded_at ? $order->refunded_at->format('d.m.Y в H:i') : '' }}.
+                            Средства возвращены на баланс арендатора.
+                        </p>
+                    </div>
+                @else
+                    <div class="info-card" style="border: 2px solid #fbbf24; background: #fef3c7;">
+                        <h3 style="color: #92400e;">Запрос на возврат средств</h3>
+                        <p style="color: #92400e; margin: 12px 0;">Арендатор запросил возврат средств. Подтвердите возврат для перевода средств на баланс арендатора.</p>
+                        <form method="POST" action="{{ route('admin.orders.refund', $order->order_id) }}" style="margin-top: 12px;">
+                            @csrf
+                            <button type="submit" class="btn-primary" style="background: #059669;" onclick="return confirm('Подтвердить возврат средств арендатору? Средства будут возвращены на баланс арендатора.')">
+                                Подтвердить возврат
+                            </button>
+                        </form>
+                    </div>
+                @endif
+            @elseif($order->order_status != \App\enum\OrderStatus::CANCELLED && !$order->isRefunded())
+                <div class="info-card" style="border: 2px solid #ef4444;">
+                    <h3 style="color: #ef4444;">Действия с заказом</h3>
+                    <form method="POST" action="{{ route('admin.orders.refund', $order->order_id) }}" style="margin-top: 12px;">
+                        @csrf
+                        <button type="submit" class="btn-danger" onclick="return confirm('Выполнить возврат средств арендатору? Это действие нельзя отменить.')">
+                            Вернуть средства арендатору
+                        </button>
+                    </form>
                 </div>
             @endif
         </div>

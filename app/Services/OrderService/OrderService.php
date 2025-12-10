@@ -306,5 +306,125 @@ class OrderService
 
         return $processed;
     }
+
+    /**
+     * Возвращает средства за заказ арендатору
+     * Если средства заморожены - возвращает из frozen_balance
+     * Если средства уже переведены - списывает с баланса арендодателя
+     */
+    public function refundOrder(Order $order): bool
+    {
+        // Проверяем, не был ли возврат уже выполнен
+        if ($order->isRefunded()) {
+            Log::warning('Попытка повторного возврата средств', [
+                'order_id' => $order->order_id,
+                'refunded_at' => $order->refunded_at
+            ]);
+            return false;
+        }
+
+        if (!$order->total_amount || $order->total_amount <= 0) {
+            Log::warning('Попытка возврата средств для заказа без суммы', [
+                'order_id' => $order->order_id
+            ]);
+            return false;
+        }
+
+        $customer = $order->customer;
+        if (!$customer) {
+            Log::error('Заказчик не найден', [
+                'order_id' => $order->order_id,
+                'customer_id' => $order->customer_id
+            ]);
+            return false;
+        }
+
+        $amount = (float) $order->total_amount;
+        
+        // Загружаем связи для проверки состояния средств
+        $order->load(['house.user', 'customer']);
+
+        // Используем транзакцию для атомарности операций
+        try {
+            DB::transaction(function () use ($order, $customer, $amount) {
+                // Обновляем данные пользователя из БД для актуальных балансов
+                $customer->refresh();
+                
+                // Проверяем фактическое состояние средств, а не статус заказа
+                $customerFrozenBalance = (float) ($customer->frozen_balance ?? 0);
+                $customerBalance = (float) ($customer->balance ?? 0);
+                
+                Log::info('Проверка состояния средств для возврата', [
+                    'order_id' => $order->order_id,
+                    'amount' => $amount,
+                    'customer_id' => $customer->user_id,
+                    'customer_frozen_balance' => $customerFrozenBalance,
+                    'customer_balance' => $customerBalance,
+                    'order_status' => $order->order_status->value
+                ]);
+                
+                // Если есть замороженные средства - возвращаем их
+                if ($customerFrozenBalance >= $amount) {
+                    // Возвращаем средства из frozen_balance на balance
+                    $customer->frozen_balance = max(0, $customerFrozenBalance - $amount);
+                    $customer->balance = (float) ($customer->balance ?? 0) + $amount;
+                    $customer->save();
+
+                    Log::info('Средства возвращены арендатору (из замороженных средств)', [
+                        'order_id' => $order->order_id,
+                        'amount' => $amount,
+                        'customer_id' => $customer->user_id
+                    ]);
+                } else {
+                    // Если замороженных средств нет или недостаточно - списываем с баланса арендодателя
+                    $house = $order->house;
+                    if (!$house) {
+                        throw new \Exception('Дом не найден для заказа');
+                    }
+
+                    $seller = $house->user;
+                    if (!$seller) {
+                        throw new \Exception('Владелец дома не найден');
+                    }
+
+                    // Обновляем данные арендодателя из БД для актуального баланса
+                    $seller->refresh();
+                    
+                    // Проверяем баланс арендодателя
+                    $sellerBalance = (float) ($seller->balance ?? 0);
+                    if ($sellerBalance < $amount) {
+                        throw new \Exception('Недостаточно средств на балансе арендодателя для возврата. Доступно: ' . $sellerBalance . ', требуется: ' . $amount);
+                    }
+
+                    // Списываем средства с баланса арендодателя
+                    $seller->balance = max(0, $sellerBalance - $amount);
+                    $seller->save();
+
+                    // Возвращаем средства на баланс арендатора
+                    $customer->balance = (float) ($customer->balance ?? 0) + $amount;
+                    $customer->save();
+
+                    Log::info('Средства возвращены арендатору (списаны с баланса арендодателя)', [
+                        'order_id' => $order->order_id,
+                        'amount' => $amount,
+                        'customer_id' => $customer->user_id,
+                        'seller_id' => $seller->user_id
+                    ]);
+                }
+
+                // Устанавливаем дату возврата
+                $order->refunded_at = now();
+                $order->save();
+            });
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Ошибка при возврате средств', [
+                'order_id' => $order->order_id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
 }
 
