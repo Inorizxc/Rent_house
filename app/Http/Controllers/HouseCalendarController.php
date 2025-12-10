@@ -135,9 +135,6 @@ class HouseCalendarController extends Controller
         ]);
     }
 
-    /**
-     * Update date range for a house calendar
-     */
     public function updateDatesRange(Request $request, $houseId)
     {
         $user = Auth::user();
@@ -148,8 +145,7 @@ class HouseCalendarController extends Controller
                 'error' => 'Необходима авторизация'
             ], 401);
         }
-        
-        // Проверяем, не забанен ли пользователь
+
         if ($user->isBanned()) {
             $banUntil = $user->getBanUntilDate();
             $banReason = $user->ban_reason ? "\n\nПричина: {$user->ban_reason}" : '';
@@ -170,13 +166,11 @@ class HouseCalendarController extends Controller
         ]);
 
         $house = House::findOrFail($houseId);
-        
-        // Проверяем, что пользователь является владельцем дома
+
         if ($house->user_id !== Auth::id()) {
             return response()->json(['error' => 'У вас нет прав для изменения этого календаря'], 403);
         }
 
-        // Получаем или создаем календарь для дома
         $calendar = HouseCalendar::firstOrCreate(
             ['house_id' => $houseId],
             ['dates' => []]
