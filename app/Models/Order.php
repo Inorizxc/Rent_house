@@ -17,12 +17,14 @@ class Order extends Model
         "house_id",
         "date_of_order",
         "day_count",
+        "total_amount",
         "customer_id",
         "order_status",
         "original_data",
         ];
     protected $casts = [
         "order_status" => OrderStatus::class,
+        "total_amount" => "decimal:2",
     ];
     
     /**

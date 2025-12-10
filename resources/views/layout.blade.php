@@ -59,6 +59,14 @@
                                 }
                             }
                         @endphp
+                        @if($currentUser)
+                            <div class="balance-display" style="margin-right: 12px; padding: 6px 12px; background: #f3f4f6; border-radius: 6px; font-size: 14px; color: #1b1b18;">
+                                Баланс: <strong>{{ number_format((float)($currentUser->balance ?? 0), 2, ',', ' ') }} ₽</strong>
+                                @if((float)($currentUser->frozen_balance ?? 0) > 0)
+                                    <span style="color: #6b7280;">({{ number_format((float)($currentUser->frozen_balance ?? 0), 2, ',', ' ') }} ₽)</span>
+                                @endif
+                            </div>
+                        @endif
                         <div class="chat-link-wrapper" id="chatLinkWrapper">
                             <a
                                 href="{{ route('chats.index') }}"

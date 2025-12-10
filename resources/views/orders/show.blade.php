@@ -216,8 +216,19 @@
                 </div>
             @endif
 
-            @if($isCustomer && $order->house)
+            @if($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED)
                 <div class="actions">
+                    <form method="POST" action="{{ route('orders.approve', $order->order_id) }}" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn-primary" onclick="return confirm('Подтвердить заказ и перевести средства на ваш баланс?')">
+                            Подтвердить заказ
+                        </button>
+                    </form>
+                </div>
+            @endif
+
+            @if($isCustomer && $order->house)
+                <div class="actions" style="margin-top: {{ $isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED ? '12px' : '0' }};">
                     <a href="{{ route('house.chat', $order->house->house_id) }}" class="btn-primary">
                         Написать владельцу
                     </a>
