@@ -4,8 +4,9 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\Role;
-
+use App\Services\OrderService\OrderService;
 use App\Services\YandexGeocoder;
+use Carbon\Carbon;
 class ShowRoles extends Command
 {
     /**
@@ -32,9 +33,16 @@ class ShowRoles extends Command
         foreach ($roles as $role) {
             $this->info("{$role->uniq_name} + {$role->role_id}+ {$count}");
         }
-        
-        $geocoder = new YandexGeocoder();
-        print_r($geocoder->getCoordinates("Навашина+9")); 
+        $service = app(OrderService::class);
+        $dates = [
+       '2024-01-01',
+       '2024-01-05',
+       '2024-01-10',
+       '2024-01-15',
+       '2024-01-20',
+       '2024-02-01',
+        ];
+        print_r($service->removeDatesBetween($dates,Carbon::parse('2024-01-05'),10)); 
 
     }
 }
