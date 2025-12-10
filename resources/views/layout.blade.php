@@ -57,11 +57,8 @@
                             @if ($currentUser->ban_reason !=null)
                         <div class="balance-display" style="margin-right: 12px; padding: 6px 12px; background: #f3f4f6; border-radius: 6px; font-size: 14px; color: #1b1b18;">
                             
-                            @if($currentUser->is_banned_permanently)
-                                Забанен навсегда.
-                            @else
-                                Причина бана: <strong> {{ $currentUser->ban_reason }}</strong>.   Забанен до: <strong>{{ $currentUser->banned_until->format('d.m.Y H:i') }}</strong>
-                            @endif
+                            Причина бана: <strong> {{ $currentUser->ban_reason }}</strong>.   Забанен до: <strong>{{ $currentUser->banned_until->format('d.m.Y H:i') }}</strong>
+
                         </div>
                         @endif
                         @endif

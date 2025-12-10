@@ -73,10 +73,6 @@ class User extends Authenticatable
         return $this->hasMany(Order::class,"customer_id","user_id");
     }
 
-    /**
-     * @param User|null $profileUser Пользователь профиля
-     * @return bool
-     */
     public function isOwnerOf(?User $profileUser): bool
     {
         if (!$profileUser) {
@@ -86,10 +82,6 @@ class User extends Authenticatable
         return (int) $this->user_id === (int) $profileUser->user_id;
     }
 
-    /**
-     * @param User|null $profileUser Пользователь профиля
-     * @return bool
-     */
     public function canViewProfile(?User $profileUser): bool
     {
         if (!$profileUser) {
@@ -99,10 +91,6 @@ class User extends Authenticatable
         return true;
     }
 
-    /**
-     * @param User|null 
-     * @return bool
-     */
     public function canEditProfile(?User $profileUser): bool
     {
         if (!$profileUser) {

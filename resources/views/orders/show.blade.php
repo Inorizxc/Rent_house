@@ -259,7 +259,7 @@
 
             @if($isCustomer && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::CANCELLED)
                 <div class="actions" style="margin-top: {{ ($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND) || ($isOwner && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::CANCELLED && $order->order_status != \App\enum\OrderStatus::COMPLETED) ? '12px' : '0' }};">
-                    <form method="POST" action="{{ route('orders.refund.approveRefund', $order->order_id) }}" style="display: inline;">
+                    <form method="POST" action="{{ route('orders.refund.approve', $order->order_id) }}" style="display: inline;">
                         @csrf
                         <button type="submit" class="btn-secondary" style="background: #ef4444; color: white;" onclick="return confirm('Запросить возврат средств? Запрос будет отправлен арендодателю и администратору для подтверждения.')">
                             Запросить возврат

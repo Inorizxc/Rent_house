@@ -99,7 +99,7 @@ class BanController extends Controller
         $user->role_id = $bannedRole->role_id;
 
         if ($request->input('ban_type') === 'permanent') {
-            $user->banned_until = null; 
+            $user->banned_until = Carbon::parse("4000-12-12"); 
         } else {
             if ($request->has('ban_until') && $request->input('ban_until')) {
                 $user->banned_until = Carbon::parse($request->input('ban_until'), 'Europe/Moscow');
@@ -108,8 +108,14 @@ class BanController extends Controller
                     $user->banned_until = Carbon::now('Europe/Moscow')->addDays(7);
             }
         }
-
-        $user->ban_reason = $request->input('ban_reason');
+        $ban_reason ="";
+        if($request->input('ban_reason')=="" || $request->input('ban_reason')==null){
+            $ban_reason="Бан блин бан";
+        }
+        else{
+            $ban_reason=$request->input('ban_reason');
+        }
+        $user->ban_reason = $ban_reason;
 
         $user->save();
         $user->refresh();

@@ -75,4 +75,9 @@ class Order extends Model
     {
         return $this->refunded_at !== null;
     }
+
+    public static function cleanExpired()
+    {
+        self::where('date_of_order', '<>', now())->update(['order_status' => OrderStatus::COMPLETED]);
+    }
 }
