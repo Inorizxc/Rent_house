@@ -25,9 +25,16 @@ return new class extends Migration
             $table->text("phone")->nullable();
             $table->text("card")->nullable();
             $table->boolean("need_verification")->nullable();
+            $table->dateTime('verification_denied_until')->nullable();
+            $table->text("ban_reason")->nullable();
+            $table->unsignedBigInteger('original_role_id')->nullable()->after('role_id');
+            $table->boolean('is_banned_permanently')->default(false);
+            $table->dateTime('banned_until')->nullable();
+            $table->text('verified_deny_reason')->nullable();
             $table->timestamps();
         });
     }
+
     public function down(): void
     {
         Schema::dropIfExists('users');
