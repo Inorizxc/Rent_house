@@ -29,14 +29,9 @@ class Order extends Model
         "refunded_at" => "datetime",
     ];
     
-    /**
-     * Обработка неизвестных значений статуса при загрузке из БД
-     * Перехватывает значения до автоматического cast
-     */
     protected function castAttribute($key, $value)
     {
         if ($key === 'order_status' && !($value instanceof OrderStatus)) {
-            // Маппинг старых значений на новые
             $mapping = [
                 'Ожидается' => OrderStatus::PENDING->value,
                 'Рассмотрение' => OrderStatus::PENDING->value,
@@ -49,12 +44,10 @@ class Order extends Model
             if (isset($mapping[$value])) {
                 $value = $mapping[$value];
             }
-            
-            // Пытаемся найти по значению enum
+ 
             try {
                 return OrderStatus::from($value);
             } catch (\ValueError $e) {
-                // Если не найдено, возвращаем PENDING по умолчанию
                 return OrderStatus::PENDING;
             }
         }
@@ -69,8 +62,7 @@ class Order extends Model
     public function customer(){
         return $this->belongsTo(User::class,"customer_id","user_id");
     }
-    
-    // Для обратной совместимости
+
     public function user(){
         return $this->customer();
     }
@@ -79,9 +71,6 @@ class Order extends Model
     //    return $this->hasOne(OrderStatus::class,"order_status_id","order_status_id");
     //}
 
-    /**
-     * Проверяет, был ли выполнен возврат средств
-     */
     public function isRefunded(): bool
     {
         return $this->refunded_at !== null;

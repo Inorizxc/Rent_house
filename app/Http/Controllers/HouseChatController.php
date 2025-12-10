@@ -16,9 +16,6 @@ class HouseChatController extends Controller
 {   
 
 
-    /**
-     * Показать чат для конкретного дома
-     */
     public function show($houseId)
     {
 
@@ -29,17 +26,17 @@ class HouseChatController extends Controller
         $currentUser = auth()->user();
 
         if (!$currentUser) {
-            return redirect()->route('login')->with('error', 'Необходима авторизация для доступа к чату');
+            return redirect()->route('login');
         }
 
         $seller = $house->user;
 
         if (!$seller) {
-            return redirect()->back()->with('error', 'Продавец не найден');
+            return redirect()->back();
         }
 
         if ($currentUser->user_id == $seller->user_id) {
-            return redirect()->back()->with('error', 'Нельзя начать чат с самим собой');
+            return redirect()->back();
         }
 
         $buyerId = $currentUser->user_id;
@@ -63,13 +60,10 @@ class HouseChatController extends Controller
 
         $chatService->update($chat);
 
-        // Загружаем календарь дома
         $house->load('house_calendar');
 
-        // Очищаем истекшие временные блокировки
         TemporaryBlock::cleanExpired();
 
-        // Получаем активные временные блокировки для этого дома (от других пользователей)
         $temporaryBlocks = TemporaryBlock::where('house_id', $houseId)
             ->where('expires_at', '>', now())
             ->where('user_id', '!=', $currentUser->user_id)
@@ -80,8 +74,6 @@ class HouseChatController extends Controller
             $temporaryBlockedDates = array_merge($temporaryBlockedDates, $block->dates ?? []);
         }
         $temporaryBlockedDates = array_unique($temporaryBlockedDates);
-
-        // Объединяем постоянные забронированные даты с временными блокировками других пользователей
         $calendar = $house->house_calendar;
         $bookedDates = $calendar ? ($calendar->dates ?? []) : [];
         $allBlockedDates = array_unique(array_merge($bookedDates, $temporaryBlockedDates));
@@ -96,9 +88,6 @@ class HouseChatController extends Controller
         ]);
     }
 
-    /**
-     * Отправить сообщение в чат
-     */
     public function sendMessage(Request $request, $houseId)
     {
         $chatService = app(ChatService::class);
@@ -108,13 +97,9 @@ class HouseChatController extends Controller
         $currentUser = auth()->user();
 
         if (!$currentUser) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Необходима авторизация'
-            ], 401);
+            return redirect()->route('login');
         }
-        
-        // Проверяем, не забанен ли пользователь
+
         if ($currentUser->isBanned()) {
             $banUntil = $currentUser->getBanUntilDate();
             $banReason = $currentUser->ban_reason ? "\n\nПричина: {$currentUser->ban_reason}" : '';
@@ -133,10 +118,6 @@ class HouseChatController extends Controller
                 'message' => 'required|string|max:1000',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Ошибка валидации: ' . implode(', ', $e->errors()['message'] ?? ['Неверные данные'])
-            ], 422);
         }
 
         $house = House::findOrFail($houseId);
@@ -159,20 +140,16 @@ class HouseChatController extends Controller
         }
 
         try {
-            // Создаем сообщение КАК БУДТО БЫ ПЕРЕПИСАТЬ
             $message = Message::create([
                 'chat_id' => $chat->chat_id,
                 'user_id' => $currentUser->user_id,
                 'message' => $validated['message'],
             ]);
 
-            // Обновляем время обновления чата
             $chat->touch();
 
-            // Загружаем связь с пользователем для ответа
             $message->load('user');
 
-            // Преобразуем сообщение в массив для JSON ответа
             return response()->json([
                 'success' => true,
                 'message' => [
@@ -190,16 +167,10 @@ class HouseChatController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Ошибка при сохранении сообщения: ' . $e->getMessage()
-            ], 500);
+           
         }
     }
 
-    /**
-     * Получить новые сообщения (для AJAX запросов)
-     */
     public function getMessages(Request $request, $houseId)
     {
 
@@ -210,15 +181,11 @@ class HouseChatController extends Controller
         $currentUser = auth()->user();
 
         if (!$currentUser) {
-            return response()->json(['error' => 'Необходима авторизация'], 401);
+            return redirect()->route('login');
         }
 
         $house = House::findOrFail($houseId);
         $seller = $house->user;
-
-        if (!$seller) {
-            return response()->json(['error' => 'Продавец не найден'], 404);
-        }
 
         $buyerId = $currentUser->user_id;
         $dealerId = $seller->user_id;

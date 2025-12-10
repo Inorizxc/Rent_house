@@ -9,9 +9,6 @@ use Carbon\Carbon;
 
 class OrderValidationService
 {
-    /**
-     * Генерирует массив дат для блокировки
-     */
     public function generateDatesToBlock(string $checkinDate, string $checkoutDate): array
     {
         $checkin = new \DateTime($checkinDate);
@@ -30,19 +27,12 @@ class OrderValidationService
         return $datesToBlock;
     }
 
-    /**
-     * Проверяет доступность дат для бронирования
-     */
     public function checkDatesAvailability(House $house, array $datesToBlock, ?User $user = null): array
     {
-        // Очищаем истекшие блокировки
         TemporaryBlock::cleanExpired();
-
-        // Получаем забронированные даты из календаря
         $calendar = $house->house_calendar;
         $bookedDates = $calendar ? ($calendar->dates ?? []) : [];
         
-        // Получаем активные временные блокировки для этого дома
         $temporaryBlocks = TemporaryBlock::where('house_id', $house->house_id)
             ->where('expires_at', '>', now())
             ->get();
@@ -53,9 +43,7 @@ class OrderValidationService
         }
         $temporaryBlockedDates = array_unique($temporaryBlockedDates);
 
-        // Проверяем каждую дату
         foreach ($datesToBlock as $date) {
-            // Проверяем постоянные бронирования
             if (in_array($date, $bookedDates)) {
                 return [
                     'available' => false,
@@ -63,8 +51,6 @@ class OrderValidationService
                     'date' => $date,
                 ];
             }
-
-            // Проверяем временные блокировки других пользователей
             if (in_array($date, $temporaryBlockedDates) && $user) {
                 $blockingUser = TemporaryBlock::where('house_id', $house->house_id)
                     ->where('expires_at', '>', now())
@@ -85,17 +71,11 @@ class OrderValidationService
         return ['available' => true];
     }
 
-    /**
-     * Создает временную блокировку
-     */
     public function createTemporaryBlock(House $house, User $user, array $dates, int $minutes = 10): TemporaryBlock
     {
-        // Удаляем старые временные блокировки этого пользователя для этого дома
         TemporaryBlock::where('house_id', $house->house_id)
             ->where('user_id', $user->user_id)
             ->delete();
-
-        // Создаем новую временную блокировку
         return TemporaryBlock::create([
             'house_id' => $house->house_id,
             'user_id' => $user->user_id,
@@ -104,9 +84,6 @@ class OrderValidationService
         ]);
     }
 
-    /**
-     * Проверяет и валидирует временную блокировку
-     */
     public function validateTemporaryBlock(int $temporaryBlockId, int $houseId, int $userId, array $expectedDates): ?TemporaryBlock
     {
         $temporaryBlock = TemporaryBlock::where('temporary_block_id', $temporaryBlockId)
@@ -119,7 +96,6 @@ class OrderValidationService
             return null;
         }
 
-        // Проверяем, что даты совпадают
         $blockDates = $temporaryBlock->dates ?? [];
         sort($blockDates);
         sort($expectedDates);
@@ -132,9 +108,6 @@ class OrderValidationService
         return $temporaryBlock;
     }
 
-    /**
-     * Удаляет временную блокировку
-     */
     public function removeTemporaryBlock(int $temporaryBlockId, int $houseId, int $userId): bool
     {
         $temporaryBlock = TemporaryBlock::where('temporary_block_id', $temporaryBlockId)
@@ -150,9 +123,6 @@ class OrderValidationService
         return false;
     }
 
-    /**
-     * Находит активную временную блокировку пользователя для дома
-     */
     public function findUserTemporaryBlock(int $houseId, int $userId): ?TemporaryBlock
     {
         return TemporaryBlock::where('house_id', $houseId)

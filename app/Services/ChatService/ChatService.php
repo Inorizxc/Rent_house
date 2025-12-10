@@ -25,8 +25,6 @@ class ChatService{
         return $chats->map(function($chat) use ($currentUser) {
             $interlocutor = ChatService::getInterlocutor($chat);
             $lastMessage = ChatService::getLastMessage($chat);
-            
-            // Ищем дома собеседника (продавца) ЗАКИНУТЬ В СЕРВИС ДОМОВ ВОТ ЭТУ ПОЕБОТУ
             $houses = [];
             if ($interlocutor) {
                 $houses = House::where('user_id', $interlocutor->user_id)
@@ -102,7 +100,6 @@ class ChatService{
                 continue;
             }
 
-            // Определяем, когда пользователь последний раз просматривал чат
             $lastReadAt = null;
             if ($chat->user_id == $currentUser->user_id) {
                 $lastReadAt = $chat->user_last_read_at;
@@ -110,8 +107,6 @@ class ChatService{
                 $lastReadAt = $chat->rent_dealer_last_read_at;
             }
 
-            // Если последнее сообщение отправлено не текущим пользователем
-            // и оно было создано после последнего просмотра (или чат никогда не просматривался)
             if ($lastMessage->user_id != $currentUser->user_id) {
                 if (!$lastReadAt || $lastMessage->created_at > $lastReadAt) {
                     $unreadCount++;

@@ -21,12 +21,8 @@ class AdminPanelController extends Controller
         $this->orderService = $orderService;
     }
 
-    /**
-     * Отображает админ-панель с таблицами БД
-     */
     public function index(Request $request)
     {
-        // Получаем список всех таблиц из БД
         $tableNames = collect(DB::select("
             SELECT name
             FROM sqlite_master
@@ -49,7 +45,6 @@ class AdminPanelController extends Controller
             $columns = collect(DB::select("PRAGMA table_info(" . DB::getPdo()->quote($selectedTable) . ")"));
         }
 
-        // Обработка добавления записи
         if ($request->isMethod('post') && $selectedTable) {
             $blocked = ['id', 'created_at', 'updated_at', 'deleted_at'];
             $fillable = $columns
@@ -73,8 +68,6 @@ class AdminPanelController extends Controller
                     ->with('status', "Запись добавлена в «{$selectedTable}»");
             }
         }
-
-        // Получение данных для отображения
         $rows = collect();
         $total = 0;
         $pages = 1;
@@ -102,18 +95,13 @@ class AdminPanelController extends Controller
         ]);
     }
 
-    /**
-     * Удаление записи из таблицы
-     */
     public function delete(Request $request, $table, $id)
     {
         try {
-            // Определяем primary key
             $primaryKey = $this->getPrimaryKey($table);
             if (!$primaryKey) {
                 return back()->with('error', 'Не удалось определить первичный ключ таблицы');
             }
-
             DB::table($table)->where($primaryKey, $id)->delete();
 
             return back()->with('status', 'Запись успешно удалена');
@@ -122,12 +110,8 @@ class AdminPanelController extends Controller
         }
     }
 
-    /**
-     * Получение первичного ключа таблицы
-     */
     private function getPrimaryKey($table)
     {
-        // Безопасная проверка имени таблицы
         $tableNames = collect(DB::select("
             SELECT name
             FROM sqlite_master
@@ -144,21 +128,16 @@ class AdminPanelController extends Controller
                 return $column->name;
             }
         }
-        // Если не найден, пробуем стандартные варианты
         $columns = collect($info)->pluck('name')->toArray();
         if (in_array('id', $columns)) {
             return 'id';
         }
-        // Пробуем другие стандартные варианты
         if (in_array($table . '_id', $columns)) {
             return $table . '_id';
         }
         return null;
     }
 
-    /**
-     * Отображает все чаты в админ-панели
-     */
     public function chats(Request $request)
     {
         $limit = (int) $request->get('per', 20);
@@ -195,7 +174,6 @@ class AdminPanelController extends Controller
                 return $chat;
             });
 
-        // Получаем списки пользователей для фильтров (те, кто участвует в чатах)
         $userIds = collect();
         $userIds = $userIds->merge(Chat::pluck('user_id'));
         $userIds = $userIds->merge(Chat::pluck('rent_dealer_id'));
@@ -217,9 +195,6 @@ class AdminPanelController extends Controller
         ]);
     }
 
-    /**
-     * Отображает детали конкретного чата
-     */
     public function chatShow($chatId)
     {
         $chat = Chat::with(['user', 'rentDealer'])->findOrFail($chatId);
@@ -235,9 +210,6 @@ class AdminPanelController extends Controller
         ]);
     }
 
-    /**
-     * Отображает все заказы в админ-панели
-     */
     public function orders(Request $request)
     {
         $limit = (int) $request->get('per', 20);
@@ -256,7 +228,6 @@ class AdminPanelController extends Controller
                 $status = OrderStatus::from($statusFilter);
                 $query->where('order_status', $status);
             } catch (\ValueError $e) {
-                // Игнорируем неверный статус
             }
         }
 
@@ -278,8 +249,6 @@ class AdminPanelController extends Controller
             ->offset(($page - 1) * $limit)
             ->limit($limit)
             ->get();
-
-        // Получаем список всех пользователей для фильтров
         $customers = User::whereHas('ordersAsCustomer')->orderBy('name')->get();
         $owners = User::whereHas('house', function($q) {
             $q->whereHas('order');
@@ -300,9 +269,6 @@ class AdminPanelController extends Controller
         ]);
     }
 
-    /**
-     * Отображает детали конкретного заказа
-     */
     public function orderShow($orderId)
     {
         $order = Order::with(['house.user', 'house.photo', 'customer'])
@@ -313,47 +279,35 @@ class AdminPanelController extends Controller
         ]);
     }
 
-    /**
-     * Возврат средств за заказ (админ)
-     * Может как запросить возврат, так и подтвердить существующий запрос
-     */
     public function refundOrder($orderId)
     {
         $order = Order::with(['house.user', 'customer'])->findOrFail($orderId);
 
-        // Проверяем, не был ли возврат уже выполнен
         if ($order->isRefunded()) {
-            return redirect()->back()->with('error', 'Возврат средств уже был выполнен ранее.');
+            return redirect()->back();
         }
 
-        // Если заказ уже в статусе возврата - подтверждаем и возвращаем средства
         if ($order->order_status === OrderStatus::REFUND) {
-            // Выполняем возврат средств
             $success = $this->orderService->refundOrder($order);
 
             if ($success) {
-                return redirect()->back()->with('success', 'Возврат средств подтвержден! Средства возвращены арендатору.');
+                return redirect()->back();
             } else {
-                return redirect()->back()->with('error', 'Ошибка при возврате средств. Проверьте логи для деталей.');
+                return redirect()->back();
             }
         }
 
-        // Если заказ не в статусе возврата - сначала меняем статус на REFUND
         if ($order->order_status === OrderStatus::CANCELLED) {
-            return redirect()->back()->with('error', 'Заказ отменен, возврат невозможен');
+            return redirect()->back();
         }
-
-        // Меняем статус на REFUND (запрос возврата)
         $order->order_status = OrderStatus::REFUND;
         $order->save();
-
-        // Сразу подтверждаем и возвращаем средства (админ может сразу подтвердить)
         $success = $this->orderService->refundOrder($order);
 
         if ($success) {
-            return redirect()->back()->with('success', 'Возврат средств выполнен! Средства возвращены арендатору.');
+            return redirect()->back();
         } else {
-            return redirect()->back()->with('error', 'Ошибка при возврате средств. Проверьте логи для деталей.');
+            return redirect()->back();
         }
     }
 }

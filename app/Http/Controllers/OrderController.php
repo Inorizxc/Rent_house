@@ -86,8 +86,7 @@ class OrderController extends Controller
 
         $order = $this->orderService->createOrder($validated);
 
-        return redirect()->route('orders.show', $order->order_id)
-            ->with('success', 'Заказ успешно создан');
+        return redirect()->route('orders.show', $order->order_id);
     }
 
 
@@ -152,8 +151,7 @@ class OrderController extends Controller
 
         $this->orderService->updateOrder($order, $validated);
 
-        return redirect()->route('orders.show', $order->order_id)
-            ->with('success', 'Заказ успешно обновлен');
+        return redirect()->route('orders.show', $order->order_id);
     }
 
 
@@ -346,7 +344,7 @@ class OrderController extends Controller
             ]);
         } catch (\Exception $e) {
             $temporaryBlock->delete();
-            return redirect()->back()->with('error', 'Ошибка при создании заказа: ' . $e->getMessage());
+            return redirect()->back();
         }
 
         $this->orderService->blockDates($house, $datesToBlock);
@@ -356,7 +354,7 @@ class OrderController extends Controller
         $seller = $house->user;
         
         if (!$seller) {
-            return redirect()->back()->with('error', 'Ошибка: продавец не найден');
+            return redirect()->back();
         }
         
         $buyerId = $user->user_id;
@@ -374,8 +372,7 @@ class OrderController extends Controller
             );
         }
 
-        return redirect()->route('house.chat', $houseId)
-            ->with('success', 'Заказ успешно создан и подтвержден!');
+        return redirect()->route('house.chat', $houseId);
     }
 
 
@@ -421,7 +418,7 @@ class OrderController extends Controller
         $user = $this->authService->checkAuth();
 
         if (!$user) {
-            return redirect()->route('login')->with('error', 'Необходима авторизация');
+            return redirect()->route('login');
         }
 
         $order = Order::with(['house.user', 'customer'])->findOrFail($id);
@@ -431,7 +428,7 @@ class OrderController extends Controller
         }
 
         if ($order->order_status === OrderStatus::COMPLETED) {
-            return redirect()->back()->with('error', 'Заказ уже обработан');
+            return redirect()->back();
         }
 
         $success = $this->orderService->transferFrozenFunds($order);
@@ -440,9 +437,9 @@ class OrderController extends Controller
             $order->order_status = OrderStatus::COMPLETED;
             $order->save();
 
-            return redirect()->back()->with('success', 'Заказ подтвержден! Средства переведены на ваш баланс.');
+            return redirect()->back();
         } else {
-            return redirect()->back()->with('error', 'Ошибка при переводе средств. Попробуйте позже.');
+            return redirect()->back();
         }
     }
 
@@ -453,7 +450,7 @@ class OrderController extends Controller
         $user = $this->authService->checkAuth();
 
         if (!$user) {
-            return redirect()->route('login')->with('error', 'Необходима авторизация');
+            return redirect()->route('login');
         }
         
         $order = Order::with(['house.user', 'customer'])->findOrFail($id);
@@ -479,7 +476,7 @@ class OrderController extends Controller
         $order->order_status = OrderStatus::REFUND;
         $order->save();
 
-        return redirect()->back()->with('success', 'Запрос на возврат средств отправлен. Ожидайте подтверждения от арендодателя или администратора.');
+        return redirect()->back();
     }
 
 
@@ -519,9 +516,9 @@ class OrderController extends Controller
 
         if ($success) {
             
-            return redirect()->back()->with('success', 'Возврат средств подтвержден! Средства возвращены арендатору.');
+            return redirect()->back();
         } else {
-            return redirect()->back()->with('error', 'Ошибка при возврате средств. Попробуйте позже.');
+            return redirect()->back();
         }
     }
 }

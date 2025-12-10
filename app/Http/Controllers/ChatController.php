@@ -35,7 +35,7 @@ class ChatController extends Controller
     {
         $currentUser = $this->authService->checkAuth();
         if (!$currentUser) {
-            return redirect()->route('login')->with('error', 'Необходима авторизация');
+            return redirect()->route('login');
         }
         
         $chatsWithInfo = $this->chatService->getChatWithInfo();
@@ -60,19 +60,19 @@ class ChatController extends Controller
         $currentUser = $this->authService->checkAuth();
 
         if (!$currentUser) {
-            return redirect()->route('login')->with('error', 'Необходима авторизация');
+            return redirect()->route('login');
         }
 
         $chat = Chat::with(['user', 'rentDealer'])->findOrFail($chatId);
 
         if (!$this->authService->checkChatAccess($currentUser, $chat)) {
-            return redirect()->route('chats.index')->with('error', 'У вас нет доступа к этому чату');
+            return redirect()->route('chats.index');
         }
 
         $interlocutor = $this->chatService->getInterlocutor($chat);
 
         if (!$interlocutor) {
-            return redirect()->route('chats.index')->with('error', 'Собеседник не найден');
+            return redirect()->route('chats.index');
         }
 
         $messages = $this->messageService->getMessages($chat);
@@ -96,13 +96,13 @@ class ChatController extends Controller
         $currentUser = $this->authService->checkAuth();
 
         if (!$currentUser) {
-            return redirect()->route('login')->with('error', 'Необходима авторизация');
+            return redirect()->route('login');
         }
 
         $otherUser = User::findOrFail($userId);
 
         if ($currentUser->user_id == $otherUser->user_id) {
-            return redirect()->back()->with('error', 'Нельзя начать чат с самим собой');
+            return redirect()->back();
         }
 
         $buyerId = $currentUser->user_id;
@@ -142,10 +142,7 @@ class ChatController extends Controller
                 'message' => 'required|string|max:1000',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Ошибка валидации: ' . implode(', ', $e->errors()['message'] ?? ['Неверные данные'])
-            ], 422);
+            
         }
 
         $chat = Chat::findOrFail($chatId);
@@ -161,10 +158,6 @@ class ChatController extends Controller
             $result = $this->messageService->sendMessage($chat, $currentUser->user_id, $validated['message']);
             return response()->json($result);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Ошибка при сохранении сообщения: ' . $e->getMessage()
-            ], 500);
         }
     }
 

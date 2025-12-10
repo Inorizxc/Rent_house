@@ -7,17 +7,12 @@ use Carbon\Carbon;
 
 class AuthService
 {
-    /**
-     * Проверяет, авторизован ли пользователь
-     */
+
     public function checkAuth(): ?User
     {
         return auth()->user();
     }
 
-    /**
-     * Проверяет, не забанен ли пользователь
-     */
     public function checkBan(User $user): ?array
     {
         if (!$user->isBanned()) {
@@ -38,17 +33,11 @@ class AuthService
         ];
     }
 
-    /**
-     * Проверяет доступ к чату
-     */
     public function checkChatAccess(User $user, $chat): bool
     {
         return $chat->user_id == $user->user_id || $chat->rent_dealer_id == $user->user_id;
     }
 
-    /**
-     * Проверяет доступ к заказу
-     */
     public function checkOrderAccess(User $user, $order): array
     {
         $isCustomer = $order->customer_id == $user->user_id;
