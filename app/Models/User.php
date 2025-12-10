@@ -27,6 +27,8 @@ class User extends Authenticatable
         'password',
         'phone',
         'card',
+        'balance',
+        'frozen_balance',
         'need_verification',
         'verification_denied_until',
         'banned_until', // Для временного бана - дата окончания
@@ -41,6 +43,8 @@ class User extends Authenticatable
         'verification_denied_until' => 'datetime',
         'banned_until' => 'datetime',
         'original_role_id' => 'integer',
+        'balance' => 'decimal:2',
+        'frozen_balance' => 'decimal:2',
     ];
 
     public static function boot(){

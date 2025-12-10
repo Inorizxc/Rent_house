@@ -458,4 +458,41 @@ class OrderController extends Controller
             'message' => 'Временная блокировка отменена'
         ]);
     }
+
+    /**
+     * Подтвердить заказ арендодателем (перевести средства)
+     */
+    public function approve($id)
+    {
+        $user = $this->authService->checkAuth();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Необходима авторизация');
+        }
+
+        $order = Order::with(['house.user', 'customer'])->findOrFail($id);
+
+        // Проверяем, что пользователь является владельцем дома
+        if (!$order->house || $order->house->user_id != $user->user_id) {
+            abort(403, 'У вас нет прав на подтверждение этого заказа');
+        }
+
+        // Проверяем, что заказ еще не обработан
+        if ($order->order_status === OrderStatus::COMPLETED) {
+            return redirect()->back()->with('error', 'Заказ уже обработан');
+        }
+
+        // Переводим средства
+        $success = $this->orderService->transferFrozenFunds($order);
+
+        if ($success) {
+            // Обновляем статус заказа на "Завершено"
+            $order->order_status = OrderStatus::COMPLETED;
+            $order->save();
+
+            return redirect()->back()->with('success', 'Заказ подтвержден! Средства переведены на ваш баланс.');
+        } else {
+            return redirect()->back()->with('error', 'Ошибка при переводе средств. Попробуйте позже.');
+        }
+    }
 }
