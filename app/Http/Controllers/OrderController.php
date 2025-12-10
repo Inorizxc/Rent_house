@@ -250,6 +250,7 @@ class OrderController extends Controller
      */
     public function showConfirm(Request $request, $houseId)
     {
+
         $request->validate([
             'checkin_date' => 'required|date|after_or_equal:today',
             'checkout_date' => 'required|date|after:checkin_date',
@@ -257,11 +258,16 @@ class OrderController extends Controller
 
         $house = House::with(['user', 'photo'])->findOrFail($houseId);
         $user = $this->authService->checkAuth();
-
+        
         if (!$user) {
             return redirect()->route('login')->with('error', 'Необходима авторизация');
         }
 
+        if($user->balance < $this->orderService->calculateDayCount($request->checkin_date, $request->checkout_date)*$house->price_id){
+            return redirect()->route('house.chat', $houseId)
+            ->with('success', 'Денег нет у тебя нищеброд');
+            //return redirect()->route('map')->with('error', 'Недостаточно средств на балансе');
+        }
         // Генерируем даты для блокировки
         $datesToBlock = $this->orderValidationService->generateDatesToBlock(
             $request->checkin_date,
@@ -324,7 +330,7 @@ class OrderController extends Controller
         ]);
 
         $house = House::with('user')->findOrFail($houseId);
-
+        
         // Генерируем даты для блокировки
         $datesToBlock = $this->orderValidationService->generateDatesToBlock(
             $request->checkin_date,
