@@ -32,10 +32,6 @@ class OrderController extends Controller
         $this->chatService = $chatService;
     }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
     public function index(Request $request)
     {
         $user = $this->authService->checkAuth();
@@ -66,10 +62,7 @@ class OrderController extends Controller
         ]);
     }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
     public function create()
     {
         $houses = House::active()->get();
@@ -97,10 +90,7 @@ class OrderController extends Controller
             ->with('success', 'Заказ успешно создан');
     }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
     public function show($id)
     {
         $order = Order::with(['house.user', 'house.photo', 'customer'])->findOrFail($id);
@@ -110,19 +100,16 @@ class OrderController extends Controller
         if (!$currentUser) {
             return redirect()->route('login')->with('error', 'Необходима авторизация');
         }
-<<<<<<< HEAD
 
         if ($currentUser->isBanned()) {
             abort(403, 'Заблокированные пользователи не могут просматривать заказы');
         }
 
-=======
         
         if ($currentUser->isBanned()) {
             abort(403, 'Заблокированные пользователи не могут просматривать заказы');
         }
         
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
         $access = $this->authService->checkOrderAccess($currentUser, $order);
         
         if (!$access['has_access']) {
@@ -150,10 +137,7 @@ class OrderController extends Controller
         ]);
     }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
     public function update(Request $request, $id)
     {
         $order = Order::findOrFail($id);
@@ -172,10 +156,7 @@ class OrderController extends Controller
             ->with('success', 'Заказ успешно обновлен');
     }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
     public function destroy($id)
     {
         $order = Order::findOrFail($id);
@@ -185,10 +166,7 @@ class OrderController extends Controller
             ->with('success', 'Заказ успешно удален');
     }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
     public function createFromChat(Request $request, $houseId)
     {
         $user = $this->authService->checkAuth();
@@ -199,11 +177,8 @@ class OrderController extends Controller
                 'error' => 'Необходима авторизация'
             ], 401);
         }
-<<<<<<< HEAD
 
-=======
         
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
         $banCheck = $this->authService->checkBan($user);
         if ($banCheck) {
             return response()->json([
@@ -218,11 +193,8 @@ class OrderController extends Controller
         ]);
 
         $house = House::findOrFail($houseId);
-<<<<<<< HEAD
 
-=======
         
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
         if ($house->is_deleted || $house->isBanned()) {
             abort(404, 'Дом не найден или недоступен');
         }
@@ -254,10 +226,7 @@ class OrderController extends Controller
         ]);
     }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
     public function showConfirm(Request $request, $houseId)
     {
 
@@ -278,10 +247,7 @@ class OrderController extends Controller
             ->with('success', 'Денег нет у тебя нищеброд');
             //return redirect()->route('map')->with('error', 'Недостаточно средств на балансе');
         }
-<<<<<<< HEAD
 
-=======
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
         $datesToBlock = $this->orderValidationService->generateDatesToBlock(
             $request->checkin_date,
             $request->checkout_date
@@ -322,11 +288,8 @@ class OrderController extends Controller
         if (!$user) {
             return redirect()->route('login')->with('error', 'Необходима авторизация');
         }
-<<<<<<< HEAD
 
-=======
         
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
         $banCheck = $this->authService->checkBan($user);
         if ($banCheck) {
             return redirect()->back()->with('error', $banCheck['message']);
@@ -339,11 +302,8 @@ class OrderController extends Controller
         ]);
 
         $house = House::with('user')->findOrFail($houseId);
-<<<<<<< HEAD
 
-=======
         
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
         $datesToBlock = $this->orderValidationService->generateDatesToBlock(
             $request->checkin_date,
             $request->checkout_date
@@ -418,10 +378,7 @@ class OrderController extends Controller
             ->with('success', 'Заказ успешно создан и подтвержден!');
     }
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
     public function cancel(Request $request, $houseId)
     {
         $user = $this->authService->checkAuth();
@@ -432,11 +389,8 @@ class OrderController extends Controller
                 'error' => 'Необходима авторизация'
             ], 401);
         }
-<<<<<<< HEAD
 
-=======
         
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
         $banCheck = $this->authService->checkBan($user);
         if ($banCheck) {
             return response()->json([
@@ -461,10 +415,7 @@ class OrderController extends Controller
         ]);
     }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
     public function approve($id)
     {
         $user = $this->authService->checkAuth();
@@ -531,10 +482,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Запрос на возврат средств отправлен. Ожидайте подтверждения от арендодателя или администратора.');
     }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
     public function approveRefund($id)
     {
         $user = $this->authService->checkAuth();
@@ -557,7 +505,6 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Возврат средств уже был выполнен ранее.');
         }
 
-<<<<<<< HEAD
         
         $dealer_id = $order->house->user_id;
         $customer_id = $order->customer->user_id;
@@ -568,8 +515,6 @@ class OrderController extends Controller
         $calendar = $order->house->house_calendar->dates;
         $calendar_obj->dates = $this->orderService->removeDatesBetween($calendar,Carbon::parse($order->date_of_order),$order->day_count);
         $calendar_obj->save();
-=======
->>>>>>> 6bdfb7f520f51358831f23c7cd5ce1d93e6d7447
         $success = $this->orderService->refundOrder($order);
 
         if ($success) {
