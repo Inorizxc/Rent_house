@@ -26,13 +26,10 @@
                             $unreadCount = 0;
                             
                             if ($currentUser) {
-                                // Получаем все чаты пользователя
                                 $chats = \App\Models\Chat::where('user_id', $currentUser->user_id)
                                     ->orWhere('rent_dealer_id', $currentUser->user_id)
                                     ->get();
-                                
-                                // Подсчитываем чаты с непрочитанными сообщениями
-                                foreach ($chats as $chat) {
+                                                                foreach ($chats as $chat) {
                                     $lastMessage = \App\Models\Message::where('chat_id', $chat->chat_id)
                                         ->latest('created_at')
                                         ->first();
@@ -40,8 +37,6 @@
                                     if (!$lastMessage) {
                                         continue;
                                     }
-
-                                    // Определяем, когда пользователь последний раз просматривал чат
                                     $lastReadAt = null;
                                     if ($chat->user_id == $currentUser->user_id) {
                                         $lastReadAt = $chat->user_last_read_at;
@@ -49,8 +44,6 @@
                                         $lastReadAt = $chat->rent_dealer_last_read_at;
                                     }
 
-                                    // Если последнее сообщение отправлено не текущим пользователем
-                                    // и оно было создано после последнего просмотра (или чат никогда не просматривался)
                                     if ($lastMessage->user_id != $currentUser->user_id) {
                                         if (!$lastReadAt || $lastMessage->created_at > $lastReadAt) {
                                             $unreadCount++;
@@ -160,7 +153,6 @@
         </header>
         @auth
         <script>
-            // Конфигурация для модуля меню пользователя
             document.getElementById('chatLinkWrapper')?.setAttribute('data-update-route', '{{ route("chats.unread.count") }}');
         </script>
         @vite(['resources/js/pages/user-menu.js'])

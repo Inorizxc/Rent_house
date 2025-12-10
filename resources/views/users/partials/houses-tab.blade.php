@@ -22,7 +22,6 @@
         </div>
     @else
         @php
-            // Собираем уникальные типы аренды и типы домов
             $rentTypes = collect();
             $houseTypes = collect();
             
@@ -107,7 +106,6 @@
                             return $value !== '' && $value !== null;
                         });
                         $searchText = mb_strtolower(implode(' ', $searchParts), 'UTF-8');
-                        // Нормализуем пробелы - заменяем множественные пробелы на одинарные
                         $searchText = preg_replace('/\s+/u', ' ', $searchText);
                         $searchText = trim($searchText);
                         
@@ -199,7 +197,6 @@
 </div>
 
 <script>
-    // Глобальная функция для инициализации фильтров домов
     window.initHousesFilters = function(container) {
         container = container || document;
         
@@ -220,7 +217,6 @@
         
         console.log('Initializing houses filters:', rentTypeCheckboxes.length, 'rent type checkboxes,', houseTypeCheckboxes.length, 'house type checkboxes,', houseCards.length, 'cards');
         
-        // Функция для получения выбранных фильтров
         function getSelectedFilters() {
             const selectedRentTypes = [];
             const selectedHouseTypes = [];
@@ -243,7 +239,6 @@
             };
         }
         
-        // Функция для фильтрации домов
         function filterHouses() {
             const cards = container.querySelectorAll('.orders-house-card');
             const grid = container.getElementById('orders-houses-grid');
@@ -264,16 +259,12 @@
                 const cardHouseType = (card.dataset.houseType || '').toLowerCase();
                 const houseAddress = (card.dataset.houseAddress || '').toLowerCase();
                 
-                // Проверяем фильтр по типу аренды
                 const rentTypeMatch = filters.rentTypes.length === 0 || filters.rentTypes.includes(cardRentType);
                 
-                // Проверяем фильтр по типу дома
                 const houseTypeMatch = filters.houseTypes.length === 0 || filters.houseTypes.includes(cardHouseType);
                 
-                // Проверяем фильтр по адресу
                 const addressMatch = !addressFilter || houseAddress.includes(addressFilter);
                 
-                // Показываем карточку только если все фильтры совпадают
                 if (rentTypeMatch && houseTypeMatch && addressMatch) {
                     card.style.display = '';
                     visibleCount++;
@@ -282,7 +273,6 @@
                 }
             });
             
-            // Показываем сообщение, если нет видимых домов
             let noResults = container.querySelector('#orders-no-results');
             if (visibleCount === 0) {
                 if (noResults) {
@@ -295,7 +285,6 @@
             }
         }
         
-        // Используем делегирование событий для надежности
         const filtersContainer = container.querySelector('.orders-filters-card') || container;
         
         filtersContainer.addEventListener('change', function(e) {
@@ -305,7 +294,6 @@
             }
         }, { passive: true });
         
-        // Также добавляем обработчики напрямую для совместимости
         rentTypeCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 filterHouses();
@@ -318,21 +306,17 @@
             }, { passive: true });
         });
         
-        // Инициализируем автодополнение для поля адреса
         initHousesAutocomplete(container, filterHouses);
         
-        // Инициализируем фильтрацию при загрузке
         filterHouses();
     };
     
-    // Функция для инициализации автодополнения для домов
     function initHousesAutocomplete(container, filterHousesFunc) {
         const addressInput = container.querySelector('#filter-address-input');
         const addressDropdown = container.querySelector('#address-autocomplete');
         
         if (!addressInput) return;
         
-        // Собираем все уникальные адреса из домов
         const houseCards = container.querySelectorAll('.orders-house-card');
         const addressesSet = new Set();
         
@@ -343,7 +327,6 @@
         
         const addresses = Array.from(addressesSet).sort();
         
-        // Функция для фильтрации и отображения вариантов
         function showSuggestions(input, dropdown, items, filterValue) {
             const query = filterValue.toLowerCase().trim();
             
@@ -379,12 +362,10 @@
             dropdown.classList.add('show');
         }
         
-        // Обработчики для поля адреса
         let addressHighlightIndex = -1;
         addressInput.addEventListener('input', function() {
             addressHighlightIndex = -1;
             showSuggestions(addressInput, addressDropdown, addresses, this.value);
-            // Немедленно запускаем фильтрацию при вводе
             if (filterHousesFunc) {
                 filterHousesFunc();
             }
@@ -414,7 +395,6 @@
             }
         });
         
-        // Закрываем выпадающее меню при клике вне его
         document.addEventListener('click', function(e) {
             if (!addressInput.contains(e.target) && !addressDropdown.contains(e.target)) {
                 addressDropdown.classList.remove('show');
@@ -422,7 +402,6 @@
         });
     }
     
-    // Пытаемся инициализировать сразу
     (function() {
         function tryInit() {
             const grid = document.getElementById('orders-houses-grid');
@@ -447,7 +426,6 @@
 </script>
 
 <style>
-    /* Стили для фильтров домов (аналогично фильтрам заказов) */
     .orders-filters-section {
         margin-bottom: 12px;
     }

@@ -8,13 +8,11 @@
 @section('main_content')
     @php
         $currentUser = auth()->user();
-        // Используем методы модели для проверки прав
         $isOwner = $currentUser && $currentUser->canEditProfile($user);
         $canViewProfile = !$currentUser || $currentUser->canViewProfile($user);
     @endphp
 
     <div class="profile-wrapper">
-        {{-- Шапка профиля --}}
         <div class="profile-header">
             <div class="profile-avatar">
                 😊

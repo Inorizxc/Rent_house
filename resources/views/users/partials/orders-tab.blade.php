@@ -3,7 +3,6 @@
     $currentUser = auth()->user();
     $user = $user ?? null;
     
-    // Забаненные пользователи не могут просматривать заказы
     if ($currentUser && $currentUser->isBanned()) {
         abort(403, 'Заблокированные пользователи не могут просматривать заказы');
     }
@@ -96,13 +95,9 @@
                 @foreach($orders as $order)
                     @php
                         $house = $order->house;
-                        // Определяем роль пользователя профиля относительно заказа
-                        // Если пользователь профиля - владелец дома, то это заказ покупателя (owner)
-                        // Если пользователь профиля - заказчик, то это его заказ (customer)
                         $isOwnerOfHouse = $user && $house && $user->user_id == $house->user_id;
                         $isCustomer = $user && $order->customer_id == $user->user_id;
                         
-                        // Определяем роль пользователя профиля относительно заказа
                         $orderRole = $isOwnerOfHouse ? 'owner' : 'customer';
                         
                         $searchParts = array_filter([
@@ -118,7 +113,6 @@
                         $searchText = preg_replace('/\s+/u', ' ', $searchText);
                         $searchText = trim($searchText);
                         
-                        // Получаем фото дома
                         $photoPayload = $house && $house->photo
                             ? $house->photo
                                 ->filter(fn($photo) => !empty($photo->path))

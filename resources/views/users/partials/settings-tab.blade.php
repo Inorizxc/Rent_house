@@ -73,7 +73,6 @@
                     $deniedUntil = null;
                     
                     if ($currentUser) {
-                        // Проверяем, может ли пользователь подать заявку
                         if ($currentUser->need_verification) {
                             $verificationStatus = 'pending';
                         } elseif ($currentUser->verification_denied_until) {
@@ -144,7 +143,6 @@ document.addEventListener('DOMContentLoaded', function() {
         verificationForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // Блокируем кнопку
             verificationBtn.disabled = true;
             if (verificationBtnText) {
                 verificationBtnText.textContent = 'Отправка...';
@@ -164,7 +162,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 
                 if (response.ok) {
-                    // Меняем кнопку на "Заявка подана"
                     if (verificationBtnText) {
                         verificationBtnText.textContent = 'Заявка подана';
                     }
@@ -173,7 +170,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     verificationBtn.style.color = '#1e40af';
                     verificationBtn.style.cursor = 'not-allowed';
                     
-                    // Показываем сообщение об успехе
                     const successMessage = document.createElement('div');
                     successMessage.className = 'settings-action-message';
                     successMessage.style.cssText = 'background: #d1fae5; border: 1px solid #10b981; color: #065f46; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center;';
@@ -186,9 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                     verificationForm.parentElement.insertBefore(successMessage, verificationForm);
                     
-                    // Обновляем статус через небольшую задержку, чтобы показать новое состояние
                     setTimeout(() => {
-                        // Заменяем форму на сообщение о статусе
                         const statusMessage = document.createElement('div');
                         statusMessage.className = 'settings-action-message';
                         statusMessage.style.cssText = 'background: #dbeafe; border: 1px solid #3b82f6; color: #1e40af; padding: 12px 16px; border-radius: 8px; display: flex; align-items: center;';
@@ -201,7 +195,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         verificationForm.parentElement.replaceChild(statusMessage, verificationForm);
                     }, 2000);
                 } else {
-                    // Показываем ошибку
                     const errorMessage = document.createElement('div');
                     errorMessage.className = 'settings-action-message';
                     errorMessage.style.cssText = 'background: #fee2e2; border: 1px solid #ef4444; color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center;';
@@ -213,13 +206,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                     verificationForm.parentElement.insertBefore(errorMessage, verificationForm);
                     
-                    // Разблокируем кнопку
                     verificationBtn.disabled = false;
                     if (verificationBtnText) {
                         verificationBtnText.textContent = 'Подать на верификацию';
                     }
                     
-                    // Удаляем сообщение об ошибке через 5 секунд
                     setTimeout(() => {
                         errorMessage.remove();
                     }, 5000);
@@ -227,7 +218,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 console.error('Ошибка при отправке заявки:', error);
                 
-                // Показываем ошибку
                 const errorMessage = document.createElement('div');
                 errorMessage.className = 'settings-action-message';
                 errorMessage.style.cssText = 'background: #fee2e2; border: 1px solid #ef4444; color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center;';
@@ -239,13 +229,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 verificationForm.parentElement.insertBefore(errorMessage, verificationForm);
                 
-                // Разблокируем кнопку
                 verificationBtn.disabled = false;
                 if (verificationBtnText) {
                     verificationBtnText.textContent = 'Подать на верификацию';
                 }
                 
-                // Удаляем сообщение об ошибке через 5 секунд
                 setTimeout(() => {
                     errorMessage.remove();
                 }, 5000);
