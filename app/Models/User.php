@@ -30,6 +30,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone',
         'card',
         'balance',
+        'frozen_balance',
         'need_verification',
         'verification_denied_until',
         'banned_until', // Для временного бана - дата окончания
@@ -48,6 +49,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'original_role_id' => 'integer',
         'verified_email' => 'boolean',
         'balance' => 'decimal:2',
+        'frozen_balance' => 'decimal:2',
     ];
 
     public static function boot(){

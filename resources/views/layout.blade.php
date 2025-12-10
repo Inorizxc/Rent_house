@@ -94,6 +94,9 @@
                         <div class="balance-wrapper" style="margin-right: 10px;">
                             <span class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal">
                                 Баланс: {{ number_format((float)($currentUser->balance ?? 0), 2, ',', ' ') }} ₽
+                                @if($currentUser->frozen_balance && $currentUser->frozen_balance > 0)
+                                    <span style="color: #f59e0b;">(на удержании: {{ number_format((float)$currentUser->frozen_balance, 2, ',', ' ') }} ₽)</span>
+                                @endif
                             </span>
                         </div>
                         

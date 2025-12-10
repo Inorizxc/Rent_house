@@ -8,6 +8,7 @@ use App\Models\HouseCalendar;
 use App\Models\TemporaryBlock;
 use App\Models\Chat;
 use App\Models\Message;
+use App\Models\User;
 use App\enum\OrderStatus;
 use App\Services\ChatService\ChatService;
 use Carbon\Carbon;
@@ -34,16 +35,37 @@ class OrderService
             'customer_id' => $data['customer_id'],
         ];
 
-        return Order::create([
+        // Вычисляем сумму заказа
+        $amount = $data['amount'] ?? null;
+        if (!$amount && isset($data['house_id'])) {
+            $house = House::find($data['house_id']);
+            if ($house && $house->price_id && isset($data['day_count'])) {
+                $amount = (float) $house->price_id * (int) $data['day_count'];
+            }
+        }
+
+        $order = Order::create([
             'house_id' => $data['house_id'],
             'date_of_order' => $data['date_of_order'],
             'day_count' => $data['day_count'],
+            'amount' => $amount,
             'customer_id' => $data['customer_id'],
             'order_status_id' => $data['order_status_id'] ?? null,
             'order_status' => $data['order_status'] ?? null,
             'seller_confirmed' => $data['seller_confirmed'] ?? false,
             'original_data' => json_encode($originalData),
         ]);
+
+        // Замораживаем деньги у покупателя
+        if ($amount && $amount > 0 && isset($data['customer_id'])) {
+            $customer = User::find($data['customer_id']);
+            if ($customer) {
+                $customer->frozen_balance = ($customer->frozen_balance ?? 0) + $amount;
+                $customer->save();
+            }
+        }
+
+        return $order;
     }
 
     /**
@@ -177,6 +199,12 @@ class OrderService
      */
     public function calculateOrderAmount(Order $order): float
     {
+        // Если сумма уже сохранена в заказе, используем её
+        if ($order->amount && $order->amount > 0) {
+            return (float) $order->amount;
+        }
+
+        // Иначе вычисляем из цены дома
         if (!$order->house || !$order->house->price_id || !$order->day_count) {
             return 0;
         }
@@ -208,12 +236,28 @@ class OrderService
             return false;
         }
 
+        $customer = $order->customer;
+        if (!$customer) {
+            return false;
+        }
+
         // Вычисляем сумму заказа
         $amount = $this->calculateOrderAmount($order);
 
         if ($amount <= 0) {
             return false;
         }
+
+        // Обновляем сумму в заказе, если её не было
+        if (!$order->amount) {
+            $order->amount = $amount;
+        }
+
+        // Размораживаем и списываем деньги у покупателя
+        $customer->frozen_balance = max(0, ($customer->frozen_balance ?? 0) - $amount);
+        // Списываем деньги с баланса покупателя
+        $customer->balance = max(0, ($customer->balance ?? 0) - $amount);
+        $customer->save();
 
         // Начисляем деньги продавцу
         $seller->balance = ($seller->balance ?? 0) + $amount;
@@ -223,6 +267,45 @@ class OrderService
         $order->seller_confirmed = true;
         $order->order_status = OrderStatus::PROCESSING;
         $order->save();
+
+        return true;
+    }
+
+    /**
+     * Отказывает в заказе продавцом (размораживает деньги покупателя)
+     */
+    public function rejectBySeller(Order $order): bool
+    {
+        if ($order->seller_confirmed) {
+            return false; // Уже подтвержден, нельзя отказать
+        }
+
+        if ($order->order_status !== OrderStatus::PENDING) {
+            return false; // Неверный статус
+        }
+
+        $customer = $order->customer;
+        if (!$customer) {
+            return false;
+        }
+
+        // Вычисляем сумму заказа
+        $amount = $this->calculateOrderAmount($order);
+
+        if ($amount > 0) {
+            // Размораживаем деньги у покупателя
+            $customer->frozen_balance = max(0, ($customer->frozen_balance ?? 0) - $amount);
+            $customer->save();
+        }
+
+        // Обновляем статус заказа
+        $order->order_status = OrderStatus::CANCELLED;
+        $order->save();
+
+        // Освобождаем даты в календаре
+        if ($order->house) {
+            $this->unblockDates($order->house, $order);
+        }
 
         return true;
     }
@@ -258,6 +341,20 @@ class OrderService
         // Если продавец уже подтвердил, нельзя просто отменить
         if ($order->seller_confirmed) {
             return false;
+        }
+
+        $customer = $order->customer;
+        if (!$customer) {
+            return false;
+        }
+
+        // Вычисляем сумму заказа
+        $amount = $this->calculateOrderAmount($order);
+
+        if ($amount > 0) {
+            // Размораживаем деньги у покупателя
+            $customer->frozen_balance = max(0, ($customer->frozen_balance ?? 0) - $amount);
+            $customer->save();
         }
 
         $order->order_status = OrderStatus::CANCELLED;

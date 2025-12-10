@@ -254,8 +254,14 @@
                 <div class="actions" style="margin-top: 12px;">
                     <form method="POST" action="{{ route('orders.confirm.seller', $order->order_id) }}" style="display: inline;">
                         @csrf
-                        <button type="submit" class="btn-primary" onclick="return confirm('Вы подтверждаете, что будете выполнять этот заказ? Деньги будут начислены на ваш баланс.')">
-                            Подтвердить выполнение заказа
+                        <button type="submit" class="btn-primary" onclick="return confirm('Вы подтверждаете, что будете выполнять этот заказ? Деньги будут списаны у покупателя и начислены на ваш баланс.')">
+                            Подтвердить
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ route('orders.reject.seller', $order->order_id) }}" style="display: inline; margin-left: 8px;">
+                        @csrf
+                        <button type="submit" class="btn-secondary" onclick="return confirm('Вы уверены, что хотите отказать в заказе? Деньги будут разморожены у покупателя.')">
+                            Отказать
                         </button>
                     </form>
                 </div>

@@ -270,8 +270,14 @@
                                 @if($orderRole === 'owner' && $order->order_status === \App\enum\OrderStatus::PENDING && !$order->seller_confirmed)
                                     <form method="POST" action="{{ route('orders.confirm.seller', $order->order_id) }}" style="display: inline; margin-left: 8px;">
                                         @csrf
-                                        <button type="submit" class="btn-primary btn-sm" onclick="return confirm('Вы подтверждаете, что будете выполнять этот заказ? Деньги будут начислены на ваш баланс.')">
+                                        <button type="submit" class="btn-primary btn-sm" onclick="return confirm('Вы подтверждаете, что будете выполнять этот заказ? Деньги будут списаны у покупателя и начислены на ваш баланс.')">
                                             Подтвердить
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('orders.reject.seller', $order->order_id) }}" style="display: inline; margin-left: 4px;">
+                                        @csrf
+                                        <button type="submit" class="btn-secondary btn-sm" onclick="return confirm('Вы уверены, что хотите отказать в заказе? Деньги будут разморожены у покупателя.')">
+                                            Отказать
                                         </button>
                                     </form>
                                 @endif

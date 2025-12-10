@@ -96,10 +96,11 @@
                         class="btn-pay" 
                         onclick="handlePayment()"
                         id="payButton"
+                        style="display: none;"
                         disabled>
                     Оплатить аренду
                 </button>
-                <div id="paymentMessage" style="margin-top: 8px; font-size: 12px; color: #6b7280; text-align: center;">
+                <div id="paymentMessage" style="margin-top: 8px; font-size: 12px; color: #6b7280; text-align: center; display: none;">
                 </div>
             </div>
         </div>
@@ -171,6 +172,9 @@
 
 <script>
     const houseId = {{ $house->house_id }};
+    const userBalance = {{ (float)($currentUser->balance ?? 0) }};
+    const userFrozenBalance = {{ (float)($currentUser->frozen_balance ?? 0) }};
+    const housePricePerDay = {{ (float)($house->price_id ?? 0) }};
     const currentUserId = {{ $currentUser->user_id }};
     let lastMessageId = {{ $messages->count() > 0 ? $messages->last()->message_id : 0 }};
 
@@ -338,6 +342,7 @@
         } finally {
             payButton.disabled = false;
             payButton.textContent = 'Оплатить аренду';
+            updatePayButton(); // Обновляем состояние кнопки после обработки
         }
     }
 
@@ -365,12 +370,57 @@
             infoEl.style.color = '#6b7280';
             infoEl.style.fontWeight = '400';
         }
+        
+        // Обновляем кнопку оплаты при изменении дат
+        updatePayButton();
     }
 
     // Функция обновления состояния кнопки оплаты
     function updatePayButton() {
         const payButton = document.getElementById('payButton');
-        payButton.disabled = !(selectedCheckinDate && selectedCheckoutDate);
+        const paymentMessage = document.getElementById('paymentMessage');
+        
+        // Проверяем, выбраны ли даты
+        if (!selectedCheckinDate || !selectedCheckoutDate) {
+            payButton.style.display = 'none';
+            paymentMessage.textContent = '';
+            paymentMessage.style.display = 'none';
+            return;
+        }
+        
+        // Вычисляем количество дней
+        const checkin = new Date(selectedCheckinDate);
+        const checkout = new Date(selectedCheckoutDate);
+        // Количество дней = разница между датами (checkout уже на следующий день после последнего дня пребывания)
+        const dayCount = Math.ceil((checkout - checkin) / (1000 * 60 * 60 * 24));
+        
+        // Вычисляем сумму заказа
+        const orderAmount = housePricePerDay * dayCount;
+        
+        // Вычисляем доступный баланс (баланс минус замороженные средства)
+        const availableBalance = userBalance - userFrozenBalance;
+        
+        // Проверяем, хватает ли денег
+        if (orderAmount > 0 && availableBalance < orderAmount) {
+            const shortage = orderAmount - availableBalance;
+            // Скрываем кнопку и показываем сообщение на её месте
+            payButton.style.display = 'none';
+            paymentMessage.textContent = `Недостаточно средств. Не хватает: ${shortage.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₽`;
+            paymentMessage.style.color = '#dc2626';
+            paymentMessage.style.display = 'block';
+        } else {
+            // Показываем кнопку и скрываем сообщение (или показываем сумму заказа)
+            payButton.style.display = 'block';
+            payButton.disabled = false;
+            if (orderAmount > 0) {
+                paymentMessage.textContent = `Сумма заказа: ${orderAmount.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₽`;
+                paymentMessage.style.color = '#059669';
+                paymentMessage.style.display = 'block';
+            } else {
+                paymentMessage.textContent = '';
+                paymentMessage.style.display = 'none';
+            }
+        }
     }
 
     // Отправка сообщения
@@ -1167,6 +1217,8 @@
 
             // Первоначальная отрисовка
             renderCalendar();
+            updateSelectedDatesInfo();
+            updatePayButton();
 
             // Сбрасываем состояние выбора промежутка при клике вне календаря
             document.addEventListener('click', function(e) {

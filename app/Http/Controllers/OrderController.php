@@ -230,6 +230,25 @@ class OrderController extends Controller
             ], 400);
         }
 
+        // Вычисляем количество дней и сумму заказа
+        $dayCount = $this->orderService->calculateDayCount($validated['checkin_date'], $validated['checkout_date']);
+        $amount = 0;
+        if ($house->price_id && $dayCount > 0) {
+            $amount = (float) $house->price_id * $dayCount;
+        }
+
+        // Проверяем баланс покупателя (включая замороженные средства)
+        if ($amount > 0) {
+            $availableBalance = ($user->balance ?? 0) - ($user->frozen_balance ?? 0);
+            if ($availableBalance < $amount) {
+                $shortage = $amount - $availableBalance;
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Недостаточно средств на балансе. Не хватает: ' . number_format($shortage, 2, ',', ' ') . ' ₽'
+                ], 400);
+            }
+        }
+
         // Создаем временную блокировку
         $this->orderValidationService->createTemporaryBlock($house, $user, $datesToBlock);
 
@@ -284,6 +303,23 @@ class OrderController extends Controller
 
         // Вычисляем количество дней
         $dayCount = $this->orderService->calculateDayCount($request->checkin_date, $request->checkout_date);
+
+        // Вычисляем сумму заказа
+        $amount = 0;
+        if ($house->price_id && $dayCount > 0) {
+            $amount = (float) $house->price_id * $dayCount;
+        }
+
+        // Проверяем баланс покупателя (включая замороженные средства)
+        if ($amount > 0) {
+            $availableBalance = ($user->balance ?? 0) - ($user->frozen_balance ?? 0);
+            if ($availableBalance < $amount) {
+                // Удаляем временную блокировку, так как денег не хватает
+                $temporaryBlock->delete();
+                $shortage = $amount - $availableBalance;
+                return redirect()->back()->with('error', 'Недостаточно средств на балансе. Не хватает: ' . number_format($shortage, 2, ',', ' ') . ' ₽');
+            }
+        }
 
         // Вычисляем оставшееся время в секундах
         $expiresAt = $temporaryBlock->expires_at;
@@ -354,6 +390,12 @@ class OrderController extends Controller
         // Вычисляем количество дней
         $dayCount = $this->orderService->calculateDayCount($request->checkin_date, $request->checkout_date);
 
+        // Вычисляем сумму заказа
+        $amount = 0;
+        if ($house->price_id && $dayCount > 0) {
+            $amount = (float) $house->price_id * $dayCount;
+        }
+
         // Получаем статус по умолчанию (Рассмотрение)
         $defaultStatus = OrderStatus::PENDING;
         
@@ -362,12 +404,21 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Не найден статус заказа');
         }
 
+        // Проверяем баланс покупателя (включая замороженные средства)
+        $availableBalance = ($user->balance ?? 0) - ($user->frozen_balance ?? 0);
+        if ($amount > 0 && $availableBalance < $amount) {
+            $temporaryBlock->delete();
+            $shortage = $amount - $availableBalance;
+            return redirect()->back()->with('error', 'Недостаточно средств на балансе. Не хватает: ' . number_format($shortage, 2, ',', ' ') . ' ₽');
+        }
+
         // Создаем заказ в БД
         try {
             $order = $this->orderService->createOrder([
                 'house_id' => $house->house_id,
                 'date_of_order' => $request->checkin_date,
                 'day_count' => $dayCount,
+                'amount' => $amount,
                 'customer_id' => $user->user_id,
                 'order_status' => $defaultStatus,
             ]);
@@ -478,9 +529,36 @@ class OrderController extends Controller
         $result = $this->orderService->confirmBySeller($order);
 
         if ($result) {
-            return redirect()->back()->with('success', 'Заказ подтвержден! Деньги начислены на ваш баланс.');
+            return redirect()->back()->with('success', 'Заказ подтвержден! Деньги списаны у покупателя и начислены на ваш баланс.');
         } else {
             return redirect()->back()->with('error', 'Не удалось подтвердить заказ. Возможно, он уже подтвержден или имеет неверный статус.');
+        }
+    }
+
+    /**
+     * Отказать в заказе продавцом (размораживание денег покупателя)
+     */
+    public function rejectBySeller(Request $request, $orderId)
+    {
+        $user = $this->authService->checkAuth();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Необходима авторизация');
+        }
+
+        $order = Order::with(['house.user'])->findOrFail($orderId);
+
+        // Проверяем, что пользователь является владельцем дома
+        if (!$order->house || $order->house->user_id != $user->user_id) {
+            abort(403, 'У вас нет прав для отказа в этом заказе');
+        }
+
+        $result = $this->orderService->rejectBySeller($order);
+
+        if ($result) {
+            return redirect()->back()->with('success', 'Заказ отклонен. Деньги разморожены у покупателя.');
+        } else {
+            return redirect()->back()->with('error', 'Не удалось отклонить заказ. Возможно, он уже подтвержден или имеет неверный статус.');
         }
     }
 

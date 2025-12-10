@@ -138,49 +138,86 @@
                             </thead>
                             <tbody>
                                 @foreach ($rows as $row)
-                                    <tr>
-                                        @php
-                                            $rowArray = (array)$row;
-                                            $primaryKey = null;
-                                            $primaryKeyValue = null;
-                                            
-                                            // Определяем primary key
-                                            foreach ($columns as $col) {
-                                                if ($col->pk == 1) {
-                                                    $primaryKey = $col->name;
-                                                    $primaryKeyValue = $rowArray[$col->name] ?? null;
-                                                    break;
-                                                }
+                                    @php
+                                        $rowArray = (array)$row;
+                                        $primaryKey = null;
+                                        $primaryKeyValue = null;
+                                        
+                                        // Определяем primary key
+                                        foreach ($columns as $col) {
+                                            if ($col->pk == 1) {
+                                                $primaryKey = $col->name;
+                                                $primaryKeyValue = $rowArray[$col->name] ?? null;
+                                                break;
                                             }
-                                            
-                                            // Если не найден, пробуем стандартные варианты
-                                            if (!$primaryKey) {
-                                                // Пробуем стандартные варианты
-                                                if (isset($rowArray['id'])) {
-                                                    $primaryKey = 'id';
-                                                    $primaryKeyValue = $rowArray['id'];
-                                                } elseif (isset($rowArray[$selectedTable . '_id'])) {
-                                                    $primaryKey = $selectedTable . '_id';
-                                                    $primaryKeyValue = $rowArray[$selectedTable . '_id'];
-                                                } elseif (isset($rowArray['user_id'])) {
-                                                    $primaryKey = 'user_id';
-                                                    $primaryKeyValue = $rowArray['user_id'];
-                                                }
+                                        }
+                                        
+                                        // Если не найден, пробуем стандартные варианты
+                                        if (!$primaryKey) {
+                                            if (isset($rowArray['id'])) {
+                                                $primaryKey = 'id';
+                                                $primaryKeyValue = $rowArray['id'];
+                                            } elseif (isset($rowArray[$selectedTable . '_id'])) {
+                                                $primaryKey = $selectedTable . '_id';
+                                                $primaryKeyValue = $rowArray[$selectedTable . '_id'];
+                                            } elseif (isset($rowArray['user_id'])) {
+                                                $primaryKey = 'user_id';
+                                                $primaryKeyValue = $rowArray['user_id'];
                                             }
-                                        @endphp
-                                        @foreach ($rowArray as $val)
-                                            <td>{{ is_null($val) ? '—' : $val }}</td>
+                                        }
+                                        
+                                        $rowId = 'row-' . ($primaryKeyValue ?? uniqid());
+                                    @endphp
+                                    <tr id="{{ $rowId }}" data-table="{{ $selectedTable }}" data-primary-key="{{ $primaryKey }}" data-primary-value="{{ $primaryKeyValue }}">
+                                        @foreach ($columns as $col)
+                                            @php
+                                                $colName = $col->name;
+                                                $colValue = $rowArray[$colName] ?? null;
+                                                $isBlocked = in_array($colName, ['id', 'created_at', 'updated_at', 'deleted_at'], true);
+                                            @endphp
+                                            <td data-column="{{ $colName }}" 
+                                                data-editable="{{ $isBlocked ? 'false' : 'true' }}"
+                                                data-type="{{ $col->type ?? 'TEXT' }}"
+                                                data-notnull="{{ $col->notnull ? 'true' : 'false' }}">
+                                                <span class="cell-value">{{ is_null($colValue) ? '—' : htmlspecialchars($colValue, ENT_QUOTES, 'UTF-8') }}</span>
+                                                @if (!$isBlocked)
+                                                    <input type="text" 
+                                                           class="cell-input" 
+                                                           value="{{ is_null($colValue) ? '' : htmlspecialchars($colValue, ENT_QUOTES, 'UTF-8') }}"
+                                                           style="display: none; width: 100%; padding: 6px 8px; border: 1px solid #3b82f6; border-radius: 4px; font-size: 14px;"
+                                                           data-original-value="{{ is_null($colValue) ? '' : htmlspecialchars($colValue, ENT_QUOTES, 'UTF-8') }}">
+                                                @endif
+                                            </td>
                                         @endforeach
-                                        <td>
+                                        <td class="actions-cell">
                                             @if ($primaryKey && $primaryKeyValue)
-                                                <form method="POST" 
-                                                      action="{{ route('admin.panel.delete', ['table' => $selectedTable, 'id' => $primaryKeyValue]) }}" 
-                                                      style="display: inline;"
-                                                      onsubmit="return confirm('Вы уверены, что хотите удалить эту запись?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger">Удалить</button>
-                                                </form>
+                                                <div class="row-actions" style="display: flex; gap: 8px; align-items: center; white-space: nowrap;">
+                                                    <button type="button" 
+                                                            class="btn btn-edit edit-row-btn" 
+                                                            data-row-id="{{ $rowId }}">
+                                                        Редактировать
+                                                    </button>
+                                                    <button type="button" 
+                                                            class="btn btn-success save-row-btn" 
+                                                            data-row-id="{{ $rowId }}"
+                                                            style="display: none;">
+                                                        Сохранить
+                                                    </button>
+                                                    <button type="button" 
+                                                            class="btn btn-secondary cancel-row-btn" 
+                                                            data-row-id="{{ $rowId }}"
+                                                            style="display: none;">
+                                                        Отмена
+                                                    </button>
+                                                    <form method="POST" 
+                                                          action="{{ route('admin.panel.delete', ['table' => $selectedTable, 'id' => $primaryKeyValue]) }}" 
+                                                          style="display: inline;"
+                                                          onsubmit="return confirm('Вы уверены, что хотите удалить эту запись?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger">Удалить</button>
+                                                    </form>
+                                                </div>
                                             @endif
                                         </td>
                                     </tr>
@@ -285,6 +322,190 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.search = params.toString();
         }
     });
+
+    // Inline-редактирование строк таблицы
+    document.addEventListener('click', function(e) {
+        // Кнопка "Редактировать"
+        if (e.target.classList.contains('edit-row-btn')) {
+            const rowId = e.target.getAttribute('data-row-id');
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            
+            // Делаем строку редактируемой
+            row.classList.add('editing');
+            const cells = row.querySelectorAll('td[data-editable="true"]');
+            
+            cells.forEach(cell => {
+                const valueSpan = cell.querySelector('.cell-value');
+                const input = cell.querySelector('.cell-input');
+                
+                if (valueSpan && input) {
+                    valueSpan.style.display = 'none';
+                    input.style.display = 'block';
+                    input.focus();
+                }
+            });
+            
+            // Показываем кнопки "Сохранить" и "Отмена", скрываем "Редактировать"
+            const actionsCell = row.querySelector('.actions-cell');
+            if (actionsCell) {
+                actionsCell.querySelector('.edit-row-btn').style.display = 'none';
+                actionsCell.querySelector('.save-row-btn').style.display = 'inline-block';
+                actionsCell.querySelector('.cancel-row-btn').style.display = 'inline-block';
+            }
+        }
+        
+        // Кнопка "Сохранить"
+        if (e.target.classList.contains('save-row-btn')) {
+            const rowId = e.target.getAttribute('data-row-id');
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            
+            const table = row.getAttribute('data-table');
+            const primaryKey = row.getAttribute('data-primary-key');
+            const primaryValue = row.getAttribute('data-primary-value');
+            
+            // Собираем данные для отправки
+            const formData = new FormData();
+            formData.append('_token', '{{ csrf_token() }}');
+            formData.append('_method', 'PUT');
+            
+            const cells = row.querySelectorAll('td[data-editable="true"]');
+            let hasChanges = false;
+            
+            cells.forEach(cell => {
+                const columnName = cell.getAttribute('data-column');
+                const input = cell.querySelector('.cell-input');
+                const originalValue = input ? input.getAttribute('data-original-value') : '';
+                const newValue = input ? input.value : '';
+                
+                if (newValue !== originalValue) {
+                    hasChanges = true;
+                }
+                
+                formData.append(columnName, newValue);
+            });
+            
+            if (!hasChanges) {
+                // Нет изменений, просто отменяем редактирование
+                cancelRowEdit(rowId);
+                return;
+            }
+            
+            // Отправляем запрос на обновление
+            const updateUrl = '{{ route("admin.panel.update", ["table" => ":table", "id" => ":id"]) }}'
+                .replace(':table', encodeURIComponent(table))
+                .replace(':id', encodeURIComponent(primaryValue));
+                
+            fetch(updateUrl, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => {
+                if (response.ok || response.redirected) {
+                    // Обновляем значения в ячейках
+                    cells.forEach(cell => {
+                        const valueSpan = cell.querySelector('.cell-value');
+                        const input = cell.querySelector('.cell-input');
+                        
+                        if (valueSpan && input) {
+                            const newValue = input.value || '—';
+                            valueSpan.textContent = newValue;
+                            input.setAttribute('data-original-value', input.value);
+                            valueSpan.style.display = '';
+                            input.style.display = 'none';
+                        }
+                    });
+                    
+                    // Выходим из режима редактирования
+                    row.classList.remove('editing');
+                    const actionsCell = row.querySelector('.actions-cell');
+                    if (actionsCell) {
+                        actionsCell.querySelector('.edit-row-btn').style.display = 'inline-block';
+                        actionsCell.querySelector('.save-row-btn').style.display = 'none';
+                        actionsCell.querySelector('.cancel-row-btn').style.display = 'none';
+                    }
+                    
+                    // Показываем сообщение об успехе
+                    showNotification('Запись успешно обновлена', 'success');
+                    
+                    // Перезагружаем страницу через небольшую задержку
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    return response.text().then(text => {
+                        throw new Error(text || 'Ошибка при сохранении');
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                showNotification('Ошибка при сохранении: ' + error.message, 'error');
+            });
+        }
+        
+        // Кнопка "Отмена"
+        if (e.target.classList.contains('cancel-row-btn')) {
+            const rowId = e.target.getAttribute('data-row-id');
+            cancelRowEdit(rowId);
+        }
+    });
+    
+    // Функция отмены редактирования строки
+    function cancelRowEdit(rowId) {
+        const row = document.getElementById(rowId);
+        if (!row) return;
+        
+        const cells = row.querySelectorAll('td[data-editable="true"]');
+        
+        cells.forEach(cell => {
+            const valueSpan = cell.querySelector('.cell-value');
+            const input = cell.querySelector('.cell-input');
+            
+            if (valueSpan && input) {
+                // Восстанавливаем оригинальное значение
+                input.value = input.getAttribute('data-original-value');
+                valueSpan.style.display = '';
+                input.style.display = 'none';
+            }
+        });
+        
+        // Выходим из режима редактирования
+        row.classList.remove('editing');
+        const actionsCell = row.querySelector('.actions-cell');
+        if (actionsCell) {
+            actionsCell.querySelector('.edit-row-btn').style.display = 'inline-block';
+            actionsCell.querySelector('.save-row-btn').style.display = 'none';
+            actionsCell.querySelector('.cancel-row-btn').style.display = 'none';
+        }
+    }
+    
+    // Функция показа уведомлений
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'success' ? 'success' : 'error'}`;
+        notification.textContent = message;
+        notification.style.position = 'fixed';
+        notification.style.top = '20px';
+        notification.style.right = '20px';
+        notification.style.zIndex = '10000';
+        notification.style.minWidth = '300px';
+        notification.style.padding = '16px 20px';
+        notification.style.borderRadius = '8px';
+        notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transition = 'opacity 0.3s';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
 });
 </script>
 @endsection

@@ -17,6 +17,7 @@ class Order extends Model
         "house_id",
         "date_of_order",
         "day_count",
+        "amount",
         "customer_id",
         "order_status",
         "seller_confirmed",
@@ -25,6 +26,7 @@ class Order extends Model
     protected $casts = [
         "order_status" => OrderStatus::class,
         "seller_confirmed" => "boolean",
+        "amount" => "decimal:2",
     ];
     
     /**

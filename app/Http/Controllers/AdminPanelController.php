@@ -95,6 +95,64 @@ class AdminPanelController extends Controller
     }
 
     /**
+     * Обновление записи в таблице
+     */
+    public function update(Request $request, $table, $id)
+    {
+        try {
+            // Проверяем существование таблицы
+            $tableNames = collect(DB::select("
+                SELECT name
+                FROM sqlite_master
+                WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+            "))->pluck('name');
+            
+            if (!$tableNames->contains($table)) {
+                return back()->with('error', 'Таблица не найдена');
+            }
+
+            // Определяем primary key
+            $primaryKey = $this->getPrimaryKey($table);
+            if (!$primaryKey) {
+                return back()->with('error', 'Не удалось определить первичный ключ таблицы');
+            }
+
+            // Получаем информацию о колонках
+            $columns = collect(DB::select("PRAGMA table_info(" . DB::getPdo()->quote($table) . ")"));
+            
+            // Блокируем изменение системных полей
+            $blocked = ['id', 'created_at', 'updated_at', 'deleted_at'];
+            $fillable = $columns
+                ->pluck('name')
+                ->reject(fn ($column) => in_array($column, $blocked, true))
+                ->values()
+                ->all();
+
+            // Получаем данные для обновления
+            $payload = $request->only($fillable);
+            foreach ($payload as $key => $value) {
+                if ($value === '') {
+                    $payload[$key] = null;
+                }
+            }
+
+            if (!empty($payload)) {
+                // Обновляем запись
+                DB::table($table)
+                    ->where($primaryKey, $id)
+                    ->update($payload);
+
+                return redirect()->route('admin.panel', ['table' => $table])
+                    ->with('status', "Запись успешно обновлена в «{$table}»");
+            }
+
+            return back()->with('error', 'Нет данных для обновления');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Ошибка при обновлении: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Удаление записи из таблицы
      */
     public function delete(Request $request, $table, $id)

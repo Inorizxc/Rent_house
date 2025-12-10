@@ -47,6 +47,7 @@ Route::middleware(['auth', 'banned'])->group(function () {
         Route::post('/house/{houseId}/order/confirm', 'confirm')->name('house.order.confirm');
         Route::post('/house/{houseId}/order/cancel', 'cancel')->name('house.order.cancel');
         Route::post('/orders/{orderId}/confirm-seller', 'confirmBySeller')->name('orders.confirm.seller');
+        Route::post('/orders/{orderId}/reject-seller', 'rejectBySeller')->name('orders.reject.seller');
         Route::post('/orders/{orderId}/request-refund', 'requestRefund')->name('orders.request.refund');
         Route::post('/orders/{orderId}/cancel-customer', 'cancelByCustomer')->name('orders.cancel.customer');
     });
@@ -120,6 +121,7 @@ Route::middleware(['auth', 'admin'])->prefix('adminpanel')->name('admin.')->grou
     Route::controller(AdminPanelController::class)->group(function () {
         Route::get('/', 'index')->name('panel');
         Route::post('/', 'index')->name('panel.store');
+        Route::put('/{table}/{id}', 'update')->name('panel.update');
         Route::delete('/{table}/{id}', 'delete')->name('panel.delete');
         
         // Чаты
