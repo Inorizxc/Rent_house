@@ -12,6 +12,7 @@ new class extends Component {
     public string $birth_date = '';
     public string $phone = '';
     public string $email = '';
+    public string $balance = '';
 
     public function mount(): void
     {
@@ -22,6 +23,7 @@ new class extends Component {
         $this->birth_date = $user->birth_date ? $user->birth_date->format('Y-m-d') : '';
         $this->phone = $user->phone ?? '';
         $this->email = $user->email ?? '';
+        $this->balance = $user->balance ?? '';
     }
 
     public function updateProfileInformation(): void
@@ -45,7 +47,10 @@ new class extends Component {
         ]);
 
         $user->fill($validated);
-
+        if($this->balance>0){
+            $user->balance = $user->balance+$this->balance;
+        }
+        
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
         }
@@ -77,10 +82,11 @@ new class extends Component {
         <div class="settings-form-grid">
             <flux:input wire:model="birth_date" :label="__('Дата рождения')" type="date" />
             <flux:input wire:model="phone" :label="__('Номер телефона')" type="tel" autocomplete="tel" />
+            <flux:input wire:model="balance" :label="__('Баланасе')" type="number"  />
         </div>
         
         <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
-
+        
         <div class="settings-form-actions">
             <button type="submit" class="settings-save-button">
                 <svg class="settings-button-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
