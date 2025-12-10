@@ -59,6 +59,27 @@
                                 }
                             }
                         @endphp
+
+                        @if($currentUser)
+                            @if ($currentUser->ban_reason !=null)
+                        <div class="ban_reason" id="chatLinkWrapper">
+                            
+                            @if($currentUser->is_banned_permanently)
+                            <a
+                                class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal"
+                            >
+                                Причина бана: {{ $currentUser->ban_reason }}.  Забанен навсегда.
+                            </a>
+                            @else
+                                <a
+                                class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal"
+                            >
+                                Причина бана: {{ $currentUser->ban_reason }}.   Забанен до: {{ $currentUser->banned_until->format('d.m.Y H:i') }}.
+                            </a>
+                            @endif
+                        </div>
+                        @endif
+                        @endif
                         @if($currentUser)
                             <div class="balance-display" style="margin-right: 12px; padding: 6px 12px; background: #f3f4f6; border-radius: 6px; font-size: 14px; color: #1b1b18;">
                                 Баланс: <strong>{{ number_format((float)($currentUser->balance ?? 0), 2, ',', ' ') }} ₽</strong>
