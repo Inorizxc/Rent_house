@@ -58,11 +58,9 @@ class HouseService{
             $coordinates = $geocoder->getCoordinates($data['adress']);
             
             if ($coordinates && isset($coordinates['lat']) && isset($coordinates['lng'])) {
-                // Конвертируем в строку, так как в БД поле TEXT
                 $data['lat'] = (string) $coordinates['lat'];
                 $data['lng'] = (string) $coordinates['lng'];
-                
-                // Проверяем уникальность координат (адреса) при создании
+
                 $existingHouse = House::where('lat', $data['lat'])
                     ->where('lng', $data['lng'])
                     ->where(function($query) {
@@ -73,21 +71,13 @@ class HouseService{
                     ->first();
                 
                 if ($existingHouse) {
-                    return redirect()->back()
-                        ->withErrors(['adress' => 'Дом с таким адресом (координатами) уже существует. Адрес существующего дома: ' . ($existingHouse->adress ?? 'не указан')])
-                        ->withInput();
+                    return redirect()->back();
                 }
             } else {
-                // Геокодер не смог найти координаты - возвращаем ошибку
-                return redirect()->back()
-                    ->withErrors(['adress' => 'Не удалось определить координаты для указанного адреса. Пожалуйста, проверьте правильность адреса. Убедитесь, что указан правильный город и название улицы (например, "Саратов, улица Исаева, 5" или "Энгельс, улица Исаева, 5"). Проверьте логи для детальной информации.'])
-                    ->withInput();
+                return redirect()->back();
             }
         } else {
-            // Адрес обязателен, так что эта ситуация не должна возникнуть благодаря валидации
-            return redirect()->back()
-                ->withErrors(['adress' => 'Адрес обязателен для заполнения.'])
-                ->withInput();
+            return redirect()->back();
         }
     }
 
@@ -137,11 +127,9 @@ class HouseService{
                 foreach ($deletedPhotosIds as $photoId) {
                     $photo = Photo::find($photoId);
                     if ($photo && $photo->house_id == $house->house_id) {
-                        // Удаляем файл из хранилища
                         if ($photo->path && Storage::disk('public')->exists($photo->path)) {
                             Storage::disk('public')->delete($photo->path);
                         }
-                        // Удаляем запись из БД
                         $photo->delete();
                     }
                 }

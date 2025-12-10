@@ -89,7 +89,7 @@ class BanController extends Controller
         $bannedRole = \App\Models\Role::where('uniq_name', 'Banned')->first();
         
         if (!$bannedRole) {
-            return back()->with('error', 'Роль "Забанен" не найдена. Запустите seeder ролей.');
+            return back();
         }
 
         if (!$user->isBanned()) {
@@ -114,7 +114,7 @@ class BanController extends Controller
         $user->save();
         $user->refresh();
 
-        return redirect()->route('admin.bans', ['type' => 'users', 'page' => $request->get('page', 1)])->with('status', "Пользователь #{$user->user_id} забанен.");
+        return redirect()->route('admin.bans', ['type' => 'users', 'page' => $request->get('page', 1)]);
     }
     
     public function unbanUser($userId)
@@ -123,7 +123,7 @@ class BanController extends Controller
 
         $user->unban();
 
-        return redirect()->route('admin.bans', ['type' => 'users'])->with('status', "Пользователь #{$user->user_id} разбанен.");
+        return redirect()->route('admin.bans', ['type' => 'users']);
     }
 
     public function banHouse(Request $request, $houseId)
@@ -153,7 +153,7 @@ class BanController extends Controller
         $house->save();
         $house->refresh(); 
 
-        return redirect()->route('admin.bans', ['type' => 'houses', 'page' => $request->get('page', 1)])->with('status', "Дом #{$house->house_id} забанен.");
+        return redirect()->route('admin.bans', ['type' => 'houses', 'page' => $request->get('page', 1)]);
     }
 
     public function unbanHouse($houseId)
@@ -164,7 +164,7 @@ class BanController extends Controller
         $house->banned_until = null;
         $house->save();
 
-        return redirect()->route('admin.bans', ['type' => 'houses'])->with('status', "Дом #{$house->house_id} разбанен.");
+        return redirect()->route('admin.bans', ['type' => 'houses']);
     }
 
     public function deleteHouse($houseId)

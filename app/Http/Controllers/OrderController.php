@@ -8,9 +8,11 @@ use App\enum\OrderStatus;
 use App\Services\OrderService\OrderService;
 use App\Services\OrderService\OrderValidationService;
 use App\Services\AuthService\AuthService;
+use App\Services\ChatService\ChatService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class OrderController extends Controller
 {
@@ -21,13 +23,14 @@ class OrderController extends Controller
     public function __construct(
         OrderService $orderService,
         OrderValidationService $orderValidationService,
-        AuthService $authService
+        AuthService $authService,
+        ChatService $chatService,
     ) {
         $this->orderService = $orderService;
         $this->orderValidationService = $orderValidationService;
         $this->authService = $authService;
+        $this->chatService = $chatService;
     }
-
 
     public function index(Request $request)
     {
@@ -83,8 +86,7 @@ class OrderController extends Controller
 
         $order = $this->orderService->createOrder($validated);
 
-        return redirect()->route('orders.show', $order->order_id)
-            ->with('success', 'Заказ успешно создан');
+        return redirect()->route('orders.show', $order->order_id);
     }
 
 
@@ -97,6 +99,11 @@ class OrderController extends Controller
         if (!$currentUser) {
             return redirect()->route('login')->with('error', 'Необходима авторизация');
         }
+
+        if ($currentUser->isBanned()) {
+            abort(403, 'Заблокированные пользователи не могут просматривать заказы');
+        }
+
         
         if ($currentUser->isBanned()) {
             abort(403, 'Заблокированные пользователи не могут просматривать заказы');
@@ -144,8 +151,7 @@ class OrderController extends Controller
 
         $this->orderService->updateOrder($order, $validated);
 
-        return redirect()->route('orders.show', $order->order_id)
-            ->with('success', 'Заказ успешно обновлен');
+        return redirect()->route('orders.show', $order->order_id);
     }
 
 
@@ -169,6 +175,7 @@ class OrderController extends Controller
                 'error' => 'Необходима авторизация'
             ], 401);
         }
+
         
         $banCheck = $this->authService->checkBan($user);
         if ($banCheck) {
@@ -184,6 +191,7 @@ class OrderController extends Controller
         ]);
 
         $house = House::findOrFail($houseId);
+
         
         if ($house->is_deleted || $house->isBanned()) {
             abort(404, 'Дом не найден или недоступен');
@@ -237,6 +245,7 @@ class OrderController extends Controller
             ->with('success', 'Денег нет у тебя нищеброд');
             //return redirect()->route('map')->with('error', 'Недостаточно средств на балансе');
         }
+
         $datesToBlock = $this->orderValidationService->generateDatesToBlock(
             $request->checkin_date,
             $request->checkout_date
@@ -277,6 +286,7 @@ class OrderController extends Controller
         if (!$user) {
             return redirect()->route('login')->with('error', 'Необходима авторизация');
         }
+
         
         $banCheck = $this->authService->checkBan($user);
         if ($banCheck) {
@@ -290,6 +300,7 @@ class OrderController extends Controller
         ]);
 
         $house = House::with('user')->findOrFail($houseId);
+
         
         $datesToBlock = $this->orderValidationService->generateDatesToBlock(
             $request->checkin_date,
@@ -333,12 +344,7 @@ class OrderController extends Controller
             ]);
         } catch (\Exception $e) {
             $temporaryBlock->delete();
-            Log::error('Ошибка при создании заказа', [
-                'house_id' => $houseId,
-                'user_id' => $user->user_id,
-                'error' => $e->getMessage()
-            ]);
-            return redirect()->back()->with('error', 'Ошибка при создании заказа: ' . $e->getMessage());
+            return redirect()->back();
         }
 
         $this->orderService->blockDates($house, $datesToBlock);
@@ -348,8 +354,7 @@ class OrderController extends Controller
         $seller = $house->user;
         
         if (!$seller) {
-            Log::error('Продавец не найден для дома', ['house_id' => $houseId]);
-            return redirect()->back()->with('error', 'Ошибка: продавец не найден');
+            return redirect()->back();
         }
         
         $buyerId = $user->user_id;
@@ -367,9 +372,9 @@ class OrderController extends Controller
             );
         }
 
-        return redirect()->route('house.chat', $houseId)
-            ->with('success', 'Заказ успешно создан и подтвержден!');
+        return redirect()->route('house.chat', $houseId);
     }
+
 
     public function cancel(Request $request, $houseId)
     {
@@ -381,6 +386,7 @@ class OrderController extends Controller
                 'error' => 'Необходима авторизация'
             ], 401);
         }
+
         
         $banCheck = $this->authService->checkBan($user);
         if ($banCheck) {
@@ -412,7 +418,7 @@ class OrderController extends Controller
         $user = $this->authService->checkAuth();
 
         if (!$user) {
-            return redirect()->route('login')->with('error', 'Необходима авторизация');
+            return redirect()->route('login');
         }
 
         $order = Order::with(['house.user', 'customer'])->findOrFail($id);
@@ -422,7 +428,7 @@ class OrderController extends Controller
         }
 
         if ($order->order_status === OrderStatus::COMPLETED) {
-            return redirect()->back()->with('error', 'Заказ уже обработан');
+            return redirect()->back();
         }
 
         $success = $this->orderService->transferFrozenFunds($order);
@@ -431,21 +437,22 @@ class OrderController extends Controller
             $order->order_status = OrderStatus::COMPLETED;
             $order->save();
 
-            return redirect()->back()->with('success', 'Заказ подтвержден! Средства переведены на ваш баланс.');
+            return redirect()->back();
         } else {
-            return redirect()->back()->with('error', 'Ошибка при переводе средств. Попробуйте позже.');
+            return redirect()->back();
         }
     }
 
 
     public function requestRefund($id)
-    {
+    {   
+        
         $user = $this->authService->checkAuth();
 
         if (!$user) {
-            return redirect()->route('login')->with('error', 'Необходима авторизация');
+            return redirect()->route('login');
         }
-
+        
         $order = Order::with(['house.user', 'customer'])->findOrFail($id);
 
         if ($order->customer_id != $user->user_id) {
@@ -459,11 +466,17 @@ class OrderController extends Controller
         if ($order->order_status === OrderStatus::CANCELLED) {
             return redirect()->back()->with('error', 'Заказ отменен');
         }
+        
+        $dealer_id = $order->house->user_id;
+        $customer = $user->user_id;
+        $chat = $this->chatService->getUsersChat($dealer_id,$user->user_id);
+        
+        $this->orderService->sendOrderRefundMessage($chat,$order);
 
         $order->order_status = OrderStatus::REFUND;
         $order->save();
 
-        return redirect()->back()->with('success', 'Запрос на возврат средств отправлен. Ожидайте подтверждения от арендодателя или администратора.');
+        return redirect()->back();
     }
 
 
@@ -481,20 +494,31 @@ class OrderController extends Controller
             abort(403, 'У вас нет прав на подтверждение возврата для этого заказа');
         }
 
-        if ($order->order_status !== OrderStatus::REFUND) {
-            return redirect()->back()->with('error', 'Запрос на возврат не найден');
-        }
+        //if ($order->order_status !== OrderStatus::REFUND) {
+        //    return redirect()->back()->with('error', 'Запрос на возврат не найден');
+        //}
 
         if ($order->isRefunded()) {
             return redirect()->back()->with('error', 'Возврат средств уже был выполнен ранее.');
         }
 
+        
+        $dealer_id = $order->house->user_id;
+        $customer_id = $order->customer->user_id;
+        $chat = $this->chatService->getUsersChat($dealer_id,$customer_id);
+        
+        $this->orderService->sendOrderApproveRefundMessage($chat,$order);
+        $calendar_obj = $order->house->house_calendar;
+        $calendar = $order->house->house_calendar->dates;
+        $calendar_obj->dates = $this->orderService->removeDatesBetween($calendar,Carbon::parse($order->date_of_order),$order->day_count);
+        $calendar_obj->save();
         $success = $this->orderService->refundOrder($order);
 
         if ($success) {
-            return redirect()->back()->with('success', 'Возврат средств подтвержден! Средства возвращены арендатору.');
+            
+            return redirect()->back();
         } else {
-            return redirect()->back()->with('error', 'Ошибка при возврате средств. Попробуйте позже.');
+            return redirect()->back();
         }
     }
 }

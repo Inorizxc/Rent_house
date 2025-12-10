@@ -33,7 +33,6 @@ class TemporaryBlock extends Model
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
-    // Метод для очистки истекших временных блокировок
     public static function cleanExpired()
     {
         self::where('expires_at', '<', now())->delete();

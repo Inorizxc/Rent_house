@@ -8,18 +8,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckBanned
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
+
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
         
-        // Не блокируем доступ к страницам, но пользователь увидит баннер
-        // Блокируем только действия (POST, PUT, DELETE запросы)
         if ($user) {
+<<<<<<< HEAD
             // ЗАКОММЕНТИРОВАНО: Автоматическая проверка и разбан истекших банов
             // Проверяем и автоматически разбаниваем, если срок истек
             // Метод isBanned() уже делает это автоматически, но проверяем явно для надежности
@@ -36,8 +31,20 @@ class CheckBanned
             // }
             
             // Проверяем, забанен ли пользователь (после проверки истекших банов)
+=======
+            if ($user->banned_until) {
+                $banDate = $user->banned_until instanceof \Carbon\Carbon 
+                    ? $user->banned_until->setTimezone('Europe/Moscow')
+                    : \Carbon\Carbon::parse($user->banned_until, 'Europe/Moscow');
+                
+                if ($banDate->isPast()) {
+                    $user->unban();
+                    return $next($request);
+                }
+            }
+
+>>>>>>> 5aa33b28e8c427fe9f510799b248d1be5651b98f
             if ($user->isBanned()) {
-                // Для POST/PUT/DELETE запросов блокируем доступ
                 if (in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'])) {
                     $banUntil = $user->getBanUntilDate();
                     $banReason = $user->ban_reason ? "\n\nПричина: {$user->ban_reason}" : '';

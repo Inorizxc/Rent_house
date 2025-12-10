@@ -31,9 +31,9 @@ class User extends Authenticatable
         'frozen_balance',
         'need_verification',
         'verification_denied_until',
-        'banned_until', // Для временного бана - дата окончания
-        'ban_reason', // Причина бана
-        'original_role_id', // Сохраняем оригинальную роль перед баном
+        'banned_until', 
+        'ban_reason', 
+        'original_role_id', 
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -69,16 +69,11 @@ class User extends Authenticatable
         return $this->hasMany(Order::class,"user_id","user_id");
     }
     
-    /**
-     * Заказы, где пользователь является заказчиком
-     */
     public function ordersAsCustomer(){
         return $this->hasMany(Order::class,"customer_id","user_id");
     }
 
     /**
-     * Проверяет, является ли переданный пользователь владельцем профиля
-     * 
      * @param User|null $profileUser Пользователь профиля
      * @return bool
      */
@@ -88,14 +83,10 @@ class User extends Authenticatable
             return false;
         }
 
-        // Строгое сравнение с приведением типов
         return (int) $this->user_id === (int) $profileUser->user_id;
     }
 
     /**
-     * Проверяет, может ли текущий пользователь просматривать профиль другого пользователя
-     * Все могут просматривать профили других пользователей (включая гостей)
-     * 
      * @param User|null $profileUser Пользователь профиля
      * @return bool
      */
@@ -105,15 +96,11 @@ class User extends Authenticatable
             return false;
         }
 
-        // Все могут просматривать профили других пользователей
         return true;
     }
 
     /**
-     * Проверяет, может ли текущий пользователь редактировать профиль другого пользователя
-     * Только владелец может редактировать свой профиль (администраторы исключены для безопасности)
-     * 
-     * @param User|null $profileUser Пользователь профиля
+     * @param User|null 
      * @return bool
      */
     public function canEditProfile(?User $profileUser): bool
@@ -122,15 +109,10 @@ class User extends Authenticatable
             return false;
         }
 
-        // Только владелец может редактировать свой профиль
         return $this->isOwnerOf($profileUser);
     }
 
-    /**
-     * Проверяет, является ли пользователь администратором
-     * 
-     * @return bool
-     */
+
     public function isAdmin(): bool
     {
         // Проверяем роль через связь
@@ -141,11 +123,7 @@ class User extends Authenticatable
         return $this->roles && strtolower($this->roles->uniq_name ?? '') === 'admin';
     }
 
-    /**
-     * Проверяет, является ли пользователь арендодателем
-     * 
-     * @return bool
-     */
+ 
     public function isRentDealer(): bool
     {
         if (!$this->relationLoaded('roles')) {
@@ -155,44 +133,22 @@ class User extends Authenticatable
         return $this->roles && strtolower($this->roles->uniq_name ?? '') === 'rentdealer';
     }
 
-    /**
-     * Проверяет, может ли пользователь создавать дома
-     * Только арендодатель или администратор могут создавать дома
-     * 
-     * @return bool
-     */
     public function canCreateHouse(): bool
     {
         return $this->isAdmin() || $this->isRentDealer();
     }
 
-    /**
-     * Проверяет, является ли пользователь владельцем дома
-     * 
-     * @param \App\Models\House $house
-     * @return bool
-     */
     public function isHouseOwner(\App\Models\House $house): bool
     {
         return (int) $this->user_id === (int) $house->user_id;
     }
 
-    /**
-     * Проверяет, может ли пользователь редактировать дом
-     * Администратор может редактировать любые дома
-     * Арендодатель может редактировать только свои дома
-     * 
-     * @param \App\Models\House $house
-     * @return bool
-     */
     public function canEditHouse(\App\Models\House $house): bool
     {
-        // Администратор может редактировать любые дома
         if ($this->isAdmin()) {
             return true;
         }
 
-        // Арендодатель может редактировать только свои дома
         if ($this->isRentDealer() && $this->isHouseOwner($house)) {
             return true;
         }
@@ -200,22 +156,13 @@ class User extends Authenticatable
         return false;
     }
 
-    /**
-     * Проверяет, может ли пользователь удалять дом
-     * Администратор может удалять любые дома
-     * Арендодатель может удалять только свои дома
-     * 
-     * @param \App\Models\House $house
-     * @return bool
-     */
     public function canDeleteHouse(\App\Models\House $house): bool
     {
-        // Администратор может удалять любые дома
+
         if ($this->isAdmin()) {
             return true;
         }
 
-        // Арендодатель может удалять только свои дома
         if ($this->isRentDealer() && $this->isHouseOwner($house)) {
             return true;
         }
@@ -223,14 +170,8 @@ class User extends Authenticatable
         return false;
     }
 
-    /**
-     * Проверяет, забанен ли пользователь
-     * 
-     * @return bool
-     */
     public function isBanned(): bool
     {
-        // Проверяем, есть ли у пользователя роль "Забанен"
         if (!$this->roles) {
             $this->load('roles');
         }
@@ -240,8 +181,8 @@ class User extends Authenticatable
             return false;
         }
         
-        // Если роль "Забанен"
         if ($this->role_id == $bannedRole->role_id) {
+<<<<<<< HEAD
             // ЗАКОММЕНТИРОВАНО: Автоматическая проверка и разбан истекших банов
             // Для временного бана проверяем дату окончания
             // if ($this->banned_until) {
@@ -265,21 +206,30 @@ class User extends Authenticatable
             if ($this->banned_until) {
                 if ($this->banned_until instanceof \Carbon\Carbon) {
                     return !$this->banned_until->isPast();
+=======
+            if ($this->banned_until) {
+                if ($this->banned_until instanceof \Carbon\Carbon) {
+                    if ($this->banned_until->isPast()) {
+                        $this->unban();
+                        return false;
+                    }
+                    return true;
+>>>>>>> 5aa33b28e8c427fe9f510799b248d1be5651b98f
                 }
                 $banDate = \Carbon\Carbon::parse($this->banned_until, 'Europe/Moscow');
                 return !$banDate->isPast();
             }
+<<<<<<< HEAD
             
             // Постоянный бан (нет даты окончания)
+=======
+>>>>>>> 5aa33b28e8c427fe9f510799b248d1be5651b98f
             return true;
         }
         
         return false;
     }
-    
-    /**
-     * Разбанивает пользователя, восстанавливая оригинальную роль
-     */
+
     public function unban()
     {
         $bannedRole = Role::where('uniq_name', 'Banned')->first();
@@ -303,11 +253,6 @@ class User extends Authenticatable
         }
     }
 
-    /**
-     * Получает дату окончания бана (если есть)
-     * 
-     * @return \Carbon\Carbon|null
-     */
     public function getBanUntilDate(): ?\Carbon\Carbon
     {
         if (!$this->isBanned()) {
@@ -321,12 +266,9 @@ class User extends Authenticatable
             return \Carbon\Carbon::parse($this->banned_until, 'Europe/Moscow');
         }
         
-        return null; // Постоянный бан
+        return null; 
     }
-    
-    /**
-     * Проверяет, является ли бан постоянным
-     */
+
     public function isBannedPermanently(): bool
     {
         if (!$this->isBanned()) {

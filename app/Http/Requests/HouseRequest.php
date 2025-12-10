@@ -8,20 +8,17 @@ class HouseRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Для создания: проверяем, может ли пользователь создавать дома
         if ($this->routeIs('houses.store')) {
             $user = $this->user();
             return $user && $user->canCreateHouse();
         }
 
-        // Для обновления: проверяем, может ли пользователь редактировать дом
         if ($this->routeIs('houses.update')) {
-            $house = $this->route('house'); // house - это параметр маршрута из route model binding
+            $house = $this->route('house'); 
             $user = $this->user();
             return $user && $house && $user->canEditHouse($house);
         }
 
-        // По умолчанию разрешаем (дополнительная проверка в контроллере)
         return true;
     }
 

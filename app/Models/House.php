@@ -88,9 +88,6 @@ class House extends Model
         return 'house_id';
     }
 
-    /**
-     * Scope для фильтрации активных домов (не удаленных и не забаненных)
-     */
     public function scopeActive($query)
     {
         return $query->where(function($q) {
@@ -109,40 +106,26 @@ class House extends Model
         });
     }
 
-    /**
-     * Проверяет, забанен ли дом
-     * 
-     * @return bool
-     */
     public function isBanned(): bool
     {
-        // Проверяем постоянный бан
         if ($this->is_banned_permanently === true) {
             return true;
         }
-        
-        // Проверяем временный бан
+
         if ($this->banned_until) {
-            // Если banned_until уже является Carbon объектом (из casts), используем его напрямую
             if ($this->banned_until instanceof \Carbon\Carbon) {
                 return $this->banned_until->isFuture();
             }
-            // Иначе парсим строку
             return \Carbon\Carbon::parse($this->banned_until)->isFuture();
         }
         
         return false;
     }
 
-    /**
-     * Получает дату окончания бана (если есть)
-     * 
-     * @return \Carbon\Carbon|null
-     */
     public function getBanUntilDate(): ?\Carbon\Carbon
     {
         if ($this->is_banned_permanently) {
-            return null; // Постоянный бан
+            return null; 
         }
         
         if ($this->banned_until) {
