@@ -255,6 +255,4 @@
     @endif
 </div>
 
-@vite(['resources/js/pages/orders-filters.js'])
-
 

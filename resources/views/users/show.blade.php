@@ -89,6 +89,4 @@
             </section>
         </div>
     </div>
-
-    @vite(['resources/js/pages/profile-tabs.js'])
 @endsection

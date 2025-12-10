@@ -141,6 +141,5 @@
         lastMessageId: {{ $messages->count() > 0 ? $messages->last()->message_id : 0 }}
     };
 </script>
-@vite(['resources/js/pages/chat.js'])
 @endsection
 

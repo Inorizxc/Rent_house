@@ -12,6 +12,20 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    // Общие модули в отдельный chunk
+                    if (id.includes('resources/js/modules/')) {
+                        return 'vendor-modules';
+                    }
+                    // Страничные модули будут автоматически разбиты на отдельные chunks через динамические импорты
+                },
+            },
+        },
+        chunkSizeWarningLimit: 1000,
+    },
     server: {
         cors: true,
     },

@@ -8,10 +8,7 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     
-    <script src="https://api-maps.yandex.ru/2.1/?apikey=a2cd05de-c1e4-457b-8092-a8b0ebd9db10&lang=ru_RU" type="text/javascript"></script>
-    <script src="{{ asset('js/photo-carousel.js') }}"></script>
-
-    @vite(['resources/css/layout.css', 'resources/css/orders.css', 'resources/css/chat.css', 'resources/css/houses.css', 'resources/css/map.css', 'resources/css/users.css', 'resources/css/admin.css'])
+    @vite(['resources/css/layout.css', 'resources/css/orders.css', 'resources/css/chat.css', 'resources/css/houses.css', 'resources/css/map.css', 'resources/css/users.css', 'resources/css/admin.css', 'resources/js/app.js'])
 
     @yield('head')
 </head>
@@ -164,7 +161,6 @@
             // Конфигурация для модуля меню пользователя
             document.getElementById('chatLinkWrapper')?.setAttribute('data-update-route', '{{ route("chats.unread.count") }}');
         </script>
-        @vite(['resources/js/pages/user-menu.js'])
         @endauth
     <div>
         @yield('main_content')

@@ -84,11 +84,12 @@
 
     </div>
     
-    <script src="https://api-maps.yandex.ru/2.1/?apikey=a2cd05de-c1e4-457b-8092-a8b0ebd9db10&lang=ru_RU" type="text/javascript"></script>
-    <script>
-        // Конфигурация для модуля карты
-        window.housesData = @json($houses);
-        window.isAuthenticated = @json(auth()->check());
-    </script>
-    @vite(['resources/js/pages/map.js'])
+    @section('head')
+        <script src="https://api-maps.yandex.ru/2.1/?apikey=a2cd05de-c1e4-457b-8092-a8b0ebd9db10&lang=ru_RU" type="text/javascript"></script>
+        <script>
+            // Конфигурация для модуля карты
+            window.housesData = @json($houses);
+            window.isAuthenticated = @json(auth()->check());
+        </script>
+    @endsection
 @endsection
