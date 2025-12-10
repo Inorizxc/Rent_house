@@ -89,6 +89,7 @@ class VerificationController extends Controller
         // Снимаем флаг верификации и устанавливаем дату блокировки
         $user->need_verification = false;
         $user->verification_denied_until = $deniedUntil;
+        $user->verified_deny_reason = $request->input("reject_reason");
         $user->save();
 
         return back()->with('status', "Верификация пользователя #{$user->user_id} отклонена. Повторная подача будет доступна после {$deniedUntil->format('d.m.Y')}.");

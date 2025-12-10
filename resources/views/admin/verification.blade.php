@@ -227,6 +227,15 @@
                     <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
                         Пользователь не сможет подать заявку на верификацию в течение указанного периода
                     </div>
+                    <input 
+                        type="text" 
+                        id="reject_reason" 
+                        name="reject_reason" 
+                        required
+                    >
+                    <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                        Причина отклонения заявки
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
