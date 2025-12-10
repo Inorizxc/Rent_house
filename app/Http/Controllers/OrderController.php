@@ -494,9 +494,9 @@ class OrderController extends Controller
             abort(403, 'У вас нет прав на подтверждение возврата для этого заказа');
         }
 
-        if ($order->order_status !== OrderStatus::REFUND) {
-            return redirect()->back()->with('error', 'Запрос на возврат не найден');
-        }
+        //if ($order->order_status !== OrderStatus::REFUND) {
+        //    return redirect()->back()->with('error', 'Запрос на возврат не найден');
+        //}
 
         if ($order->isRefunded()) {
             return redirect()->back()->with('error', 'Возврат средств уже был выполнен ранее.');

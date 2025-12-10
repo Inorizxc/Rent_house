@@ -332,8 +332,7 @@ class OrderService
                     $customer->balance = (float) ($customer->balance ?? 0) + $amount;
                     $customer->save();
                 }
-
-                // Устанавливаем дату возврата
+                $order->order_status = OrderStatus::REFUND;
                 $order->refunded_at = now();
                 $order->save();
             });
