@@ -71,11 +71,21 @@
     const checkoutDate = '{{ $checkout_date }}';
     const temporaryBlockId = {{ $temporary_block_id }};
     
-    let timeLeft = 600; // 10 минут в секундах
+    // Время истечения из БД (timestamp в миллисекундах)
+    const expiresAtTimestamp = {{ $expires_at->timestamp }} * 1000;
+    
     let timerInterval;
+
+    // Вычисляем оставшееся время на основе времени истечения из БД
+    function getRemainingTime() {
+        const now = Date.now();
+        const remaining = Math.max(0, Math.floor((expiresAtTimestamp - now) / 1000));
+        return remaining;
+    }
 
     // Таймер обратного отсчета
     function updateTimer() {
+        const timeLeft = getRemainingTime();
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
         document.getElementById('timer').textContent = 
@@ -85,13 +95,20 @@
             clearInterval(timerInterval);
             // Автоматически отменяем заказ при истечении времени
             cancelOrder(true);
+        return;
         }
-        timeLeft--;
     }
 
     // Запускаем таймер
-    timerInterval = setInterval(updateTimer, 1000);
-    updateTimer();
+    const initialTimeLeft = getRemainingTime();
+    if (initialTimeLeft <= 0) {
+        // Время уже истекло, сразу отменяем заказ
+        cancelOrder(true);
+    } else {
+        // Запускаем таймер только если время еще не истекло
+        timerInterval = setInterval(updateTimer, 1000);
+        updateTimer();
+    }
 
     // Подтверждение заказа
     async function confirmOrder() {

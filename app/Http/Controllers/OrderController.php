@@ -285,12 +285,18 @@ class OrderController extends Controller
         // Вычисляем количество дней
         $dayCount = $this->orderService->calculateDayCount($request->checkin_date, $request->checkout_date);
 
+        // Вычисляем оставшееся время в секундах
+        $expiresAt = $temporaryBlock->expires_at;
+        $remainingSeconds = max(0, now()->diffInSeconds($expiresAt, false));
+
         return view('orders.confirm', [
             'house' => $house,
             'checkin_date' => $request->checkin_date,
             'checkout_date' => $request->checkout_date,
             'day_count' => $dayCount,
             'temporary_block_id' => $temporaryBlock->temporary_block_id,
+            'expires_at' => $expiresAt,
+            'remaining_seconds' => $remainingSeconds,
         ]);
     }
 
@@ -347,6 +353,8 @@ class OrderController extends Controller
 
         // Вычисляем количество дней
         $dayCount = $this->orderService->calculateDayCount($request->checkin_date, $request->checkout_date);
+
+
 
         // Получаем статус по умолчанию (Рассмотрение)
         $defaultStatus = OrderStatus::PENDING;

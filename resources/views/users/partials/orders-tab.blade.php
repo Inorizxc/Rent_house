@@ -65,34 +65,6 @@
                     </div>
                     <div class="orders-filter-group-row">
                         <div class="orders-filter-group">
-                            <label class="orders-filter-label">Заказчик:</label>
-                            <select id="filter-customer-select" class="orders-filter-select">
-                                <option value="">Все заказчики</option>
-                                @if(isset($customers) && $customers)
-                                    @foreach ($customers as $customer)
-                                        <option value="{{ $customer->user_id }}">
-                                            {{ trim(($customer->name ?? '') . ' ' . ($customer->sename ?? '')) ?: 'Пользователь #' . $customer->user_id }}
-                                        </option>
-                                    @endforeach
-                                @endif
-                            </select>
-                        </div>
-                        <div class="orders-filter-group">
-                            <label class="orders-filter-label">Владелец дома:</label>
-                            <select id="filter-owner-select" class="orders-filter-select">
-                                <option value="">Все владельцы</option>
-                                @if(isset($owners) && $owners)
-                                    @foreach ($owners as $owner)
-                                        <option value="{{ $owner->user_id }}">
-                                            {{ trim(($owner->name ?? '') . ' ' . ($owner->sename ?? '')) ?: 'Пользователь #' . $owner->user_id }}
-                                        </option>
-                                    @endforeach
-                                @endif
-                            </select>
-                        </div>
-                    </div>
-                    <div class="orders-filter-group-row">
-                        <div class="orders-filter-group">
                             <label class="orders-filter-label">Имя:</label>
                             <div class="orders-filter-input-wrapper">
                                 <input type="text" 
