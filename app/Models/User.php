@@ -11,9 +11,9 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use App\Models\Role;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
-    use Notifiable, TwoFactorAuthenticatable;
+
     protected $table = "users";
     protected $primaryKey = "user_id";
     public $incrementing = true;

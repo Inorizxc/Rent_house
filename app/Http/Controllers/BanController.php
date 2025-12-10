@@ -38,21 +38,12 @@ class BanController extends Controller
         $total = $query->count();
         $pages = max((int) ceil($total / $limit), 1);
         $page = min($page, $pages);
-        
-        $users = $query->offset(($page - 1) * $limit)
-            ->limit($limit)
-            ->get()
-            ->map(function($user) {
-                // Проверяем истекшие временные баны и автоматически разбаниваем
-                if ($user->isBanned() && $user->banned_until) {
-                    if ($user->banned_until instanceof \Carbon\Carbon && $user->banned_until->isPast()) {
-                        $user->unban();
-                    } elseif (is_string($user->banned_until) && \Carbon\Carbon::parse($user->banned_until, 'Europe/Moscow')->isPast()) {
-                        $user->unban();
-                    }
-                }
-                return $user;
-            });
+        $users = $query->paginate($limit, ['*'], 'page', $page);
+        // Разбаниваем массово
+        $expiredBans = User::where('banned_until', '<', now())
+                  ->get();
+        User::whereIn('id', $expiredBans->pluck('id'))
+            ->update(['banned_until' => null]);
         
         return view('admin.bans', [
             'type' => 'users',
@@ -123,12 +114,7 @@ class BanController extends Controller
         if ($request->input('ban_type') === 'permanent') {
             $user->banned_until = null; // Постоянный бан
         } else {
-            if ($request->has('ban_until') && $request->input('ban_until')) {
-                $user->banned_until = Carbon::parse($request->input('ban_until'), 'Europe/Moscow');
-            } else {
-                // Если временный бан, но дата не указана, устанавливаем по умолчанию 7 дней
-                    $user->banned_until = Carbon::now('Europe/Moscow')->addDays(7);
-            }
+            $user->banned_until = Carbon::parse($request->input('ban_until'), 'Europe/Moscow');
         }
 
         // Сохраняем причину бана
@@ -174,12 +160,9 @@ class BanController extends Controller
             $house->banned_until = null;
         } else {
             $house->is_banned_permanently = false;
-            if ($request->has('ban_until') && $request->input('ban_until')) {
-                $house->banned_until = Carbon::parse($request->input('ban_until'), 'Europe/Moscow');
-            } else {
-                // Если временный бан, но дата не указана, устанавливаем по умолчанию 7 дней
-                    $house->banned_until = Carbon::now('Europe/Moscow')->addDays(7);
-            }
+            $house->banned_until = Carbon::parse($request->input('ban_until'), 'Europe/Moscow');
+            
+            
         }
 
         $house->save();

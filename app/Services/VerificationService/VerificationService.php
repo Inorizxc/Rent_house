@@ -53,7 +53,7 @@ class VerificationService
         // Проверяем, существует ли колонка, и добавляем её, если нужно
         try {
             $columns = DB::select("PRAGMA table_info(users)");
-            $columnExists = false;
+        
             foreach ($columns as $column) {
                 if ($column->name === 'verification_denied_until') {
                     $columnExists = true;
@@ -61,10 +61,7 @@ class VerificationService
                 }
             }
             
-            if (!$columnExists) {
-                // Добавляем колонку, если её нет
-                DB::statement('ALTER TABLE users ADD COLUMN verification_denied_until DATETIME NULL');
-            }
+           
             
             $user->verification_denied_until = null;
         } catch (\Exception $e) {
