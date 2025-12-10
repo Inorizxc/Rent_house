@@ -68,7 +68,7 @@
                 @endif
                 @if($order->house && $order->house->price_id)
                     @php
-                        $pricePerDay = (float)$order->house->price_id;
+                        $pricePerDay = (float)$order->price;
                         $totalAmount = $pricePerDay * (int)($order->day_count ?? 0);
                     @endphp
                     <div class="info-row">
@@ -94,7 +94,7 @@
 
             @if($order->house && $order->house->price_id && $order->day_count)
                 @php
-                    $pricePerDay = (float)$order->house->price_id;
+                    $pricePerDay = (float)$order->price;
                     $totalAmount = $pricePerDay * (int)($order->day_count ?? 0);
                 @endphp
                 <div class="section-title" style="margin-top: 24px;">Суммарная стоимость</div>
@@ -202,7 +202,7 @@
 
             @if($order->house && $order->house->price_id)
                 @php
-                    $pricePerDay = (float)$order->house->price_id;
+                    $pricePerDay = (float)$order->price;
                     $totalAmount = $pricePerDay * (int)($order->day_count ?? 0);
                 @endphp
                 <div class="section-title" style="margin-top: 24px;">Стоимость</div>
@@ -235,6 +235,17 @@
                 </div>
             @endif
 
+            @if($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND)
+                <div class="actions">
+                    <form method="POST" action="{{ route('orders.refund.approve', $order->order_id) }}" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn-primary" onclick="return confirm('Подтвердить заказ и вернуть средства на баланс клиента?')">
+                            Вернуть деньги
+                        </button>
+                    </form>
+                </div>
+            @endif
+
             @if($isOwner && $order->order_status === \App\enum\OrderStatus::REFUND && !$order->isRefunded())
                 <div class="actions" style="margin-top: {{ $isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND ? '12px' : '0' }};">
                     <form method="POST" action="{{ route('orders.refund.approve', $order->order_id) }}" style="display: inline;">
@@ -245,21 +256,10 @@
                     </form>
                 </div>
             @endif
-
-            @if($isOwner && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::CANCELLED && $order->order_status != \App\enum\OrderStatus::COMPLETED && !$order->isRefunded())
-                <div class="actions" style="margin-top: {{ $isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND ? '12px' : '0' }};">
-                    <form method="POST" action="{{ route('orders.refund.approve', $order->order_id) }}" style="display: inline;">
-                        @csrf
-                        <button type="submit" class="btn-secondary" style="background: #ef4444; color: white;" onclick="return confirm('Вернуть средства арендатору? Средства будут возвращены на баланс арендатора.')">
-                            Вернуть средства
-                        </button>
-                    </form>
-                </div>
-            @endif
-
-            @if($isCustomer && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::CANCELLED)
+            
+            @if($isCustomer && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::CANCELLED && $order->date_of_order>=now()->addDays(1) )
                 <div class="actions" style="margin-top: {{ ($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND) || ($isOwner && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::CANCELLED && $order->order_status != \App\enum\OrderStatus::COMPLETED) ? '12px' : '0' }};">
-                    <form method="POST" action="{{ route('orders.refund.approve', $order->order_id) }}" style="display: inline;">
+                    <form method="POST" action="{{ route('orders.refund.request', $order->order_id) }}" style="display: inline;">
                         @csrf
                         <button type="submit" class="btn-secondary" style="background: #ef4444; color: white;" onclick="return confirm('Запросить возврат средств? Запрос будет отправлен арендодателю и администратору для подтверждения.')">
                             Запросить возврат

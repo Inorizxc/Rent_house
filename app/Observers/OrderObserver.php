@@ -9,7 +9,7 @@ class OrderObserver
 {
     public function retrieved(Order $order): void
     {
-        if ($order->date_of_order <= now()) {
+        if ($order->date_of_order <= now() && $order->order_status != OrderStatus::REFUND) {
             $service=app(OrderService::class);
             $service->transferFrozenFunds($order);
             $order->order_status = OrderStatus::COMPLETED;
@@ -18,7 +18,7 @@ class OrderObserver
 
     public function saving(Order $order): void
     {
-        if ($order->date_of_order <= now()) {
+        if ($order->date_of_order <= now() && $order->order_status != OrderStatus::REFUND) {
             $service=app(OrderService::class);
             $service->transferFrozenFunds($order);
             $order->order_status = OrderStatus::COMPLETED;

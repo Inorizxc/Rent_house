@@ -22,6 +22,7 @@ class Order extends Model
         "order_status",
         "original_data",
         "refunded_at",
+        "price",
         ];
     protected $casts = [
         "order_status" => OrderStatus::class,

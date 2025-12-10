@@ -26,12 +26,7 @@ class OrderService
 
     public function createOrder(array $data): Order
     {
-        $originalData = [
-            'house_id' => $data['house_id'],
-            'date_of_order' => $data['date_of_order'],
-            'day_count' => $data['day_count'],
-            'customer_id' => $data['customer_id'],
-        ];
+        
 
         $house = House::findOrFail($data['house_id']);
         $pricePerDay = (float) $house->price_id;
@@ -39,7 +34,13 @@ class OrderService
         $totalAmount = $pricePerDay * $dayCount;
 
         $customer = User::findOrFail($data['customer_id']);
-
+        $originalData = [
+            'house_id' => $data['house_id'],
+            'date_of_order' => $data['date_of_order'],
+            'day_count' => $data['day_count'],
+            'customer_id' => $data['customer_id'],
+            'price'=>$house->price_id,
+        ];
         $currentBalance = (float) ($customer->balance ?? 0);
         if ($currentBalance < $totalAmount) {
             throw new \Exception('Недостаточно средств на балансе. Требуется: ' . number_format($totalAmount, 2, ',', ' ') . ' ₽, доступно: ' . number_format($currentBalance, 2, ',', ' ') . ' ₽');
@@ -59,6 +60,7 @@ class OrderService
                 'order_status_id' => $data['order_status_id'] ?? null,
                 'order_status' => $data['order_status'] ?? null,
                 'original_data' => json_encode($originalData),
+                'price' =>$data['price'],
             ]);
         });
     }

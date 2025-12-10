@@ -82,6 +82,7 @@ class OrderController extends Controller
             'day_count' => 'required|integer|min:1',
             'customer_id' => 'required|exists:users,user_id',
             'order_status_id' => 'required|exists:order_statuses,order_status_id',
+            'price'=>'required',
         ]);
 
         $order = $this->orderService->createOrder($validated);
@@ -341,6 +342,7 @@ class OrderController extends Controller
                 'day_count' => $dayCount,
                 'customer_id' => $user->user_id,
                 'order_status' => $defaultStatus,
+                'price'=>$house->price_id
             ]);
         } catch (\Exception $e) {
             $temporaryBlock->delete();

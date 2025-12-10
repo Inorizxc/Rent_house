@@ -22,6 +22,7 @@ return new class extends Migration
             $table->text("customer_id");
             $table->string("order_status");
             $table->text("original_data");
+            $table->text("price");
             $table->timestamps();
         });
     }
