@@ -28,7 +28,7 @@ class HouseRequest extends FormRequest
             'user_id'         => ['nullable','integer','exists:users,user_id'],
             'adress'          => ['required','string','max:255'],
             'area'            => ['nullable','numeric'],
-            'price_id'        => ['nullable','numeric'],
+            'price_id'        => ['nullable','numeric','min:1000'],
             'rent_type_id'    => ['nullable','integer'],
             'rent_type_name'  => ['nullable','string','exists:rent_types,name'],
             'house_type_id'   => ['nullable','integer'],
@@ -39,6 +39,7 @@ class HouseRequest extends FormRequest
             'is_deleted'      => ['required','in:0,1'],
             'images.*'        => ['nullable','image','mimes:jpeg,png,jpg,gif','max:4096'],
             'deleted_photos'  => ['nullable','string'],
+            'prepayment'      => ['nullable','numeric','max:90','min:20'],
         ];
     }
 }

@@ -73,6 +73,21 @@
         @enderror
     </div>
 
+
+
+
+    <div class="house-form-field">
+        <label class="house-form-label">Предоплата в процентах</label>
+        <input type="number" step="0.01" name="prepayment" value="{{ old('prepayment', $house->prepayment ?? '') }}" class="house-form-input">
+        @error('prepayment') 
+            <p class="house-form-error">{{ $message }}</p> 
+        @enderror
+    </div>
+
+
+
+
+
     <div class="house-form-field">
         <label class="house-form-label">Цена</label>
         <input type="number" name="price_id" value="{{ old('price_id', $house->price_id ?? '') }}" class="house-form-input">

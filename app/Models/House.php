@@ -31,8 +31,10 @@ class House extends Model
         'lat',
         'banned_until',
         'is_banned_permanently',
+        'prepayment',
     ];
     protected $casts = [
+        'prepayment'=>'float',
         'lat' => 'float',
         'lng' => 'float',
         'area' => 'float',

@@ -23,6 +23,8 @@ return new class extends Migration
             $table->string("order_status");
             $table->text("original_data");
             $table->text("price");
+            $table->text('prepayment');
+            $table->text('full_payment')->default(false);
             $table->timestamps();
         });
     }

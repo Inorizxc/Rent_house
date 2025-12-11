@@ -53,6 +53,10 @@
                     </div>
                 </div>
                 <div class="info-row">
+                        <div class="info-label">Предоплата:</div>
+                        <div class="info-value">{{ number_format($order->prepayment, 0, ',', ' ') }}%</div>
+                    </div>
+                <div class="info-row">
                     <div class="info-label">Количество дней:</div>
                     <div class="info-value">{{ $order->day_count ?? '—' }} дн.</div>
                 </div>
@@ -66,6 +70,7 @@
                         <div class="info-value">{{ $checkout->format('d.m.Y') }}</div>
                     </div>
                 @endif
+                
                 @if($order->house && $order->house->price_id)
                     @php
                         $pricePerDay = (float)$order->price;
@@ -91,7 +96,7 @@
                     </div>
                 </div>
             </div>
-
+            
             @if($order->house && $order->house->price_id && $order->day_count)
                 @php
                     $pricePerDay = (float)$order->price;
@@ -107,6 +112,7 @@
                         <div class="order-total-label">Количество дней:</div>
                         <div class="order-total-value">{{ $order->day_count }} дн.</div>
                     </div>
+                    
                     <div class="order-total-row order-total-final">
                         <div class="order-total-label">Итого:</div>
                         <div class="order-total-value-final">{{ number_format($totalAmount, 0, ',', ' ') }} ₽</div>
@@ -203,7 +209,7 @@
             @if($order->house && $order->house->price_id)
                 @php
                     $pricePerDay = (float)$order->price;
-                    $totalAmount = $pricePerDay * (int)($order->day_count ?? 0);
+                    $totalAmount = $order->total_amount;
                 @endphp
                 <div class="section-title" style="margin-top: 24px;">Стоимость</div>
                 <div class="info-grid">
@@ -213,7 +219,23 @@
                             {{ number_format($pricePerDay, 0, ',', ' ') }} ₽
                         </div>
                     </div>
-                    @if($order->day_count)
+                    @if($order->full_payment==false)
+                        <div class="info-row" style="border-bottom: 2px solid #10b981; padding-bottom: 12px; margin-bottom: 8px;">
+                            <div class="info-label" style="font-weight: 600; font-size: 15px;">Предоплачено:</div>
+                            <div class="info-value" style="font-weight: 700; font-size: 18px; color: #047857;">
+                                {{ number_format($totalAmount, 0, ',', ' ') }} ₽
+                            </div>
+                        </div>
+                    @endif
+                    @if($order->full_payment==false)
+                        <div class="info-row" style="border-bottom: 2px solid #10b981; padding-bottom: 12px; margin-bottom: 8px;">
+                            <div class="info-label" style="font-weight: 600; font-size: 15px;">К оплате:</div>
+                            <div class="info-value" style="font-weight: 700; font-size: 18px; color: #047857;">
+                                {{ number_format($pricePerDay*$order->day_count-$totalAmount, 0, ',', ' ') }} ₽
+                            </div>
+                        </div>
+                    @endif
+                    @if($order->full_payment==true)
                         <div class="info-row" style="border-bottom: 2px solid #10b981; padding-bottom: 12px; margin-bottom: 8px;">
                             <div class="info-label" style="font-weight: 600; font-size: 15px;">Итого:</div>
                             <div class="info-value" style="font-weight: 700; font-size: 18px; color: #047857;">
@@ -223,10 +245,11 @@
                     @endif
                 </div>
             @endif
-
+            
+            
             @if($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND)
                 <div class="actions">
-                    <form method="POST" action="{{ route('orders.approve', $order->order_id) }}" style="display: inline;">
+                    <form method="POST" action="{{ route('orders.approve', $order) }}" style="display: inline;">
                         @csrf
                         <button type="submit" class="btn-primary" onclick="return confirm('Подтвердить заказ и перевести средства на ваш баланс?')">
                             Подтвердить заказ
@@ -263,6 +286,17 @@
                         @csrf
                         <button type="submit" class="btn-secondary" style="background: #ef4444; color: white;" onclick="return confirm('Запросить возврат средств? Запрос будет отправлен арендодателю и администратору для подтверждения.')">
                             Запросить возврат
+                        </button>
+                    </form>
+                </div>
+            @endif
+
+            @if($isCustomer && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::CANCELLED && $order->order_status!=\App\enum\OrderStatus::REFUND && $order->full_payment==false)
+                <div class="actions" style="margin-top: {{ ($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND) || ($isOwner && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::CANCELLED && $order->order_status != \App\enum\OrderStatus::COMPLETED) ? '12px' : '0' }};">
+                    <form method="POST" action="{{ route('orders.order.payRest', $order->order_id) }}" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn-secondary" style="background: #ef4444; color: white;" onclick="return confirm('Оплатить заказ полностью?')">
+                            Оплатить заказ полностью
                         </button>
                     </form>
                 </div>

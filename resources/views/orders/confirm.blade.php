@@ -39,6 +39,9 @@
                     Не указана
                 @endif
             </div>
+            <div>
+                <strong>Предоплата:</strong> {{ $house->prepayment ?? '—' }}%
+            </div>
         </div>
 
         <div class="order-details">

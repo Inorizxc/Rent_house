@@ -31,7 +31,7 @@ class OrderService
         $house = House::findOrFail($data['house_id']);
         $pricePerDay = (float) $house->price_id;
         $dayCount = (int) $data['day_count'];
-        $totalAmount = $pricePerDay * $dayCount;
+        $totalAmount = $pricePerDay * $dayCount*$data['prepayment']/100;
 
         $customer = User::findOrFail($data['customer_id']);
         $originalData = [
@@ -57,10 +57,12 @@ class OrderService
                 'day_count' => $data['day_count'],
                 'total_amount' => $totalAmount,
                 'customer_id' => $data['customer_id'],
+                'full_payment'=>false,
                 'order_status_id' => $data['order_status_id'] ?? null,
                 'order_status' => $data['order_status'] ?? null,
                 'original_data' => json_encode($originalData),
                 'price' =>$data['price'],
+                'prepayment' =>$data['prepayment'],
             ]);
         });
     }
@@ -123,9 +125,16 @@ class OrderService
         
         $checkinFormatted = Carbon::parse($checkinDate)->format('d.m.Y');
         $checkoutFormatted = Carbon::parse($checkoutDate)->format('d.m.Y');
-        $orderMessage = "✅ Заказ #{$order->order_id} подтвержден!\n" .
+        if($order->full_payment==false){
+            $orderMessage = "Предоплата: Заказ #{$order->order_id} внесена!\n" .
                        "Период аренды: {$checkinFormatted} - {$checkoutFormatted}\n" .
                        "Количество дней: {$dayCount}";
+        }
+        else{
+            $orderMessage = "✅ Заказ #{$order->order_id} оплачен полностью!\n" .
+                       "Период аренды: {$checkinFormatted} - {$checkoutFormatted}\n" .
+                       "Количество дней: {$dayCount}";
+        }
         Message::create([
             'chat_id' => $chat->chat_id,
             'user_id' => $userId,
@@ -212,8 +221,10 @@ class OrderService
 
     public function transferFrozenFunds(Order $order): bool
     {
+
+        
         if (!$order->total_amount || $order->total_amount <= 0) {
-            
+
             return false;
         }
 
@@ -225,13 +236,11 @@ class OrderService
 
         $seller = $house->user;
         if (!$seller) {
-            
             return false;
         }
 
         $customer = $order->customer;
         if (!$customer) {
-            
             return false;
         }
 
@@ -239,15 +248,60 @@ class OrderService
 
         $customerFrozenBalance = (float) ($customer->frozen_balance ?? 0);
         if ($customerFrozenBalance < $amount) {
+            
             return false;
         }
 
         try {
             DB::transaction(function () use ($customer, $seller, $amount) {
-                $customer->frozen_balance = max(0, (float) ($customer->frozen_balance ?? 0) - $amount);
+                $customer->frozen_balance = (float) ($customer->frozen_balance ?? 0) - $amount;
                 $customer->save();
 
                 $seller->balance = (float) ($seller->balance ?? 0) + $amount;
+                $seller->save();
+            });
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+
+    public function transferFrozenFundsInDebt(Order $order): bool
+    {
+
+        
+        if (!$order->total_amount || $order->total_amount <= 0) {
+
+            return false;
+        }
+
+        $house = $order->house;
+        if (!$house) {
+            
+            return false;
+        }
+
+        $seller = $house->user;
+        if (!$seller) {
+            return false;
+        }
+
+        $customer = $order->customer;
+        if (!$customer) {
+            return false;
+        }
+
+        $amount = (float) $order->total_amount;
+
+        $customerFrozenBalance = (float) ($customer->frozen_balance);
+
+        try {
+            DB::transaction(function () use ($customer, $seller, $amount) {
+                $customer->frozen_balance = (float) ($customer->frozen_balance) - $amount;
+                $customer->save();
+
+                $seller->balance = (float) ($seller->balance) + $amount;
                 $seller->save();
             });
             return true;

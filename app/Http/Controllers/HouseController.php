@@ -35,12 +35,11 @@ class HouseController extends Controller
 
     public function create()
     {
-        // Проверяем, может ли пользователь создавать дома
+
         $this->authorize('create', House::class);
 
         $currentUser = auth()->user();
-        
-        // Проверяем, не забанен ли пользователь
+
         if ($currentUser && $currentUser->isBanned()) {
             $banUntil = $currentUser->getBanUntilDate();
             $banReason = $currentUser->ban_reason ? "\n\nПричина: {$currentUser->ban_reason}" : '';
@@ -97,6 +96,14 @@ class HouseController extends Controller
         }
 
         $data = $request->validated();
+
+        if($data['prepayment']==null || (float)$data['prepayment']>100){
+            $prepayment='30';
+        }
+        else{
+            $prepayment = $data['prepayment'];
+        }
+
         unset($data['image']);
 
         $data=$houseService->convertRentNameTypeInId($data);
@@ -183,7 +190,10 @@ class HouseController extends Controller
         }
 
         $data = $request->validated();
-
+        if($data['prepayment']==null || $data['prepayment']>100 ){
+            $data['prepayment']='30';
+        }
+        
         $data=$houseService->convertRentNameTypeInId($data);
         
         $data=$houseService->convertHouseNameTypeInId($data);

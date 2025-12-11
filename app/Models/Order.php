@@ -23,11 +23,15 @@ class Order extends Model
         "original_data",
         "refunded_at",
         "price",
+        'prepayment',
+        'full_payment',
         ];
     protected $casts = [
         "order_status" => OrderStatus::class,
         "total_amount" => "decimal:2",
         "refunded_at" => "datetime",
+        'prepayment'=>'float',
+        'full_payment'=>'boolean',
     ];
     
     protected function castAttribute($key, $value)

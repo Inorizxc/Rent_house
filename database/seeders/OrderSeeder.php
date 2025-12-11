@@ -22,7 +22,8 @@ class OrderSeeder extends Seeder
             "customer_id"=>"1",
             "order_status"=>OrderStatus::REFUND,
             "original_data"=>"",
-            'price'=>'12'],
+            'price'=>'12',
+            'prepayment'=>'40'],
         ];
         foreach ($orders as $order) {
             $order_without_original=array_slice($order,1,-2);

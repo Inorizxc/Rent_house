@@ -280,18 +280,50 @@ class OrderController extends Controller
         ]);
     }
 
+
+    public function payRest(Request $request, $orderId){
+        $user = $this->authService->checkAuth();
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $order = Order::with('customer')->findOrFail($orderId);
+
+        
+        if($user->balance < $order->price*$order->day_count-$order->price*$order->day_count*$order->prepayment/100){
+            return redirect()->route('orders.show', $orderId)
+            ->with('success', 'Денег нет у тебя нищеброд');
+            //return redirect()->route('map')->with('error', 'Недостаточно средств на балансе');
+        }
+        $total_amount = $order->price*$order->day_count - $order->price*$order->day_count*$order->prepayment/100;
+
+        $order->full_payment=true;
+        $user->balance = (float) ($user->balance) - $total_amount;
+        $user->frozen_balance = (float) ($user->frozen_balance) + $total_amount;
+
+        $user->save();
+        $order->total_amount = $order->price*$order->day_count;
+        $order->save();
+        
+        $this->orderService->transferFrozenFunds($order);
+
+        
+        return redirect()->route('orders.show', $orderId);
+    }
+
     public function confirm(Request $request, $houseId)
     {
         $user = $this->authService->checkAuth();
 
         if (!$user) {
-            return redirect()->route('login')->with('error', 'Необходима авторизация');
+            return redirect()->route('login');
         }
 
         
         $banCheck = $this->authService->checkBan($user);
         if ($banCheck) {
-            return redirect()->back()->with('error', $banCheck['message']);
+            return redirect()->back();
         }
         
         $request->validate([
@@ -342,7 +374,8 @@ class OrderController extends Controller
                 'day_count' => $dayCount,
                 'customer_id' => $user->user_id,
                 'order_status' => $defaultStatus,
-                'price'=>$house->price_id
+                'price'=>$house->price_id,
+                'prepayment' =>$house->prepayment,
             ]);
         } catch (\Exception $e) {
             $temporaryBlock->delete();
@@ -377,6 +410,7 @@ class OrderController extends Controller
         return redirect()->route('house.chat', $houseId);
     }
 
+    
 
     public function cancel(Request $request, $houseId)
     {
@@ -418,23 +452,25 @@ class OrderController extends Controller
     public function approve($id)
     {
         $user = $this->authService->checkAuth();
-
+        
         if (!$user) {
             return redirect()->route('login');
         }
-
+        
         $order = Order::with(['house.user', 'customer'])->findOrFail($id);
-
+        
         if (!$order->house || $order->house->user_id != $user->user_id) {
+            
             abort(403, 'У вас нет прав на подтверждение этого заказа');
         }
-
+        
         if ($order->order_status === OrderStatus::COMPLETED) {
+            
             return redirect()->back();
         }
-
+        
         $success = $this->orderService->transferFrozenFunds($order);
-
+        
         if ($success) {
             $order->order_status = OrderStatus::COMPLETED;
             $order->save();
