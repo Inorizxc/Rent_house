@@ -247,7 +247,7 @@
             @endif
             
             
-            @if($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND)
+            @if($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND & $order->full_payment!=false)
                 <div class="actions">
                     <form method="POST" action="{{ route('orders.approve', $order) }}" style="display: inline;">
                         @csrf

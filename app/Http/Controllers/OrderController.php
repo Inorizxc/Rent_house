@@ -289,7 +289,7 @@ class OrderController extends Controller
         }
 
         $order = Order::with('customer')->findOrFail($orderId);
-
+        $chat = $this->orderService->getOrCreateChat($user->user_id, $order->house->user_id);
         
         if($user->balance < $order->price*$order->day_count-$order->price*$order->day_count*$order->prepayment/100){
             return redirect()->route('orders.show', $orderId)
@@ -307,6 +307,7 @@ class OrderController extends Controller
         $order->save();
         
         $this->orderService->transferFrozenFunds($order);
+        $this->orderService->sendOrderConfirmationMessage($chat,$order,'','',$order->day_count,$user->user_id);
 
         
         return redirect()->route('orders.show', $orderId);
@@ -453,12 +454,17 @@ class OrderController extends Controller
     {
         $user = $this->authService->checkAuth();
         
+
         if (!$user) {
             return redirect()->route('login');
         }
         
         $order = Order::with(['house.user', 'customer'])->findOrFail($id);
         
+        if($order->full_payment==false){
+            bort(403, 'Заказ не оплачен полностью');
+        }
+
         if (!$order->house || $order->house->user_id != $user->user_id) {
             
             abort(403, 'У вас нет прав на подтверждение этого заказа');

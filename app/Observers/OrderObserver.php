@@ -9,7 +9,7 @@ class OrderObserver
 {
     public function retrieved(Order $order): void
     {
-        if ($order->date_of_order <= now() && $order->order_status == OrderStatus::PENDING) {
+        if ($order->date_of_order <= now()->addDay(1) && $order->order_status == OrderStatus::PENDING) {
             $service=app(OrderService::class);
             $user=$order->customer;
             if($order->full_payment==false){
@@ -34,7 +34,7 @@ class OrderObserver
 
     public function create(Order $order): void
     {
-        if ($order->date_of_order <= now()->addDay(7) && $order->order_status == OrderStatus::PENDING) {
+        if ($order->date_of_order <= now()->addDay(1) && $order->order_status == OrderStatus::PENDING) {
             $service=app(OrderService::class);
             $user=auth()->user();
             if($order->full_payment==false){
