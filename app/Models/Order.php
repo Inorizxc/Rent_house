@@ -19,6 +19,7 @@ class Order extends Model
         "day_count",
         "total_amount",
         "customer_id",
+        "rent_dealer_id",
         "order_status",
         "original_data",
         "refunded_at",
@@ -67,6 +68,11 @@ class Order extends Model
     public function customer(){
         return $this->belongsTo(User::class,"customer_id","user_id");
     }
+
+    public function rentDealer(){
+        return $this->belongsTo(User::class,"rent_dealer_id","user_id");
+    }
+
 
     public function user(){
         return $this->customer();

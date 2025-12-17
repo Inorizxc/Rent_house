@@ -206,7 +206,7 @@
                 </div>
             @endif
 
-            @if($order->house && $order->house->price_id)
+            @if(true)
                 @php
                     $pricePerDay = (float)$order->price;
                     $totalAmount = $order->total_amount;
@@ -247,7 +247,7 @@
             @endif
             
             
-            @if($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND & $order->full_payment!=false)
+            @if($order->rent_dealer_id == auth()->user()->user_id && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND & $order->full_payment!=false)
                 <div class="actions">
                     <form method="POST" action="{{ route('orders.approve', $order) }}" style="display: inline;">
                         @csrf
@@ -258,7 +258,7 @@
                 </div>
             @endif
 
-            @if($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND)
+            @if($isOwner && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::PREREFUND)
                 <div class="actions">
                     <form method="POST" action="{{ route('orders.refund.approve', $order->order_id) }}" style="display: inline;">
                         @csrf
@@ -269,18 +269,29 @@
                 </div>
             @endif
 
-            @if($isOwner && $order->order_status === \App\enum\OrderStatus::REFUND && !$order->isRefunded())
+            @if($isOwner && $order->order_status === \App\enum\OrderStatus::PREREFUND && !$order->isRefunded())
                 <div class="actions" style="margin-top: {{ $isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND ? '12px' : '0' }};">
                     <form method="POST" action="{{ route('orders.refund.approve', $order->order_id) }}" style="display: inline;">
                         @csrf
-                        <button type="submit" class="btn-primary" style="background: #059669; color: white;" onclick="return confirm('Подтвердить возврат средств арендатору? Средства будут возвращены на баланс арендатора.')">
+                        <button type="submit" class="btn-primary" style="background: #059669; color: white;" onclick="return confirm('Отменить возврат средств Клиенту? Средства будут возвращены на баланс клиента.')">
                             Подтвердить возврат
                         </button>
                     </form>
                 </div>
             @endif
+
+            @if($isOwner && $order->order_status === \App\enum\OrderStatus::PREREFUND && !$order->isRefunded())
+                <div class="actions" style="margin-top: {{ $isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND ? '12px' : '0' }};">
+                    <form method="POST" action="{{ route('orders.refund.cancelRefund', $order->order_id) }}" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn-primary" style="background: #059669; color: white;" onclick="return confirm('Отменить возврат средств клиенту? Средства будут возвращены на баланс клиента.')">
+                            Отменить возврат
+                        </button>
+                    </form>
+                </div>
+            @endif
             
-            @if($isCustomer && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::CANCELLED && $order->date_of_order>=now()->addDays(1) )
+            @if($isCustomer && $order->order_status === \App\enum\OrderStatus::PREPAYMENT && $order->date_of_order>=now()->addDays(1) )
                 <div class="actions" style="margin-top: {{ ($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND) || ($isOwner && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::CANCELLED && $order->order_status != \App\enum\OrderStatus::COMPLETED) ? '12px' : '0' }};">
                     <form method="POST" action="{{ route('orders.refund.request', $order->order_id) }}" style="display: inline;">
                         @csrf
@@ -291,7 +302,7 @@
                 </div>
             @endif
 
-            @if($isCustomer && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::CANCELLED && $order->order_status!=\App\enum\OrderStatus::REFUND && $order->full_payment==false)
+            @if($isCustomer && $order->order_status===\App\enum\OrderStatus::PREPAYMENT)
                 <div class="actions" style="margin-top: {{ ($isOwner && $order->order_status != \App\enum\OrderStatus::COMPLETED && $order->order_status != \App\enum\OrderStatus::REFUND) || ($isOwner && $order->order_status != \App\enum\OrderStatus::REFUND && $order->order_status != \App\enum\OrderStatus::CANCELLED && $order->order_status != \App\enum\OrderStatus::COMPLETED) ? '12px' : '0' }};">
                     <form method="POST" action="{{ route('orders.order.payRest', $order->order_id) }}" style="display: inline;">
                         @csrf

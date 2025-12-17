@@ -42,16 +42,20 @@ class OrderController extends Controller
 
         $query = Order::with(['house', 'user', 'order_status']);
 
-        if ($request->has('customer_id')) {
-            $query->where('customer_id', $request->customer_id);
-        }
-
         if ($request->has('house_id')) {
             $query->where('house_id', $request->house_id);
         }
 
         if ($request->has('order_status_id')) {
             $query->where('order_status_id', $request->order_status_id);
+        }
+
+        if ($request->has('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+       if ($request->has('rent_dealer_id')) {
+            $query->where('rent_dealer_id', $request->rent_dealer_id);
         }
 
         $orders = $query->orderBy('date_of_order', 'desc')->paginate(15);
@@ -289,7 +293,7 @@ class OrderController extends Controller
         }
 
         $order = Order::with('customer')->findOrFail($orderId);
-        $chat = $this->orderService->getOrCreateChat($user->user_id, $order->house->user_id);
+        $chat = $this->orderService->getOrCreateChat($user->user_id, $order->rent_dealer_id);
         
         if($user->balance < $order->price*$order->day_count-$order->price*$order->day_count*$order->prepayment/100){
             return redirect()->route('orders.show', $orderId)
@@ -301,7 +305,7 @@ class OrderController extends Controller
         $order->full_payment=true;
         $user->balance = (float) ($user->balance) - $total_amount;
         $user->frozen_balance = (float) ($user->frozen_balance) + $total_amount;
-
+        $order->order_status = OrderStatus::PENDING;
         $user->save();
         $order->total_amount = $order->price*$order->day_count;
         $order->save();
@@ -361,7 +365,7 @@ class OrderController extends Controller
 
         $dayCount = $this->orderService->calculateDayCount($request->checkin_date, $request->checkout_date);
 
-        $defaultStatus = OrderStatus::PENDING;
+        $defaultStatus = OrderStatus::PREPAYMENT;
         
         if (!$defaultStatus) {
             $temporaryBlock->delete();
@@ -465,7 +469,7 @@ class OrderController extends Controller
             bort(403, 'Заказ не оплачен полностью');
         }
 
-        if (!$order->house || $order->house->user_id != $user->user_id) {
+        if ($order->rent_dealer_id != $user->user_id) {
             
             abort(403, 'У вас нет прав на подтверждение этого заказа');
         }
@@ -517,12 +521,38 @@ class OrderController extends Controller
         
         $this->orderService->sendOrderRefundMessage($chat,$order);
 
-        $order->order_status = OrderStatus::REFUND;
+        $order->order_status = OrderStatus::PREREFUND;
         $order->save();
 
         return redirect()->back();
     }
 
+    public function cancelRefund($id)
+    {
+        $user = $this->authService->checkAuth();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Необходима авторизация');
+        }
+
+        $order = Order::with(['house.user', 'customer'])->findOrFail($id);
+
+        if ($order->rent_dealer_id != $user->user_id) {
+            abort(403, 'У вас нет прав на отменение возврата для этого заказа');
+        }
+
+        //if ($order->order_status !== OrderStatus::REFUND) {
+        //    return redirect()->back()->with('error', 'Запрос на возврат не найден');
+        //}
+
+        if ($order->isRefunded()) {
+            return redirect()->back()->with('error', 'Отмена возврат средств уже был выполнен ранее.');
+        }
+
+        $order->order_status = OrderStatus::PREPAYMENT;
+        $order->save();
+        return redirect()->back();
+    }
 
     public function approveRefund($id)
     {
@@ -534,7 +564,7 @@ class OrderController extends Controller
 
         $order = Order::with(['house.user', 'customer'])->findOrFail($id);
 
-        if (!$order->house || $order->house->user_id != $user->user_id) {
+        if ($order->rent_dealer_id != $user->user_id) {
             abort(403, 'У вас нет прав на подтверждение возврата для этого заказа');
         }
 

@@ -45,6 +45,7 @@ Route::middleware(['auth', 'banned'])->group(function () {
         Route::post('/orders/{id}/approve', 'approve')->name('orders.approve');
         Route::post('/orders/{id}/refund/request', 'requestRefund')->name('orders.refund.request');
         Route::post('/orders/{id}/refund/approve', 'approveRefund')->name('orders.refund.approve');
+        Route::post('/orders/{id}/refund/cancelRefund', 'cancelRefund')->name('orders.refund.cancelRefund');
         Route::post('/orders/{id}/order/payRest', 'payRest')->name('orders.order.payRest');
         Route::post('/house/{houseId}/order', 'createFromChat')->name('house.order.create');
         Route::get('/house/{houseId}/order/confirm', 'showConfirm')->name('house.order.confirm.show');

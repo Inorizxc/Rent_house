@@ -20,6 +20,7 @@ class OrderSeeder extends Seeder
             "date_of_order"=>"01.01.2000",
             "day_count"=>"2",
             "customer_id"=>"1",
+            "rent_dealer_id"=>"1",
             "order_status"=>OrderStatus::REFUND,
             "original_data"=>"",
             'price'=>'12',

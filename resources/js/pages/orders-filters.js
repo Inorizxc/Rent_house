@@ -5,7 +5,7 @@
 // Глобальная функция для инициализации фильтров заказов
 window.initOrdersFilters = function(container) {
     container = container || document;
-
+    console.log('Filtering orders with:', 'address:');
     const ordersGrid = container.getElementById('orders-houses-grid');
     if (!ordersGrid) {
         console.log('Orders grid not found');
@@ -50,12 +50,13 @@ window.initOrdersFilters = function(container) {
 
         return {
             roles: selectedRoles.length > 0 ? selectedRoles : ['customer', 'owner'],
-            statuses: selectedStatuses.length > 0 ? selectedStatuses : ['рассмотрение', 'обработка', 'завершено', 'отменено', 'возврат']
+            statuses: selectedStatuses.length > 0 ? selectedStatuses : ['рассмотрение', 'обработка', 'завершено', 'отменено', 'возврат','ожидает возврата','предоплачено']
         };
     }
 
     // Функция для фильтрации заказов
     function filterOrders() {
+        
         const cards = container.querySelectorAll('.orders-compact-card');
         const grid = container.getElementById('orders-houses-grid');
         if (!grid) return;
@@ -63,7 +64,9 @@ window.initOrdersFilters = function(container) {
         const filters = getSelectedFilters();
 
         const nameInput = container.querySelector('#filter-name-input');
-        const addressInput = container.querySelector('#filter-address-input');
+        //const nameInput = container.querySelector('#filter-address-input');
+        //const addressInput = container.querySelector('#filter-address-input');
+        const addressInput = container.querySelector('#order-address-input');
         const customerSelect = container.querySelector('#filter-customer-select');
         const ownerSelect = container.querySelector('#filter-owner-select');
 

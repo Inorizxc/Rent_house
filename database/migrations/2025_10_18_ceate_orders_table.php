@@ -20,6 +20,7 @@ return new class extends Migration
             $table->text("date_of_order");
             $table->text("day_count");
             $table->text("customer_id");
+            $table->text("rent_dealer_id");
             $table->string("order_status");
             $table->text("original_data");
             $table->text("price");

@@ -31,7 +31,13 @@ class OrderService
         $house = House::findOrFail($data['house_id']);
         $pricePerDay = (float) $house->price_id;
         $dayCount = (int) $data['day_count'];
-        $totalAmount = $pricePerDay * $dayCount*$data['prepayment']/100;
+        if($data['date_of_order']<=now()->addDay(1)){
+            $totalAmount = $pricePerDay * $dayCount;
+        }
+        else{
+            $totalAmount = $pricePerDay * $dayCount*$data['prepayment']/100;
+        }
+        
 
         $customer = User::findOrFail($data['customer_id']);
         $originalData = [
@@ -46,25 +52,26 @@ class OrderService
             throw new \Exception('Недостаточно средств на балансе. Требуется: ' . number_format($totalAmount, 2, ',', ' ') . ' ₽, доступно: ' . number_format($currentBalance, 2, ',', ' ') . ' ₽');
         }
 
-        return DB::transaction(function () use ($data, $originalData, $totalAmount, $customer) {
-            $customer->balance = max(0, (float) ($customer->balance ?? 0) - $totalAmount);
-            $customer->frozen_balance = (float) ($customer->frozen_balance ?? 0) + $totalAmount;
-            $customer->save();
+        
+        $customer->balance = (float)$customer->balance - $totalAmount;
+        $customer->frozen_balance = (float)$customer->frozen_balance + $totalAmount;
+        $customer->save();
 
-            return Order::create([
-                'house_id' => $data['house_id'],
-                'date_of_order' => $data['date_of_order'],
-                'day_count' => $data['day_count'],
-                'total_amount' => $totalAmount,
-                'customer_id' => $data['customer_id'],
-                'full_payment'=>false,
-                'order_status_id' => $data['order_status_id'] ?? null,
-                'order_status' => $data['order_status'] ?? null,
-                'original_data' => json_encode($originalData),
-                'price' =>$data['price'],
-                'prepayment' =>$data['prepayment'],
-            ]);
-        });
+        return Order::create([
+            'house_id' => $data['house_id'],
+            'date_of_order' => $data['date_of_order'],
+            'day_count' => $data['day_count'],
+            'total_amount' => $totalAmount,
+            'customer_id' => $data['customer_id'],
+            'rent_dealer_id' => $house->user_id,
+            'full_payment'=>false,
+            'order_status_id' => $data['order_status_id'] ?? null,
+            'order_status' => $data['order_status'] ?? null,
+            'original_data' => json_encode($originalData),
+            'price' =>$data['price'],
+            'prepayment' =>$data['prepayment'],
+        ]);
+        
     }
 
     public function updateOrder(Order $order, array $data): Order
@@ -206,13 +213,11 @@ class OrderService
             ->get();
     }
 
-    public function getOrdersAsOwner(array $houseIds)
+    public function getOrdersAsOwner($ownerId)
     {
-        if (empty($houseIds)) {
-            return collect();
-        }
+       
 
-        return Order::whereIn('house_id', $houseIds)
+        return Order::where('rent_dealer_id', $ownerId)
             ->with(['house.photo', 'house.rent_type', 'house.house_type', 'customer'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -228,13 +233,9 @@ class OrderService
             return false;
         }
 
-        $house = $order->house;
-        if (!$house) {
-            
-            return false;
-        }
+    
+        $seller = $order->rentDealer;
 
-        $seller = $house->user;
         if (!$seller) {
             return false;
         }
@@ -253,13 +254,13 @@ class OrderService
         }
 
         try {
-            DB::transaction(function () use ($customer, $seller, $amount) {
-                $customer->frozen_balance = (float) ($customer->frozen_balance ?? 0) - $amount;
-                $customer->save();
+            
+            $customer->frozen_balance = (float) ($customer->frozen_balance ?? 0) - $amount;
+            $customer->save();
 
-                $seller->balance = (float) ($seller->balance ?? 0) + $amount;
-                $seller->save();
-            });
+            $seller->balance = (float) ($seller->balance ?? 0) + $amount;
+            $seller->save();
+            
             return true;
         } catch (\Exception $e) {
             return false;
@@ -297,13 +298,13 @@ class OrderService
         $customerFrozenBalance = (float) ($customer->frozen_balance);
 
         try {
-            DB::transaction(function () use ($customer, $seller, $amount) {
-                $customer->frozen_balance = (float) ($customer->frozen_balance) - $amount;
-                $customer->save();
+            
+            $customer->frozen_balance = (float) ($customer->frozen_balance) - $amount;
+            $customer->save();
 
-                $seller->balance = (float) ($seller->balance) + $amount;
-                $seller->save();
-            });
+            $seller->balance = (float) ($seller->balance) + $amount;
+            $seller->save();
+            
             return true;
         } catch (\Exception $e) {
             return false;
@@ -353,45 +354,45 @@ class OrderService
         $order->load(['house.user', 'customer']);
 
         try {
-            DB::transaction(function () use ($order, $customer, $amount) {
-                $customer->refresh();
+            
+            $customer->refresh();
 
-                $customerFrozenBalance = (float) ($customer->frozen_balance ?? 0);
-                $customerBalance = (float) ($customer->balance ?? 0);
+            $customerFrozenBalance = (float) ($customer->frozen_balance ?? 0);
+            $customerBalance = (float) ($customer->balance ?? 0);
 
-                if ($customerFrozenBalance >= $amount) {
-                    $customer->frozen_balance = max(0, $customerFrozenBalance - $amount);
-                    $customer->balance = (float) ($customer->balance ?? 0) + $amount;
-                    $customer->save();
+            if ($customerFrozenBalance >= $amount) {
+                $customer->frozen_balance = max(0, $customerFrozenBalance - $amount);
+                $customer->balance = (float) ($customer->balance ?? 0) + $amount;
+                $customer->save();
 
-                } else {
-                    $house = $order->house;
-                    if (!$house) {
-                        throw new \Exception('Дом не найден для заказа');
-                    }
-
-                    $seller = $house->user;
-                    if (!$seller) {
-                        throw new \Exception('Владелец дома не найден');
-                    }
-
-                    $seller->refresh();
-
-                    $sellerBalance = (float) ($seller->balance ?? 0);
-                    if ($sellerBalance < $amount) {
-                        throw new \Exception('Недостаточно средств на балансе арендодателя для возврата. Доступно: ' . $sellerBalance . ', требуется: ' . $amount);
-                    }
-
-                    $seller->balance =  $sellerBalance - $amount;
-                    $seller->save();
-
-                    $customer->balance = (float) ($customer->balance ?? 0) + $amount;
-                    $customer->save();
+            } else {
+                $house = $order->house;
+                if (!$house) {
+                    throw new \Exception('Дом не найден для заказа');
                 }
-                $order->order_status = OrderStatus::REFUND;
-                $order->refunded_at = now();
-                $order->save();
-            });
+
+                $seller = $house->user;
+                if (!$seller) {
+                    throw new \Exception('Владелец дома не найден');
+                }
+
+                $seller->refresh();
+
+                $sellerBalance = (float) ($seller->balance ?? 0);
+                if ($sellerBalance < $amount) {
+                    throw new \Exception('Недостаточно средств на балансе арендодателя для возврата. Доступно: ' . $sellerBalance . ', требуется: ' . $amount);
+                }
+
+                $seller->balance =  $sellerBalance - $amount;
+                $seller->save();
+
+                $customer->balance = (float) ($customer->balance ?? 0) + $amount;
+                $customer->save();
+            }
+            $order->order_status = OrderStatus::REFUND;
+            $order->refunded_at = now();
+            $order->save();
+            
 
             return true;
         } catch (\Exception $e) {
