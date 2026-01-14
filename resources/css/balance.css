@@ -247,3 +247,15 @@ html, body{
     border: 1px solid var(--stroke);
     box-shadow: none;
   }
+
+  .btn--ghost-danger{
+    margin-top: 10px;
+    background: transparent;
+    color: #b91c1c;
+    border: 1px solid rgba(185,28,28,.28);
+    box-shadow: none;
+  }
+  .btn--ghost-danger:hover{
+    opacity: .9;
+    letter-spacing: .8;
+  }

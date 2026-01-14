@@ -225,119 +225,66 @@ class UserController extends Controller
 
 
     public function balanceTopup(Request $request, PaymentGatewaySimulator $gateway)
-    {
-        $request->merge([
-            'card_number' => preg_replace('/\D/', '', (string) $request->input('card_number')),
-        ]);
-    
-        $data = $request->validate([
-            'amount'      => ['required', 'numeric', 'min:1', 'max:10000000'],
-            'card_number' => ['required', 'digits:16'],
-            'exp_month'   => ['required', 'integer', 'between:1,12'],
-            'exp_year'    => ['required', 'integer', 'between:0,99'],
-            'cvv'         => ['required', 'digits:3'],
-    
-            'simulate_mode' => ['nullable', 'in:no_funds'],
-        ], [
-            'amount.required' => 'Введите сумму пополнения.',
-            'amount.numeric'  => 'Сумма должна быть числом.',
-            'amount.min'      => 'Минимальная сумма пополнения: 1.',
-            'card_number.digits' => 'Номер карты должен содержать 16 цифр.',
-            'exp_month.between'  => 'Месяц должен быть от 1 до 12.',
-            'exp_year.between'   => 'Год укажите двумя цифрами (например 26).',
-            'cvv.digits_between' => 'CVV должен быть 3 или 4 цифры.',
-        ]);
-    
-        $resp = $gateway->charge([
-            'amount' => (float)$data['amount'],
-            'card_number' => $data['card_number'],
-            'exp_month' => (int)$data['exp_month'],
-            'exp_year' => (int)$data['exp_year'],
-            'cvv' => (string)$data['cvv'],
-            'simulate_mode' => $data['simulate_mode'] ?? null,
-            'operation'=>'topup'
-        ]);
-    
-        if ($resp['status'] === 'declined') {
-            return back()
-                ->withErrors([
-                    'payment' => $resp['reason_message'] . ' (код: ' . $resp['reason_code'] . ')',
-                ])
-                ->with('gateway', $resp) 
-                ->withInput();
-        }
-    
-        $user = auth()->user();
-        if (!$user) abort(403, 'Требуется авторизация');
-    
-        $user->balance = $user->balance + (float)$data['amount'];
-        $user->save();
-    
+{
+    $request->merge([
+        'amount' => str_replace(',', '.', (string) $request->input('amount')),
+        'card_number' => preg_replace('/\D/', '', (string) $request->input('card_number')),
+    ]);
+
+    $data = $request->validate([
+        'action'     => ['required', 'in:topup,withdraw'], // ✅ какая кнопка нажата
+        'amount'      => ['required', 'numeric', 'min:1', 'max:10000000'],
+        'card_number' => ['required', 'digits:16'],
+        'exp_month'   => ['required', 'integer', 'between:1,12'],
+        'exp_year'    => ['required', 'integer', 'between:0,99'],
+        'cvv'         => ['required', 'digits_between:3,4'],
+
+        'simulate_mode' => ['nullable', 'in:no_funds'],
+    ]);
+
+    $user = auth()->user();
+    if (!$user) abort(403, 'Требуется авторизация');
+
+    // (Опционально) шлюз нужен и для вывода, и для пополнения — оставим для обоих
+    $resp = $gateway->charge([
+        'amount' => (float)$data['amount'],
+        'card_number' => $data['card_number'],
+        'exp_month' => (int)$data['exp_month'],
+        'exp_year' => (int)$data['exp_year'],
+        'cvv' => (string)$data['cvv'],
+        'simulate_mode' => $data['simulate_mode'] ?? null,
+    ]);
+
+    if ($resp['status'] === 'declined') {
         return back()
-            ->with('success', 'Платёж принят. Транзакция: ' . $resp['transaction_id'])
+            ->withErrors(['payment' => $resp['reason_message'].' (код: '.$resp['reason_code'].')'])
+            ->with('gateway', $resp)
+            ->withInput();
+    }
+
+    $amount = (float)$data['amount'];
+
+    if ($data['action'] === 'topup') {
+        $user->balance += $amount;
+        $user->save();
+
+        return back()
+            ->with('success', 'Пополнение успешно. Tx: '.$resp['transaction_id'])
             ->with('gateway', $resp);
     }
 
-        public function balanceSpisanie(Request $request)
-    {
-       $request->merge([
-            'card_number' => preg_replace('/\D/', '', (string) $request->input('card_number')),
-        ]);
-    
-        $data = $request->validate([
-            'amount'      => ['required', 'numeric', 'min:1', 'max:10000000'],
-            'card_number' => ['required', 'digits:16'],
-            'exp_month'   => ['required', 'integer', 'between:1,12'],
-            'exp_year'    => ['required', 'integer', 'between:0,99'],
-            'cvv'         => ['required', 'digits:3'],
-    
-            'simulate_mode' => ['nullable'],
-        ], [
-            'amount.required' => 'Введите сумму списания.',
-            'amount.numeric'  => 'Сумма должна быть числом.',
-            'amount.min'      => 'Минимальная сумма списания: 1.',
-            'card_number.digits' => 'Номер карты должен содержать 16 цифр.',
-            'exp_month.between'  => 'Месяц должен быть от 1 до 12.',
-            'exp_year.between'   => 'Год укажите двумя цифрами (например 26).',
-            'cvv.digits_between' => 'CVV должен быть 3 или 4 цифры.',
-        ]);
-    
-        $resp = $gateway->charge([
-            'amount' => (float)$data['amount'],
-            'card_number' => $data['card_number'],
-            'exp_month' => (int)$data['exp_month'],
-            'exp_year' => (int)$data['exp_year'],
-            'cvv' => (string)$data['cvv'],
-            'simulate_mode' => $data['simulate_mode'] ?? null,
-            'operation' => 'spisanie'
-        ]);
-    
-        if ($resp['status'] === 'declined') {
-            return back()
-                ->withErrors([
-                    'payment' => $resp['reason_message'] . ' (код: ' . $resp['reason_code'] . ')',
-                ])
-                ->with('gateway', $resp) 
-                ->withInput();
-        }
-    
-        $user = auth()->user();
-        if (!$user) abort(403, 'Требуется авторизация');
-        if($user->balance < (float)$data['amount']){
-            return back()
-                ->withErrors([
-                   'Недостаточно средств на балансе',
-                ])
-                ->with('gateway', $resp) 
-                ->withInput();
-        
-        }
-        $user->balance = $user->balance - (float)$data['amount'];
-        $user->save();
-    
+    // withdraw
+    if ($user->balance < $amount) {
         return back()
-            ->with('success', 'Платёж принят. Транзакция: ' . $resp['transaction_id'])
-            ->with('gateway', $resp);
+            ->withErrors(['payment' => 'Недостаточно средств на балансе для вывода.'])
+            ->withInput();
     }
 
+    $user->balance -= $amount;
+    $user->save();
+
+    return back()
+        ->with('success', 'Вывод выполнен. Tx: '.$resp['transaction_id'])
+        ->with('gateway', $resp);
+    }
 }
