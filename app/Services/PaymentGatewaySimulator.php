@@ -8,17 +8,13 @@ class PaymentGatewaySimulator
     {
         $tx = 'SIM-' . strtoupper(bin2hex(random_bytes(6)));
 
-        // Принудительная симуляция: недостаточно средств (кнопкой)
-        if (($payload['simulate_mode'] ?? null) === 'no_funds') {
-            return $this->decline($tx, 'INSUFFICIENT_FUNDS', 'Недостаточно средств на карте.');
-        }
+        
 
         $amount = (float) ($payload['amount'] ?? 0);
         $card   = (string) ($payload['card_number'] ?? '');
         $cvv    = (string) ($payload['cvv'] ?? '');
-
-        // Примеры причин отказа
-        if ($amount > 1000) {
+        
+        if ($amount > 20000 && $payload['operation']=="topup") {
             return $this->decline($tx, 'INSUFFICIENT_FUNDS', 'Недостаточно средств на карте.');
         }
 
@@ -30,7 +26,6 @@ class PaymentGatewaySimulator
             return $this->decline($tx, 'DO_NOT_HONOR', 'Банк отклонил операцию. Попробуйте позже.');
         }
 
-        // 10% случайный отказ
         if (random_int(1, 100) <= 10) {
             return $this->decline($tx, 'TEMPORARY_ERROR', 'Временная ошибка. Повторите попытку.');
         }

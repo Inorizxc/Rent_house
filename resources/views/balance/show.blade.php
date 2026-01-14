@@ -91,17 +91,15 @@
 
                     <label class="field">
                         <span>CVV</span>
-                        <input type="text" class="field-input mono" name="cvv" id="cvv" inputmode="numeric" maxlength="4" autocomplete="cc-csc" placeholder="***">
+                        <input type="text" class="field-input mono" name="cvv" id="cvv" inputmode="numeric" maxlength="3" autocomplete="cc-csc" placeholder="***">
                         @error('cvv') <small class="error">{{ $message }}</small> @enderror
                     </label>
 
                 </div>
 
                 <button class="btn" type="submit">Пополнить</button>
+                <button class="btn" type="submit">Списать</button>
 
-                <button class="btn btn--ghost" type="submit" name="simulate_mode" value="no_funds">
-                    Симулировать: недостаточно средств
-                </button>
             </form>
         </div>
     </div>
