@@ -13,4 +13,9 @@ class RouterController extends Controller
         $houses = House::with(['photo', 'house_type'])->get();
         return view('map', ['houses' => $houses]);
     }
+
+    public function balance()
+    {
+        return view('balance.show');
+    }
 }

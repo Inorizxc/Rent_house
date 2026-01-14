@@ -1,6 +1,4 @@
-/**
- * Модуль для работы с меню пользователя
- */
+
 
 class UserMenuManager {
     constructor() {
@@ -24,7 +22,7 @@ class UserMenuManager {
             }
         });
 
-        // Обработка кликов внутри меню
+
         this.dropdown.addEventListener('click', (event) => {
             const link = event.target.closest('a');
             const button = event.target.closest('button[type="submit"]');
@@ -41,7 +39,6 @@ class UserMenuManager {
             }
         });
 
-        // Закрытие при клике вне меню
         document.addEventListener('click', (event) => {
             if (this.isOpen && 
                 !this.toggle.contains(event.target) && 
@@ -50,14 +47,12 @@ class UserMenuManager {
             }
         });
 
-        // Закрытие по Escape
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && this.isOpen) {
                 this.close();
             }
         });
 
-        // Инициализация обновления счетчика непрочитанных сообщений
         if (this.chatLinkWrapper) {
             this.initUnreadCountUpdater();
         }
@@ -78,7 +73,6 @@ class UserMenuManager {
     }
 
     initUnreadCountUpdater() {
-        // Получаем маршрут из data-атрибута или используем дефолтный
         const updateRoute = this.chatLinkWrapper.getAttribute('data-update-route') || '/chats/unread/count';
         
         const updateUnreadCount = () => {
@@ -122,13 +116,11 @@ class UserMenuManager {
             });
         };
 
-        // Обновляем каждые 5 секунд
         updateUnreadCount();
         setInterval(updateUnreadCount, 5000);
     }
 }
 
-// Инициализация при загрузке DOM
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         new UserMenuManager();

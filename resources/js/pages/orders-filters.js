@@ -28,7 +28,6 @@ window.initOrdersFilters = function(container) {
 
     console.log('Initializing filters:', roleCheckboxes.length, 'role checkboxes,', statusCheckboxes.length, 'status checkboxes,', orderCards.length, 'cards');
 
-    // Функция для получения выбранных фильтров
     function getSelectedFilters() {
         const selectedRoles = [];
         const selectedStatuses = [];
@@ -54,7 +53,6 @@ window.initOrdersFilters = function(container) {
         };
     }
 
-    // Функция для фильтрации заказов
     function filterOrders() {
         const cards = container.querySelectorAll('.orders-compact-card');
         const grid = container.getElementById('orders-houses-grid');
@@ -116,7 +114,6 @@ window.initOrdersFilters = function(container) {
         }
     }
 
-    // Используем делегирование событий
     const filtersContainer = container.querySelector('.orders-filters-card') || container;
 
     filtersContainer.addEventListener('change', function(e) {
@@ -153,14 +150,11 @@ window.initOrdersFilters = function(container) {
         }, { passive: true });
     }
 
-    // Инициализируем автодополнение
     initAutocomplete(container, filterOrders);
 
-    // Инициализируем фильтрацию при загрузке
     filterOrders();
 };
 
-// Функция для инициализации автодополнения
 function initAutocomplete(container, filterOrdersFunc) {
     const nameInput = container.querySelector('#filter-name-input');
     const addressInput = container.querySelector('#filter-address-input');
@@ -295,7 +289,7 @@ function initAutocomplete(container, filterOrdersFunc) {
     });
 }
 
-// Автоинициализация
+
 (function() {
     function tryInit() {
         const grid = document.getElementById('orders-houses-grid');

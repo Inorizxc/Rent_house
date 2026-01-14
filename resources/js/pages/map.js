@@ -33,7 +33,6 @@ class MapManager {
         let defaultLng = 46.034176;
         let defaultZoom = 10;
 
-        // Загружаем сохраненное состояние карты
         const savedViewRaw = localStorage.getItem('housesMapView');
         if (savedViewRaw) {
             try {
@@ -58,10 +57,8 @@ class MapManager {
             controls: []
         });
 
-        // Сохраняем состояние карты при изменении
         this.map.events.add('boundschange', () => this.saveMapView());
 
-        // Создаем метки для домов
         this.createMarkers();
     }
 
@@ -116,10 +113,8 @@ class MapManager {
         const areaMaxInput = document.getElementById('area_max');
         const resetBtn = document.getElementById('resetFilters');
 
-        // Заполняем селект типов домов
         this.fillSelectOptions(houseTypeSel);
 
-        // Обработчики фильтров
         [searchInput, houseTypeSel, priceMinInput, priceMaxInput, areaMinInput, areaMaxInput].forEach(el => {
             el.addEventListener('input', () => this.updateView());
             el.addEventListener('change', () => this.updateView());
@@ -135,7 +130,6 @@ class MapManager {
             this.updateView();
         });
 
-        // Первоначальное обновление
         this.updateView();
     }
 
@@ -279,7 +273,6 @@ class MapManager {
             </div>
         `;
 
-        // Подсветка в списке
         Array.from(document.getElementsByClassName('house-item')).forEach(el => {
             el.classList.toggle('active', Number(el.dataset.id) === Number(houseId));
         });
@@ -300,7 +293,6 @@ class MapManager {
     updateView() {
         const filtered = this.getFilteredHouses();
 
-        // Показываем/прячем метки на карте
         Object.entries(this.markers).forEach(([id, placemark]) => {
             const exists = filtered.find(h => Number(h.house_id) === Number(id));
             placemark.options.set('visible', !!exists);
@@ -388,7 +380,6 @@ class MapManager {
     }
 }
 
-// Инициализация при загрузке страницы
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initMap);
 } else {
