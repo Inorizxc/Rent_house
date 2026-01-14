@@ -21,7 +21,7 @@ use Livewire\Volt\Volt;
 Route::controller(RouterController::class)->group(function () {
     Route::get('/map', 'map')->name('map');
     Route::get('/balance', 'balance')->name('balance');
-    Route::post('/balance', 'balanceTopup')->name('balance.topup');
+    
 });
 
 Route::controller(HouseController::class)->group(function () {
@@ -73,11 +73,13 @@ Route::prefix('profile/{id}')
         Route::get('/tab/houses', 'tabHouses')->name('profile.tab.houses');
         Route::get('/tab/orders', 'tabOrders')->name('profile.tab.orders');
         Route::get('/tab/settings', 'tabSettings')->name('profile.tab.settings');
+        
     });
 
 Route::middleware(['auth', 'banned'])->group(function () {
     Route::controller(UserController::class)->group(function () {
         Route::post('/verification/request', 'requestVerification')->name('verification.request');
+        Route::post('/balance', 'balanceTopup')->name('balance.topup');
     });
 });
 
