@@ -104,7 +104,7 @@ class UserController extends Controller
         $ordersAsCustomer = $this->orderService->getOrdersAsCustomer($user->user_id);
 
         $houseIds = $user->house->pluck('house_id')->toArray();
-        $ordersAsOwner = $this->orderService->getOrdersAsOwner($houseIds);
+        $ordersAsOwner = $this->orderService->getOrdersAsOwner($user->user_id);
 
         $allOrders = $ordersAsCustomer->merge($ordersAsOwner)->unique('order_id')->sortByDesc('created_at');
 

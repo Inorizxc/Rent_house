@@ -56,6 +56,14 @@
                                     <span class="orders-filter-checkbox-label">Отменено</span>
                                 </label>
                                 <label class="orders-filter-checkbox">
+                                    <input type="checkbox" data-filter-status="предоплачено" checked>
+                                    <span class="orders-filter-checkbox-label">Предоплачено</span>
+                                </label>
+                                <label class="orders-filter-checkbox">
+                                    <input type="checkbox" data-filter-status="ожидает возврата" checked>
+                                    <span class="orders-filter-checkbox-label">Ожидает возврата</span>
+                                </label>
+                                <label class="orders-filter-checkbox">
                                     <input type="checkbox" data-filter-status="возврат" checked>
                                     <span class="orders-filter-checkbox-label">Возврат</span>
                                 </label>
@@ -78,7 +86,7 @@
                             <label class="orders-filter-label">Адрес:</label>
                             <div class="orders-filter-input-wrapper">
                                 <input type="text" 
-                                       id="filter-address-input" 
+                                       id="order-address-input" 
                                        class="orders-filter-input" 
                                        placeholder="Введите адрес..."
                                        autocomplete="off">
@@ -155,6 +163,8 @@
                                             \App\enum\OrderStatus::COMPLETED => 'completed',
                                             \App\enum\OrderStatus::CANCELLED => 'cancelled',
                                             \App\enum\OrderStatus::REFUND => 'refund',
+                                            \App\enum\OrderStatus::PREPAYMENT => 'prepayment',
+                                            \App\enum\OrderStatus::PREREFUND => 'prerefund',
                                             default => 'pending'
                                         };
                                         $statusValue = mb_strtolower($order->order_status->value, 'UTF-8');
