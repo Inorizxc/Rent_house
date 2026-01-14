@@ -42,7 +42,7 @@
                     </div>
                 </div>
 
-                <div class="card-hint">Данные карты не сохраняються</div>
+                <div class="card-hint">Данные карты не сохраняются</div>
             
             </section>
 
