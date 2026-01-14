@@ -21,6 +21,7 @@ use Livewire\Volt\Volt;
 Route::controller(RouterController::class)->group(function () {
     Route::get('/map', 'map')->name('map');
     Route::get('/balance', 'balance')->name('balance');
+    Route::post('/balance', 'balanceTopup')->name('balance.topup');
 });
 
 Route::controller(HouseController::class)->group(function () {
