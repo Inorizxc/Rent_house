@@ -17,12 +17,14 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 
-
 Route::controller(RouterController::class)->group(function () {
     Route::get('/map', 'map')->name('map');
     Route::get('/balance', 'balance')->name('balance');
-    
 });
+
+Route::post('/balance/topup', [UserController::class, 'balanceTopup'])->name('balance.topup');
+
+
 
 Route::controller(HouseController::class)->group(function () {
     Route::get('/house/{id}', 'show')->name('house.show');

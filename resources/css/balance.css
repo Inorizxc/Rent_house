@@ -215,3 +215,35 @@ html, body{
     border-color: rgba(220,38,38,.7);
     box-shadow: 0 0 0 4px rgba(220,38,38,.10);
   }
+
+
+
+  .notice{
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    font-size: 14px;
+    border: 1px solid transparent;
+  }
+  .notice--error{
+    background: rgba(220,38,38,.08);
+    border-color: rgba(220,38,38,.25);
+    color: #991b1b;
+  }
+  .notice--success{
+    background: rgba(34,197,94,.10);
+    border-color: rgba(34,197,94,.25);
+    color: #166534;
+  }
+  .notice__meta{
+    margin-top: 6px;
+    font-size: 12px;
+    opacity: .85;
+  }
+  .btn--ghost{
+    margin-top: 10px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--stroke);
+    box-shadow: none;
+  }

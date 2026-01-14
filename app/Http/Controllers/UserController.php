@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Services\UserServices\UserService;
 use App\Services\OrderService\OrderService;
 use App\Services\VerificationService\VerificationService;
+use App\Services\PaymentGatewaySimulator;
 
 class UserController extends Controller
 {
@@ -223,18 +224,21 @@ class UserController extends Controller
     }
 
 
-        public function balanceTopup(Request $request)
+    public function balanceTopup(Request $request, PaymentGatewaySimulator $gateway)
     {
         $request->merge([
             'card_number' => preg_replace('/\D/', '', (string) $request->input('card_number')),
         ]);
-
-        $validated = $request->validate([
+    
+        $data = $request->validate([
             'amount'      => ['required', 'numeric', 'min:1', 'max:10000000'],
             'card_number' => ['required', 'digits:16'],
             'exp_month'   => ['required', 'integer', 'between:1,12'],
             'exp_year'    => ['required', 'integer', 'between:0,99'],
             'cvv'         => ['required', 'digits_between:3,4'],
+    
+            // режим симуляции от кнопки (опционально)
+            'simulate_mode' => ['nullable', 'in:no_funds'],
         ], [
             'amount.required' => 'Введите сумму пополнения.',
             'amount.numeric'  => 'Сумма должна быть числом.',
@@ -244,24 +248,37 @@ class UserController extends Controller
             'exp_year.between'   => 'Год укажите двумя цифрами (например 26).',
             'cvv.digits_between' => 'CVV должен быть 3 или 4 цифры.',
         ]);
-
-        if($request->success == true){
-            $user = auth()->user();
-            $user->balance = $user->balance + $request->amount;
-            $user->save(); 
-            return redirect()
-            ->route('balance')
-            ->with('success', 'Данные приняты. Пополнение обрабатывается.');
+    
+        // ✅ "запрос" в шлюз
+        $resp = $gateway->charge([
+            'amount' => (float)$data['amount'],
+            'card_number' => $data['card_number'],
+            'exp_month' => (int)$data['exp_month'],
+            'exp_year' => (int)$data['exp_year'],
+            'cvv' => (string)$data['cvv'],
+            'simulate_mode' => $data['simulate_mode'] ?? null,
+        ]);
+    
+        // ✅ обработка ответа шлюза
+        if ($resp['status'] === 'declined') {
+            return back()
+                ->withErrors([
+                    'payment' => $resp['reason_message'] . ' (код: ' . $resp['reason_code'] . ')',
+                ])
+                ->with('gateway', $resp)   // tx id, code
+                ->withInput();
         }
-        else{
-            return redirect()
-            ->route('balance')
-            ->with('success', 'Ошибка платежного шлюза.');
-        }
-
-        
-
-        
+    
+        // успех — зачисляем баланс
+        $user = auth()->user();
+        if (!$user) abort(403, 'Требуется авторизация');
+    
+        $user->balance = $user->balance + (float)$data['amount'];
+        $user->save();
+    
+        return back()
+            ->with('success', 'Платёж принят. Транзакция: ' . $resp['transaction_id'])
+            ->with('gateway', $resp);
     }
 
         public function balanceSpisanie(Request $request)

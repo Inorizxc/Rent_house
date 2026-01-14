@@ -11,8 +11,22 @@
         <div class="head">
             <h1 class="title">Пополнение баланса</h1>
             <p class="subtitle">Введите сумму и данные карты для пополнения.</p>
+            @if($errors->has('payment'))
+            <div class="notice notice--error">
+                {{ $errors->first('payment') }}
+                @if(session('gateway'))
+                <div class="notice__meta">Tx: {{ session('gateway.transaction_id') }}</div>
+                @endif
+            </div>
+            @endif
+
             @if(session('success'))
-                <div class="success">{{ session('success') }}</div>
+            <div class="notice notice--success">
+                {{ session('success') }}
+                @if(session('gateway'))
+                <div class="notice__meta">Tx: {{ session('gateway.transaction_id') }}</div>
+                @endif
+            </div>
             @endif
         </div>
 
@@ -33,7 +47,7 @@
                         <div class="card-value" id="previewAmount">0.00 руб</div>
                     </div>
 
-                    <div class="card-col card-col-right">
+                    <div class="card-col card-col-right">       
                         <div class="card-label">Срок</div>
                         <div class="card-value">
                             <span id="previewMM">MM</span>
@@ -83,8 +97,10 @@
 
                 </div>
 
-                <button class="btn" type="submit">
-                    Пополнить
+                <button class="btn" type="submit">Пополнить</button>
+
+                <button class="btn btn--ghost" type="submit" name="simulate_mode" value="no_funds">
+                    Симулировать: недостаточно средств
                 </button>
             </form>
         </div>
