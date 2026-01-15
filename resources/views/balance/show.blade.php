@@ -97,8 +97,10 @@
 
                 </div>
 
-                <button class="btn" type="submit">Пополнить</button>
-                
+
+                <button class="btn" type="submit" name="action" value="topup">
+                    Пополнить
+                </button>
                 <button class="btn btn--ghost-danger" type="submit" name="action" value="withdraw">
                     Вывести средства
                 </button>
