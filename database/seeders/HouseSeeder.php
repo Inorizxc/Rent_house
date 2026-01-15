@@ -17,10 +17,11 @@ class HouseSeeder extends Seeder
         $houses = [
             ["house_id"=>"1",
             "user_id"=>"1",
-            "price_id"=>"1",
+            "price_id"=>"1500",
             "rent_type_id"=>"1",
             "house_type_id"=>"1",
             "calendar_id"=>"1",
+            'prepayment'=>'45',
             "adress"=>"Ул. Пушикна, дом Колотушкина",
             "area"=>"150 квадратов",
             "is_deleted"=>"0",
