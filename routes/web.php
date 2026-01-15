@@ -19,7 +19,7 @@ use Livewire\Volt\Volt;
 
 Route::controller(RouterController::class)->group(function () {
     Route::get('/map', 'map')->name('map');
-    Route::get('/balance', 'balance')->name('balance');
+    Route::get('/balance', 'balance')->middleware('auth')->name('balance');
 });
 
 Route::post('/balance/topup', [UserController::class, 'balanceTopup'])->name('balance.topup');

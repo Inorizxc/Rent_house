@@ -75,7 +75,7 @@
                     </div>
                     @if($isOwner)
                         <div class="profile-tab-panel" id="tab-orders">
-                            {{-- Контент загружается через AJAX --}}
+                            
                         </div>
                     @endif
                     @if($isOwner)

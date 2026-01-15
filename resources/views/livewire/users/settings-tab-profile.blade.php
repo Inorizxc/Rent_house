@@ -99,5 +99,8 @@ new class extends Component {
             </x-action-message>
         </div>
     </form>
+    <a href="{{ route('balance')}}" class="button">
+                                            Списать\ Пополнить свой баланасе
+     </a>
 </div>
 
