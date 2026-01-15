@@ -226,13 +226,16 @@ class UserController extends Controller
 
     public function balanceTopup(Request $request, PaymentGatewaySimulator $gateway)
 {
+    if($request->value == 'topup'){
+        return back();
+    }
     $request->merge([
         'amount' => str_replace(',', '.', (string) $request->input('amount')),
         'card_number' => preg_replace('/\D/', '', (string) $request->input('card_number')),
     ]);
 
     $data = $request->validate([
-        'action'     => ['required', 'in:topup,withdraw'], // ✅ какая кнопка нажата
+        'action'     => ['required', 'in:topup,withdraw'],
         'amount'      => ['required', 'numeric', 'min:1', 'max:10000000'],
         'card_number' => ['required', 'digits:16'],
         'exp_month'   => ['required', 'integer', 'between:1,12'],
@@ -245,8 +248,8 @@ class UserController extends Controller
     $user = auth()->user();
     if (!$user) abort(403, 'Требуется авторизация');
 
-    // (Опционально) шлюз нужен и для вывода, и для пополнения — оставим для обоих
     $resp = $gateway->charge([
+        'action'=>$request->action,
         'amount' => (float)$data['amount'],
         'card_number' => $data['card_number'],
         'exp_month' => (int)$data['exp_month'],
@@ -273,7 +276,6 @@ class UserController extends Controller
             ->with('gateway', $resp);
     }
 
-    // withdraw
     if ($user->balance < $amount) {
         return back()
             ->withErrors(['payment' => 'Недостаточно средств на балансе для вывода.'])

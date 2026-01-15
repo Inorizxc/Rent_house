@@ -14,7 +14,7 @@ class PaymentGatewaySimulator
         $card   = (string) ($payload['card_number'] ?? '');
         $cvv    = (string) ($payload['cvv'] ?? '');
         
-        if ($amount > 20000 && $payload['operation']=="topup") {
+        if ($amount > 20000 && $payload['action']=="topup") {
             return $this->decline($tx, 'INSUFFICIENT_FUNDS', 'Недостаточно средств на карте.');
         }
 
